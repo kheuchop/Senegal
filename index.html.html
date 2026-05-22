@@ -6314,42 +6314,37 @@ function a17UpdateDriftUI() {
   const isBehind = d.deltaHours < 0;
   const reposDispo = Math.max(0, MISSION.joursRepos - Math.max(0, -d.deltaDays));
 
-  // ── KPI boxes — safe via optional chaining ──
-  const kDone  = document.getElementById('a17-k-done');
-  const kTheo  = document.getElementById('a17-k-theorique');
-  const kRepos = document.getElementById('a17-k-repos');
-  const kDelta = document.getElementById('a17-k-delta');
+  const kDone     = document.getElementById('a17-k-done');
+  const kTheo     = document.getElementById('a17-k-theorique');
+  const kRepos    = document.getElementById('a17-k-repos');
+  const kDelta    = document.getElementById('a17-k-delta');
+  const modeBadge = document.getElementById('a17-mode-badge');
+  const deltaDisp = document.getElementById('a17-delta-display');
+  const deltaSub  = document.getElementById('a17-delta-sub');
+  const optimCard = document.getElementById('a17-optim-card');
+  const planbCard = document.getElementById('a17-planb-card');
+
   if (kDone)  kDone.textContent  = d.actualDone;
   if (kTheo)  kTheo.textContent  = d.theoreticalDays;
   if (kRepos) kRepos.textContent = Math.round(reposDispo);
-  if (kDelta) {
-    kDelta.textContent  = d.deltaHours;
-    kDelta.style.color  = isBehind ? 'var(--red)' : 'var(--emerald)';
-  }
-
-  // ── Mode/delta display elements ──
-  const modeBadge  = document.getElementById('a17-mode-badge');
-  const deltaDisp  = document.getElementById('a17-delta-display');
-  const deltaSub   = document.getElementById('a17-delta-sub');
-  const optimCard  = document.getElementById('a17-optim-card');   // ← was crashing
-  const planbCard  = document.getElementById('a17-planb-card');   // ← was crashing
+  if (kDelta) { kDelta.textContent = d.deltaHours; kDelta.style.color = isBehind ? 'var(--red)' : 'var(--emerald)'; }
 
   if (!isBehind || absDeltaH < 24) {
     if (modeBadge) { modeBadge.textContent = '⬡ NOMINAL'; modeBadge.className = 'a17-mode-badge'; }
     if (deltaDisp) { deltaDisp.textContent = `Δ ${d.deltaHours >= 0 ? '+' : ''}${d.deltaHours}h`; deltaDisp.className = 'a17-delta-display'; }
-    if (deltaSub)  deltaSub.textContent    = 'En phase avec le planning — aucune action requise';
-    if (optimCard) optimCard.style.display = 'none';   // ← guarded
-    if (planbCard) planbCard.style.display = 'none';   // ← guarded
+    if (deltaSub)  deltaSub.textContent = 'En phase avec le planning — aucune action requise';
+    if (optimCard) optimCard.style.display = 'none';
+    if (planbCard) planbCard.style.display = 'none';
   } else if (absDeltaH >= 24 && absDeltaH < 72) {
     if (modeBadge) { modeBadge.textContent = '⚠️ OPTIMISATION RECOMMANDÉE'; modeBadge.className = 'a17-mode-badge mode-optim'; }
     if (deltaDisp) { deltaDisp.textContent = `Δ ${d.deltaHours}h`; deltaDisp.className = 'a17-delta-display warn'; }
-    if (deltaSub)  deltaSub.textContent    = `Retard de ${absDeltaH}h détecté — optimisation recommandée`;
+    if (deltaSub)  deltaSub.textContent = `Retard de ${absDeltaH}h détecté — optimisation recommandée`;
     a17ShowOptim(d);
-    if (planbCard) planbCard.style.display = 'none';   // ← guarded
+    if (planbCard) planbCard.style.display = 'none';
   } else {
     if (modeBadge) { modeBadge.textContent = '🚨 PLAN B CRITIQUE'; modeBadge.className = 'a17-mode-badge mode-planb'; }
     if (deltaDisp) { deltaDisp.textContent = `Δ ${d.deltaHours}h`; deltaDisp.className = 'a17-delta-display critical'; }
-    if (deltaSub)  deltaSub.textContent    = `Retard critique de ${absDeltaH}h — Plan B requis`;
+    if (deltaSub)  deltaSub.textContent = `Retard critique de ${absDeltaH}h — Plan B requis`;
     a17ShowOptim(d);
     a17ShowPlanB(d);
   }
@@ -6537,30 +6532,15 @@ function a17AddLog(text) {
 }
 
 function initAgent17() {
+  try { a17RenderRisks();       } catch(e) { console.warn('a17RenderRisks:', e.message); }
+  try { a17UpdateDriftUI();     } catch(e) { console.warn('a17UpdateDriftUI:', e.message); }
+  try { a17UpdateQueueDisplay();} catch(e) { console.warn('a17UpdateQueueDisplay:', e.message); }
   try {
-    a17RenderRisks();
-  } catch(e) { console.warn('a17RenderRisks:', e.message); }
-
-  try {
-    // a17UpdateDriftUI modifie le DOM du panel Agent 17.
-    // Si le panel n'est pas encore rendu (lazy render), tous les getElementById
-    // retournent null — les guards ci-dessus absorbent silencieusement ces appels.
-    a17UpdateDriftUI();
-  } catch(e) { console.warn('a17UpdateDriftUI:', e.message); }
-
-  try {
-    a17UpdateQueueDisplay();
-  } catch(e) { console.warn('a17UpdateQueueDisplay:', e.message); }
-
-  // Watcher : idempotent — ne démarre qu'une seule fois
-  if (!a17State.watcherInterval) {
-    try {
-      a17StartWatcher();
-    } catch(e) { console.warn('a17StartWatcher:', e.message); }
-  }
-
+    if (!a17State.watcherInterval) a17StartWatcher();
+  } catch(e) { console.warn('a17StartWatcher:', e.message); }
   a17AddLog('Agent 17 initialisé — Risk Manager & Watcher actifs');
 }
+
 // Start the app
 document.addEventListener('DOMContentLoaded', init);
 </script>
