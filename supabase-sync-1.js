@@ -23,7 +23,7 @@
      Ne jamais committer ces valeurs dans un dépôt public.
      ================================================================ */
   const SUPABASE_URL      = 'https://ntzmxtewynwddqfuonwp.supabase.co';       // ex: https://xxxx.supabase.co
-  const SUPABASE_ANON_KEY = 'sb_publishable_MP6lRgJBpfphbXkV1IpARg__LpAZX2F';  // clé publique anon
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50em14dGV3eW53ZGRxZnVvbndwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODg0ODIsImV4cCI6MjA5NTA2NDQ4Mn0.qu4Pu7zeBOLrT1Wo6Qa9ftF2fU_wuCopYa05aTKvtMo';  // clé publique anon JWT
 
   /* ================================================================
      [2] CONSTANTES SYSTÈME
