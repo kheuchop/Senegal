@@ -85,6 +85,46 @@ svg { display: block; flex-shrink: 0; }
 /* ============================================================
    SPLASH SCREEN
    ============================================================ */
+/* AUTH WALL */
+#auth-wall {
+  position: fixed; inset: 0; z-index: 10000;
+  background: var(--bg-deep);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
+}
+#auth-wall .auth-title {
+  font-family: var(--font-display); font-size: 1.2rem; font-weight: 900;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  background: var(--grad-cyan); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+#auth-wall .auth-sub {
+  font-family: var(--font-mono); font-size: 0.65rem;
+  color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase;
+}
+#auth-wall input {
+  width: 280px; padding: 12px 16px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--r); color: var(--text-primary);
+  font-family: var(--font-mono); font-size: 0.85rem;
+  outline: none; transition: border-color 0.2s;
+}
+#auth-wall input:focus { border-color: var(--cyan); }
+#auth-wall input::placeholder { color: var(--text-muted); }
+#auth-btn {
+  width: 280px; padding: 13px;
+  background: var(--grad-cyan); border: none; border-radius: var(--r);
+  color: #000; font-family: var(--font-mono); font-size: 0.8rem;
+  font-weight: 700; letter-spacing: 0.12em; cursor: pointer;
+  transition: opacity 0.2s;
+}
+#auth-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+#auth-error {
+  display: none; width: 280px; padding: 10px 14px;
+  background: rgba(255,82,82,0.1); border: 1px solid var(--red);
+  border-radius: var(--r-sm); color: var(--red);
+  font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.05em;
+}
+#auth-wall.hidden { display: none; }
+
 #splash {
   position: fixed; inset: 0; z-index: 9999;
   background: var(--bg-deep);
@@ -1754,6 +1794,16 @@ textarea.input-field { resize: vertical; min-height: 80px; }
     </linearGradient>
   </defs>
 </svg>
+
+<!-- Auth Wall -->
+<div id="auth-wall">
+  <div class="auth-title">⬡ Mission Control</div>
+  <div class="auth-sub">Accès restreint · Identification requise</div>
+  <input type="email" id="auth-email" placeholder="Identifiant opérateur" autocomplete="email" />
+  <input type="password" id="auth-password" placeholder="Clé d'accès" autocomplete="current-password" />
+  <button id="auth-btn" onclick="handleLogin()">VALIDER L'EMPREINTE</button>
+  <div id="auth-error"></div>
+</div>
 
 <!-- Splash Screen -->
 <div id="splash">
@@ -4236,6 +4286,10 @@ async function init() {
     console.warn('[MISSION CTRL] supabase-sync-1.js non chargé — mode hors-ligne activé.');
   }
 
+  // Vérification session auth — après init Supabase, jamais avant
+  setStatus('Vérification session…');
+  await checkAuthSession();
+
 
   setStatus('Initialisation WakeLock…');
   await requestWakeLock();
@@ -6482,6 +6536,84 @@ function initAgent17() {
 }
 
 // Start the app
+/* ==========================================================================
+   AUTHENTIFICATION SUPABASE
+   - _authClient : client dédié, distinct de SupaSync (pas d'interférence)
+   - handleLogin : appelé par le bouton auth-wall
+   - checkAuthSession : vérifié APRÈS SupaSync.init() dans init()
+   ========================================================================== */
+const _SUPA_URL  = 'https://ntzmxtewynwddqfuonwp.supabase.co';
+const _SUPA_KEY  = 'sb_publishable_MP6lRgJBpfphbXkV1IpARg__LpAZX2F';
+let   _authClient = null;
+
+function _getAuthClient() {
+  if (_authClient) return _authClient;
+  if (typeof window.supabase === 'undefined') {
+    console.warn('[AUTH] SDK Supabase non disponible');
+    return null;
+  }
+  _authClient = window.supabase.createClient(_SUPA_URL, _SUPA_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true }
+  });
+  return _authClient;
+}
+
+async function handleLogin() {
+  const email   = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const errorEl = document.getElementById('auth-error');
+  const btn     = document.getElementById('auth-btn');
+
+  errorEl.style.display = 'none';
+
+  if (!email || !password) {
+    errorEl.innerText = 'ERREUR : Identifiants manquants.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerText = 'VÉRIFICATION EN COURS…';
+
+  const client = _getAuthClient();
+  if (!client) {
+    errorEl.innerText = 'ERREUR : Module auth non initialisé. Rechargez la page.';
+    errorEl.style.display = 'block';
+    btn.disabled = false;
+    btn.innerText = "VALIDER L'EMPREINTE";
+    return;
+  }
+
+  try {
+    const { data, error } = await client.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+
+    document.getElementById('auth-wall').classList.add('hidden');
+    showToast('Accès autorisé. Bienvenue Commandant.', 'success');
+
+  } catch (err) {
+    errorEl.innerText = 'ACCÈS REFUSÉ : Empreinte non reconnue.';
+    errorEl.style.display = 'block';
+    btn.disabled = false;
+    btn.innerText = "VALIDER L'EMPREINTE";
+  }
+}
+
+// Appelée depuis init(), après SupaSync.init() — pas de setTimeout arbitraire
+async function checkAuthSession() {
+  const client = _getAuthClient();
+  if (!client) return; // Supabase non dispo → mur reste affiché
+
+  try {
+    const { data: { session } } = await client.auth.getSession();
+    if (session) {
+      document.getElementById('auth-wall').classList.add('hidden');
+    }
+  } catch (e) {
+    console.warn('[AUTH] getSession échoué :', e.message);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
