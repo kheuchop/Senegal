@@ -266,53 +266,23 @@ svg { display: block; flex-shrink: 0; }
   overflow: hidden;
   position: relative;
 }
-/* ── Lazy-Render Viewport ── */
-#agent-viewport {
-  width: 100%;
+#agents-slider {
+  display: flex;
+  height: 100%;
+  will-change: transform;
+  transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+}
+.agent-panel {
+  flex-shrink: 0;
+  width: 100vw;
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  position: relative;
-  will-change: contents;
-}
-#agent-viewport::-webkit-scrollbar { display: none; }
-/* ── Agent panel inside viewport ── */
-.agent-panel {
-  width: 100%;
-  min-height: 100%;
   padding: 12px 12px 16px;
-  transform-origin: top center;
+  scrollbar-width: none;
 }
-.agent-panel.ap-enter {
-  animation: ap-fade-in 0.22s cubic-bezier(0.23, 1, 0.32, 1) forwards;
-}
-.agent-panel.ap-leave {
-  animation: ap-fade-out 0.12s cubic-bezier(0.23, 1, 0.32, 1) forwards;
-}
-@keyframes ap-fade-in {
-  from { opacity: 0; transform: translateY(10px) scale(0.995); }
-  to   { opacity: 1; transform: translateY(0)   scale(1); }
-}
-@keyframes ap-fade-out {
-  from { opacity: 1; transform: translateY(0)   scale(1); }
-  to   { opacity: 0; transform: translateY(-6px) scale(0.998); }
-}
-/* ── Loading bar ── */
-#agent-load-bar {
-  position: absolute; top: 0; left: 0; right: 0; height: 2px;
-  background: var(--grad-cyan);
-  transform: scaleX(0); transform-origin: left;
-  z-index: 50; pointer-events: none;
-  transition: transform 0.18s cubic-bezier(0.23, 1, 0.32, 1),
-              opacity 0.15s ease;
-  box-shadow: 0 0 8px rgba(0,242,254,0.5);
-}
-#agent-load-bar.lb-loading { transform: scaleX(0.65); }
-#agent-load-bar.lb-done    { transform: scaleX(1); opacity: 0; }
-/* Map panel — no padding, overflow managed internally */
-.agent-panel#agent-map { padding: 0; }
+.agent-panel::-webkit-scrollbar { display: none; }
 
 /* ============================================================
    BOTTOM NAVIGATION
@@ -1767,6 +1737,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 #agent-risk .a17-log-text{font-size:0.63rem;line-height:1.4;flex:1}
 
 </style>
+
 </head>
 <body>
 
@@ -1854,13 +1825,1506 @@ textarea.input-field { resize: vertical; min-height: 80px; }
     <button class="agent-tab" onclick="switchTab(17)"><span class="tab-num">⬡</span>Carte</button>
   </div>
 
-  <!-- AGENTS PANELS CONTAINER — Lazy Render Viewport -->
+  <!-- AGENTS PANELS CONTAINER -->
   <div id="agents-wrap">
-    <div id="agent-load-bar" aria-hidden="true"></div>
-    <div id="agent-viewport" role="region" aria-live="polite">
-      <!-- Agent panels injected here dynamically by renderAgent() -->
+    <div id="agents-slider">
 
-    </div>
+      <!-- =====================================================
+           AGENT 1 — SUPERVISEUR (COO)
+           ===================================================== -->
+      <div class="agent-panel" id="agent-superviseur">
+
+        <!-- Mission Progress Ring -->
+        <div class="card">
+          <div class="card-title">Avancement Mission</div>
+          <div style="display:block">
+          <div class="progress-ring-wrap">
+            <div class="ring-wrap-pos">
+              <svg class="progress-ring-svg" viewBox="0 0 72 72">
+                <defs>
+                  <linearGradient id="ringGradCOO" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#00f2fe"/><stop offset="100%" stop-color="#4facfe"/>
+                  </linearGradient>
+                </defs>
+                <circle class="ring-bg" cx="36" cy="36" r="30"/>
+                <circle class="ring-fill" id="mission-ring" cx="36" cy="36" r="30" style="stroke:url(#ringGradCOO)"/>
+              </svg>
+              <div class="ring-label" id="ring-pct">0%</div>
+            </div>
+            <div class="ring-info">
+              <div class="ring-info-val" id="days-done-coo">0 / 66</div>
+              <div class="ring-info-sub">jours terrain effectués</div>
+              <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+                <span class="pill pill-cyan" id="coo-sites-done">0 sites</span>
+                <span class="pill pill-green" id="coo-budget-pct">100% budget</span>
+              </div>
+            </div>
+          </div>
+          </div><!-- /.progress-ring-wrap wrapper -->
+        </div>
+
+        <!-- Pending Approvals -->
+        <div class="card">
+          <div class="card-title">File d'Approbations <span class="pill pill-amber" style="margin-left:auto;font-size:0.5rem" id="approval-count">3 en attente</span></div>
+          <div id="approval-list"></div>
+        </div>
+
+        <!-- Notifications Critiques -->
+        <div class="card">
+          <div class="card-title">Notifications Critiques</div>
+          <div id="notifications-list"></div>
+        </div>
+
+        <!-- Activité Récente -->
+        <div class="card">
+          <div class="card-title">Journal d'Activité</div>
+          <div id="activity-feed"></div>
+        </div>
+
+        <!-- WhatsApp Broadcast -->
+        <div class="card">
+          <div class="card-title">Diffusion WhatsApp</div>
+          <div class="input-group">
+            <label class="input-label">Message d'alerte</label>
+            <textarea class="input-field" id="wa-broadcast-msg" placeholder="Saisir le message à diffuser à l'équipe…" autocomplete="off" spellcheck="false" style="min-height:70px"></textarea>
+          </div>
+          <div class="wa-btn-row">
+            <button class="btn btn-primary" onclick="triggerWhatsAppBroadcast('team')">
+              <div class="spinner"></div><span class="btn-text">📣 Équipe</span>
+            </button>
+            <button class="btn btn-danger" onclick="triggerWhatsAppBroadcast('emergency')">
+              <div class="spinner"></div><span class="btn-text">🚨 Urgence</span>
+            </button>
+          </div>
+          <div style="margin-top:8px">
+            <div class="queue-status" id="wa-queue-status">
+              <div class="online-dot" style="width:6px;height:6px" id="wa-queue-dot"></div>
+              <span id="wa-queue-label">File vide — 0 message en attente</span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /agent-superviseur -->
+
+      <!-- =====================================================
+           AGENT 2 — COFFRE-FORT (DEVOPS)
+           ===================================================== -->
+      <div class="agent-panel" id="agent-coffre">
+
+        <!-- PIN Lock Screen -->
+        <div class="card" id="vault-lock-card">
+          <div class="card-title">Coffre-Fort Chiffré</div>
+          <div class="vault-lock-screen">
+            <div class="vault-icon">
+              <svg width="28" height="28" fill="none" stroke="#00f2fe" stroke-width="1.5" viewBox="0 0 24 24">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                <circle cx="12" cy="16" r="1" fill="#00f2fe"/>
+              </svg>
+            </div>
+            <div style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);letter-spacing:0.12em">CODE PIN (4 chiffres)</div>
+            <div class="vault-pin-row" id="vault-pin-dots">
+              <div class="vault-pin-dot" id="pin-d0"></div>
+              <div class="vault-pin-dot" id="pin-d1"></div>
+              <div class="vault-pin-dot" id="pin-d2"></div>
+              <div class="vault-pin-dot" id="pin-d3"></div>
+            </div>
+            <div class="vault-error" id="vault-error">Code incorrect — Réessayez</div>
+            <div class="vault-numpad" id="vault-numpad">
+              <button class="numpad-btn" onclick="vaultPinInput('1')">1</button>
+              <button class="numpad-btn" onclick="vaultPinInput('2')">2</button>
+              <button class="numpad-btn" onclick="vaultPinInput('3')">3</button>
+              <button class="numpad-btn" onclick="vaultPinInput('4')">4</button>
+              <button class="numpad-btn" onclick="vaultPinInput('5')">5</button>
+              <button class="numpad-btn" onclick="vaultPinInput('6')">6</button>
+              <button class="numpad-btn" onclick="vaultPinInput('7')">7</button>
+              <button class="numpad-btn" onclick="vaultPinInput('8')">8</button>
+              <button class="numpad-btn" onclick="vaultPinInput('9')">9</button>
+              <button class="numpad-btn wide" onclick="vaultPinInput('0')">0</button>
+              <button class="numpad-btn" onclick="vaultPinBackspace()">⌫</button>
+            </div>
+            <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted);opacity:0.5;text-align:center">PIN par défaut : 1234 · Modifiable dans le coffre</div>
+          </div>
+        </div>
+
+        <!-- Vault Content (shown after unlock) -->
+        <div id="vault-content-area" class="vault-content">
+
+          <div class="card" style="margin-bottom:8px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div class="card-title" style="margin-bottom:0">Clés API & Webhooks</div>
+              <button class="btn btn-ghost btn-sm" onclick="lockVault()">🔒 Verrouiller</button>
+            </div>
+          </div>
+
+          <!-- WhatsApp Keys -->
+          <div class="card">
+            <div class="key-category">
+              <svg width="12" height="12" fill="#25d366" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+              WhatsApp Business API
+            </div>
+            <div id="vault-keys-whatsapp"></div>
+            <button class="btn btn-ghost btn-sm btn-full" onclick="addKeyToCategory('whatsapp')" style="margin-top:6px">+ Ajouter clé</button>
+          </div>
+
+          <!-- Maps / GPS Keys -->
+          <div class="card">
+            <div class="key-category">🗺 Cartographie & GPS</div>
+            <div id="vault-keys-maps"></div>
+            <button class="btn btn-ghost btn-sm btn-full" onclick="addKeyToCategory('maps')" style="margin-top:6px">+ Ajouter clé</button>
+          </div>
+
+          <!-- Cloud Keys -->
+          <div class="card">
+            <div class="key-category">☁️ Cloud & Stockage</div>
+            <div id="vault-keys-cloud"></div>
+            <button class="btn btn-ghost btn-sm btn-full" onclick="addKeyToCategory('cloud')" style="margin-top:6px">+ Ajouter clé</button>
+          </div>
+
+          <!-- Social Keys -->
+          <div class="card">
+            <div class="key-category">📲 Réseaux Sociaux</div>
+            <div id="vault-keys-social"></div>
+            <button class="btn btn-ghost btn-sm btn-full" onclick="addKeyToCategory('social')" style="margin-top:6px">+ Ajouter clé</button>
+          </div>
+
+          <!-- Add Key Modal inline -->
+          <div class="add-key-form" id="add-key-form" style="display:none">
+            <div class="card-title" style="margin-bottom:10px">Nouvelle entrée</div>
+            <div class="input-group">
+              <label class="input-label">Nom / Service</label>
+              <input type="text" class="input-field" id="new-key-name" placeholder="ex: WhatsApp Token" autocomplete="new-password" spellcheck="false">
+            </div>
+            <div class="input-group">
+              <label class="input-label">Valeur / Clé</label>
+              <input type="password" class="input-field" id="new-key-value" placeholder="Coller la clé ici…" autocomplete="new-password" spellcheck="false">
+            </div>
+            <input type="hidden" id="new-key-category">
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-success btn-sm" style="flex:1" onclick="saveNewKey()">
+                <div class="spinner"></div><span class="btn-text">💾 Sauvegarder</span>
+              </button>
+              <button class="btn btn-ghost btn-sm" onclick="cancelAddKey()">Annuler</button>
+            </div>
+          </div>
+
+          <!-- Export -->
+          <div class="card" style="margin-top:8px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <button class="btn btn-primary btn-sm" onclick="exportVault()">
+                <div class="spinner"></div><span class="btn-text">📤 Exporter</span>
+              </button>
+              <button class="btn btn-ghost btn-sm" onclick="changePIN()">🔑 Changer PIN</button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /agent-coffre -->
+
+      <!-- =====================================================
+           AGENT 3 — CM MULTI-RÉSEAUX
+           ===================================================== -->
+      <div class="agent-panel" id="agent-cm">
+
+        <!-- Platform Selector -->
+        <div class="card">
+          <div class="card-title">Plateforme cible</div>
+          <div class="platform-tabs" id="platform-tabs">
+            <button class="plat-tab active-tiktok" data-plat="tiktok" onclick="selectPlatform('tiktok',this)">
+              <svg width="14" height="14" fill="#ee1d52" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+              TikTok
+            </button>
+            <button class="plat-tab" data-plat="youtube" onclick="selectPlatform('youtube',this)">
+              <svg width="14" height="14" fill="#ff0000" viewBox="0 0 24 24"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>
+              YouTube
+            </button>
+            <button class="plat-tab" data-plat="linkedin" onclick="selectPlatform('linkedin',this)">
+              <svg width="14" height="14" fill="#0077b5" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+              LinkedIn
+            </button>
+            <button class="plat-tab" data-plat="instagram" onclick="selectPlatform('instagram',this)">
+              <svg width="14" height="14" fill="url(#igGrad)" viewBox="0 0 24 24">
+                <defs><linearGradient id="igGrad" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="25%" stop-color="#e6683c"/><stop offset="50%" stop-color="#dc2743"/><stop offset="75%" stop-color="#cc2366"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs>
+                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/>
+              </svg>
+              Instagram
+            </button>
+          </div>
+        </div>
+
+        <!-- Content Generator -->
+        <div class="card">
+          <div class="card-title">Générateur de Contenu</div>
+          <div class="input-group">
+            <label class="input-label">Site / Lieu</label>
+            <select class="input-field" id="cm-site-select">
+              <option value="">— Sélectionner un site —</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Tonalité</label>
+            <select class="input-field" id="cm-tone-select">
+              <option value="inspiring">Inspirant & Poétique</option>
+              <option value="informative">Informatif & Documentaire</option>
+              <option value="exciting">Dynamique & Engageant</option>
+              <option value="cultural">Culturel & Éducatif</option>
+              <option value="promotional">Promotionnel & Viral</option>
+            </select>
+          </div>
+          <div class="input-group" id="yt-specific" style="display:none">
+            <label class="input-label">Durée vidéo estimée</label>
+            <select class="input-field" id="cm-duration">
+              <option value="short">Court (< 5 min) — Reel / Short</option>
+              <option value="medium">Moyen (5-20 min) — Documentaire Web</option>
+              <option value="long">Long (> 20 min) — Documentaire Complet</option>
+            </select>
+          </div>
+          <div class="gen-controls">
+            <button class="btn btn-primary" style="flex:1" onclick="generateContent()">
+              <div class="spinner"></div><span class="btn-text">✨ Générer</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="copyPreview()" id="copy-btn" style="display:none">📋 Copier</button>
+          </div>
+        </div>
+
+        <!-- Preview -->
+        <div class="card">
+          <div class="card-title">Aperçu <span id="preview-plat-badge" class="pill pill-cyan" style="margin-left:auto;font-size:0.48rem">TikTok</span></div>
+          <div class="preview-box" id="content-preview">
+            <div class="preview-empty">Sélectionner un site et générer le contenu…</div>
+          </div>
+        </div>
+
+        <!-- History -->
+        <div class="card" id="cm-history-card" style="display:none">
+          <div class="card-title">Historique</div>
+          <div id="cm-history-list"></div>
+        </div>
+
+      </div><!-- /agent-cm -->
+
+      <!-- =====================================================
+           AGENT 4 — CONTRÔLE FINANCIER
+           ===================================================== -->
+      <div class="agent-panel" id="agent-financier">
+
+        <!-- Budget Gauge -->
+        <div class="card">
+          <div class="card-title">Budget Mission — 100 000 000 FCFA</div>
+
+          <div class="budget-gauge">
+            <svg class="gauge-svg" viewBox="0 0 200 110">
+              <path class="gauge-track" d="M20,100 A90,90 0 0,1 180,100" stroke-dasharray="282.7"/>
+              <path class="gauge-fill" id="gauge-fill-path" d="M20,100 A90,90 0 0,1 180,100"/>
+            </svg>
+            <div class="gauge-center" style="bottom:8px">
+              <div class="gauge-val" id="budget-remaining-val">100.0M</div>
+              <div class="gauge-sub">FCFA RESTANT</div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px">
+            <div style="text-align:center;padding:8px;background:var(--bg-card-2);border:1px solid var(--border);border-radius:var(--r-sm)">
+              <div style="font-family:var(--font-display);font-size:0.75rem;font-weight:700;color:var(--red);font-variant-numeric:tabular-nums" id="total-spent-val">0</div>
+              <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-top:2px">DÉPENSÉ</div>
+            </div>
+            <div style="text-align:center;padding:8px;background:var(--bg-card-2);border:1px solid var(--border);border-radius:var(--r-sm)">
+              <div style="font-family:var(--font-display);font-size:0.75rem;font-weight:700;color:var(--amber);font-variant-numeric:tabular-nums" id="pct-spent-val">0%</div>
+              <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-top:2px">CONSOMMÉ</div>
+            </div>
+            <div style="text-align:center;padding:8px;background:var(--bg-card-2);border:1px solid var(--border);border-radius:var(--r-sm)">
+              <div style="font-family:var(--font-display);font-size:0.75rem;font-weight:700;color:var(--emerald);font-variant-numeric:tabular-nums" id="tx-count-val">0</div>
+              <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-top:2px">TRANSACTIONS</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Catégories -->
+        <div class="card">
+          <div class="card-title">Répartition par Catégorie</div>
+          <div class="fin-cats" id="fin-categories"></div>
+        </div>
+
+        <!-- Printer Rate -->
+        <div class="card">
+          <div class="card-title">Tarif Imprimeur</div>
+          <div class="print-rate-row">
+            <div class="print-rate-label">Coût/page (FCFA)</div>
+            <input type="number" class="input-field print-rate-input" id="print-rate-input" value="150" min="1" autocomplete="off" oninput="updatePrintRate(this.value)">
+          </div>
+          <div style="margin-top:8px;font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted)">
+            Estimation tirage 500 ex. × 200p : <span id="print-estimate" style="color:var(--amber);font-weight:600">15 000 000 FCFA</span>
+          </div>
+        </div>
+
+        <!-- Ajouter Dépense -->
+        <div class="card">
+          <div class="card-title">Enregistrer une Dépense</div>
+          <div class="input-group">
+            <label class="input-label">Catégorie</label>
+            <select class="input-field" id="exp-category">
+              <option value="transport">🚗 Transport & Déplacements</option>
+              <option value="hebergement">🏨 Hébergement</option>
+              <option value="equipement">📷 Équipement & Matériel</option>
+              <option value="api">🔌 Coûts API & Cloud</option>
+              <option value="impression">🖨️ Impression & Production</option>
+              <option value="communication">📣 Communication & Marketing</option>
+              <option value="divers">📦 Divers</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Montant (FCFA)</label>
+            <input type="number" class="input-field" id="exp-amount" placeholder="0" min="0" autocomplete="off" style="font-size:1rem">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Description</label>
+            <input type="text" class="input-field" id="exp-desc" placeholder="Détail de la dépense…" autocomplete="off">
+          </div>
+          <button class="btn btn-primary btn-full" onclick="addExpense()">
+            <div class="spinner"></div><span class="btn-text">➕ Enregistrer</span>
+          </button>
+        </div>
+
+        <!-- Queue Status -->
+        <div class="card">
+          <div class="card-title">File de Transactions</div>
+          <div class="queue-status" id="tx-queue-status">
+            <div class="queue-dot" id="tx-queue-dot"></div>
+            <span id="tx-queue-label">Processeur inactif — File vide</span>
+          </div>
+        </div>
+
+        <!-- Transaction History -->
+        <div class="card">
+          <div class="card-title">Historique des Transactions</div>
+          <div id="transaction-list">
+            <div style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);text-align:center;padding:20px 0">
+              Aucune transaction enregistrée
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /agent-financier -->
+
+      <!-- =====================================================
+           AGENT 5 — COORDINATION TERRAIN
+           ===================================================== -->
+      <div class="agent-panel" id="agent-coordination">
+
+        <!-- A5: Header KPIs -->
+        <div class="card" id="a5-kpi-bar">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+            <div class="a5-kpi-box">
+              <div class="a5-kpi-val" id="a5-days-done">0</div>
+              <div class="a5-kpi-label">J. Effectués</div>
+            </div>
+            <div class="a5-kpi-box">
+              <div class="a5-kpi-val" id="a5-days-left">66</div>
+              <div class="a5-kpi-label">J. Restants</div>
+            </div>
+            <div class="a5-kpi-box">
+              <div class="a5-kpi-val" id="a5-sites-done">0</div>
+              <div class="a5-kpi-label">Sites OK</div>
+            </div>
+            <div class="a5-kpi-box">
+              <div class="a5-kpi-val a5-val-cyan" id="a5-chrono-display">00:00:00</div>
+              <div class="a5-kpi-label">Chrono GPS</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- A5: Chronomètre GPS terrain -->
+        <div class="card">
+          <div class="card-title">Chronomètre Terrain GPS Hors-Ligne</div>
+          <div class="a5-chrono-wrap">
+            <div class="a5-chrono-ring-outer">
+              <svg viewBox="0 0 120 120" class="a5-ring-svg">
+                <circle cx="60" cy="60" r="54" fill="none" stroke="var(--border)" stroke-width="6"/>
+                <circle cx="60" cy="60" r="54" fill="none" stroke="url(#a5Grad)" stroke-width="6"
+                  stroke-linecap="round" stroke-dasharray="339.3" id="a5-ring-arc"
+                  stroke-dashoffset="339.3"
+                  style="transform:rotate(-90deg);transform-origin:center;transition:stroke-dashoffset 1s linear"/>
+                <defs>
+                  <linearGradient id="a5Grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#00f2fe"/>
+                    <stop offset="100%" stop-color="#4facfe"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div class="a5-chrono-center">
+                <div class="a5-big-time" id="a5-big-chrono">00:00:00</div>
+                <div class="a5-chrono-site" id="a5-chrono-site-label">—</div>
+                <div class="a5-chrono-gps-badge" id="a5-gps-badge">GPS INACTIF</div>
+              </div>
+            </div>
+          </div>
+          <div class="a5-chrono-controls">
+            <button class="btn btn-primary" id="a5-btn-start" onclick="a5ChronoStart()">
+              <div class="spinner"></div><span class="btn-text">▶ Démarrer</span>
+            </button>
+            <button class="btn btn-ghost" id="a5-btn-pause" onclick="a5ChronoPause()" style="display:none">
+              <div class="spinner"></div><span class="btn-text">⏸ Pause</span>
+            </button>
+            <button class="btn btn-success" id="a5-btn-valider" onclick="a5ValiderJour()" style="display:none">
+              <div class="spinner"></div><span class="btn-text">✅ Valider Jour</span>
+            </button>
+            <button class="btn btn-danger btn-sm" id="a5-btn-reset" onclick="a5ChronoReset()">↺</button>
+          </div>
+          <div class="a5-session-meta" id="a5-session-meta" style="display:none">
+            <span class="pill pill-cyan" id="a5-session-site">Site —</span>
+            <span class="pill pill-green" id="a5-session-km">0 km</span>
+            <span class="pill pill-amber" id="a5-session-start">Départ —</span>
+          </div>
+        </div>
+
+        <!-- A5: Planning 66 jours -->
+        <div class="card">
+          <div class="card-title">Planning Mission — 66 Jours Terrain</div>
+          <div class="a5-plan-filter">
+            <button class="a5-filter-btn active" onclick="a5FilterPlan('all',this)">Tous</button>
+            <button class="a5-filter-btn" onclick="a5FilterPlan('done',this)">✅ Faits</button>
+            <button class="a5-filter-btn" onclick="a5FilterPlan('active',this)">🔵 En cours</button>
+            <button class="a5-filter-btn" onclick="a5FilterPlan('pending',this)">○ À venir</button>
+          </div>
+          <div class="a5-plan-list" id="a5-plan-list"></div>
+        </div>
+
+        <!-- A5: Journal terrain du jour -->
+        <div class="card">
+          <div class="card-title">Journal de Terrain — Entrée du Jour</div>
+          <div class="input-group">
+            <label class="input-label">Site visité</label>
+            <select class="input-field" id="a5-journal-site"></select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Conditions terrain</label>
+            <select class="input-field" id="a5-journal-conditions">
+              <option value="excellent">🌟 Excellentes</option>
+              <option value="bon">✅ Bonnes</option>
+              <option value="difficile">⚠️ Difficiles</option>
+              <option value="critique">🚨 Critiques</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Note de terrain</label>
+            <textarea class="input-field" id="a5-journal-note" placeholder="Observations, incidents, qualité de lumière, accueil local…" style="min-height:80px" autocomplete="off" spellcheck="false"></textarea>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Prises validées (nb)</label>
+            <input type="number" class="input-field" id="a5-journal-shots" placeholder="0" min="0" autocomplete="off">
+          </div>
+          <button class="btn btn-primary btn-full" onclick="a5SaveJournal()">
+            <div class="spinner"></div><span class="btn-text">💾 Enregistrer Entrée</span>
+          </button>
+        </div>
+
+        <!-- A5: Historique sessions -->
+        <div class="card">
+          <div class="card-title">Historique Sessions GPS</div>
+          <div id="a5-sessions-log">
+            <div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);text-align:center;padding:16px">Aucune session enregistrée</div>
+          </div>
+        </div>
+
+      </div><!-- /agent-coordination -->
+
+      <!-- =====================================================
+           AGENT 6 — DIRECTION ARTISTIQUE
+           ===================================================== -->
+      <div class="agent-panel" id="agent-direction-artistique">
+
+        <!-- A6: Brief Sélecteur de Site -->
+        <div class="card">
+          <div class="card-title">Générateur de Brief Visuel</div>
+          <div class="input-group">
+            <label class="input-label">Site de référence</label>
+            <select class="input-field" id="a6-site-select"></select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Style photographique</label>
+            <div class="a6-style-grid" id="a6-style-grid">
+              <button class="a6-style-btn active" data-style="natgeo" onclick="a6SelectStyle(this)">NatGeo</button>
+              <button class="a6-style-btn" data-style="golden" onclick="a6SelectStyle(this)">Golden Hour</button>
+              <button class="a6-style-btn" data-style="blue" onclick="a6SelectStyle(this)">Blue Hour</button>
+              <button class="a6-style-btn" data-style="aerial" onclick="a6SelectStyle(this)">Drone Aerial</button>
+              <button class="a6-style-btn" data-style="portrait" onclick="a6SelectStyle(this)">Portrait</button>
+              <button class="a6-style-btn" data-style="street" onclick="a6SelectStyle(this)">Street</button>
+              <button class="a6-style-btn" data-style="macro" onclick="a6SelectStyle(this)">Macro Détail</button>
+              <button class="a6-style-btn" data-style="longexp" onclick="a6SelectStyle(this)">Long Exp.</button>
+            </div>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Intention narrative</label>
+            <select class="input-field" id="a6-intention">
+              <option value="grandiose">Grandeur & Immensité</option>
+              <option value="intime">Intimité & Humanité</option>
+              <option value="spirituel">Spiritualité & Lumière</option>
+              <option value="economique">Économie & Modernité</option>
+              <option value="heritage">Héritage & Mémoire</option>
+              <option value="nature">Nature & Biodiversité</option>
+            </select>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <button class="btn btn-primary" onclick="a6GenerateBrief()">
+              <div class="spinner"></div><span class="btn-text">📋 Générer Brief</span>
+            </button>
+            <button class="btn btn-ghost" onclick="a6GeneratePrompt()">
+              <div class="spinner"></div><span class="btn-text">✨ Prompt 8K</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- A6: Brief Output -->
+        <div class="card" id="a6-brief-card" style="display:none">
+          <div class="card-title">Brief Technique Visuel <span class="pill pill-cyan" id="a6-brief-badge" style="margin-left:auto;font-size:0.48rem">NatGeo</span></div>
+          <div class="a6-brief-section" id="a6-brief-output"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+            <button class="btn btn-ghost btn-sm" onclick="a6CopyBrief('brief')">📋 Copier Brief</button>
+            <button class="btn btn-primary btn-sm" onclick="a6SaveBrief()">
+              <div class="spinner"></div><span class="btn-text">💾 Archiver</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- A6: Prompt 8K Output -->
+        <div class="card" id="a6-prompt-card" style="display:none">
+          <div class="card-title">Prompt Image 8K — National Geographic Style</div>
+          <div class="a6-prompt-box" id="a6-prompt-output"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+            <button class="btn btn-primary btn-sm" onclick="a6CopyBrief('prompt')">📋 Copier Prompt</button>
+            <button class="btn btn-ghost btn-sm" onclick="a6VariatePrompt()">
+              <div class="spinner"></div><span class="btn-text">🎲 Varier</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- A6: Charte Colorimétrique -->
+        <div class="card">
+          <div class="card-title">Charte Colorimétrique Mission</div>
+          <div class="a6-palette-row" id="a6-palette-row">
+            <div class="a6-swatch" style="background:#c4872a" title="Or Teranga"></div>
+            <div class="a6-swatch" style="background:#1a3a5c" title="Bleu Dakar"></div>
+            <div class="a6-swatch" style="background:#d4522a" title="Latérite"></div>
+            <div class="a6-swatch" style="background:#2d6e3e" title="Forêt Casamance"></div>
+            <div class="a6-swatch" style="background:#8b5e3c" title="Terre Sénégal"></div>
+            <div class="a6-swatch" style="background:#e8c97e" title="Lumière Sahel"></div>
+          </div>
+          <div class="a6-palette-labels">
+            <span>Or Teranga</span><span>Bleu Dakar</span><span>Latérite</span>
+            <span>Forêt Cas.</span><span>Terre Sén.</span><span>Lumière Sah.</span>
+          </div>
+        </div>
+
+        <!-- A6: Ratios & Formats -->
+        <div class="card">
+          <div class="card-title">Formats Techniques Édition</div>
+          <div class="a6-format-grid">
+            <div class="a6-format-box">
+              <div class="a6-format-ratio">4:3</div>
+              <div class="a6-format-label">Double Page</div>
+              <div class="a6-format-spec">420×315mm · 300 DPI</div>
+            </div>
+            <div class="a6-format-box">
+              <div class="a6-format-ratio">16:9</div>
+              <div class="a6-format-label">Pleine Page</div>
+              <div class="a6-format-spec">210×280mm · 300 DPI</div>
+            </div>
+            <div class="a6-format-box">
+              <div class="a6-format-ratio">1:1</div>
+              <div class="a6-format-label">Vignette</div>
+              <div class="a6-format-spec">105×105mm · 300 DPI</div>
+            </div>
+            <div class="a6-format-box">
+              <div class="a6-format-ratio">2:3</div>
+              <div class="a6-format-label">Portrait</div>
+              <div class="a6-format-spec">140×210mm · 300 DPI</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- A6: Briefs archivés -->
+        <div class="card" id="a6-archive-card" style="display:none">
+          <div class="card-title">Briefs Archivés</div>
+          <div id="a6-archive-list"></div>
+        </div>
+
+      </div><!-- /agent-direction-artistique -->
+
+      <!-- =====================================================
+           AGENT 7 — RÉDACTEUR-TRADUCTEUR
+           ===================================================== -->
+      <div class="agent-panel" id="agent-redacteur">
+
+        <!-- A7: Langue cible -->
+        <div class="card">
+          <div class="card-title">Processeur Trilangue</div>
+          <div class="a7-lang-tabs">
+            <button class="a7-lang-tab a7-active-fr" data-lang="fr" onclick="a7SelectLang('fr',this)">
+              <span class="a7-flag">🇫🇷</span> Français
+            </button>
+            <button class="a7-lang-tab" data-lang="en" onclick="a7SelectLang('en',this)">
+              <span class="a7-flag">🇬🇧</span> English
+            </button>
+            <button class="a7-lang-tab" data-lang="ar" onclick="a7SelectLang('ar',this)">
+              <span class="a7-flag">🇸🇳</span> عربية
+            </button>
+          </div>
+        </div>
+
+        <!-- A7: Éditeur source -->
+        <div class="card">
+          <div class="card-title">Texte Source</div>
+          <div class="input-group">
+            <label class="input-label">Type de contenu</label>
+            <select class="input-field" id="a7-content-type">
+              <option value="caption">Légende photographique</option>
+              <option value="intro">Introduction de chapitre</option>
+              <option value="narration">Narration documentaire</option>
+              <option value="description">Description de site</option>
+              <option value="poeme">Poème / Texte poétique</option>
+              <option value="citation">Citation / Exergue</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Texte à traiter</label>
+            <textarea class="input-field" id="a7-source-text"
+              placeholder="Saisir le texte source en français ou coller depuis le terrain…"
+              style="min-height:120px" autocomplete="off" spellcheck="true" lang="fr"></textarea>
+          </div>
+          <div class="a7-meta-row">
+            <span class="pill pill-cyan" id="a7-char-count">0 car.</span>
+            <span class="pill" id="a7-word-count" style="border-color:var(--border);color:var(--text-muted)">0 mots</span>
+            <span class="pill pill-amber" id="a7-lang-badge">FR</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px">
+            <button class="btn btn-primary btn-sm" onclick="a7Poetiser()">
+              <div class="spinner"></div><span class="btn-text">✨ Poétiser</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="a7Traduire()">
+              <div class="spinner"></div><span class="btn-text">🌍 Traduire</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="a7Condenser()">
+              <div class="spinner"></div><span class="btn-text">✂️ Condenser</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- A7: Sortie trilingue -->
+        <div class="card" id="a7-output-card" style="display:none">
+          <div class="card-title">Versions Trilingues</div>
+          <div class="a7-output-tabs">
+            <button class="a7-out-tab a7-out-active" onclick="a7ShowOutput('fr',this)">🇫🇷 FR</button>
+            <button class="a7-out-tab" onclick="a7ShowOutput('en',this)">🇬🇧 EN</button>
+            <button class="a7-out-tab" onclick="a7ShowOutput('ar',this)">🇸🇳 AR</button>
+            <button class="a7-out-tab" onclick="a7ShowOutput('all',this)">⊞ Tout</button>
+          </div>
+          <div id="a7-output-fr" class="a7-out-block a7-out-fr">
+            <div class="a7-out-lang-badge a7-badge-fr">Français</div>
+            <div class="a7-out-text" id="a7-text-fr"></div>
+            <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="a7Copy('fr')">📋 Copier FR</button>
+          </div>
+          <div id="a7-output-en" class="a7-out-block a7-out-en" style="display:none">
+            <div class="a7-out-lang-badge a7-badge-en">English</div>
+            <div class="a7-out-text" id="a7-text-en"></div>
+            <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="a7Copy('en')">📋 Copy EN</button>
+          </div>
+          <div id="a7-output-ar" class="a7-out-block a7-out-ar" style="display:none">
+            <div class="a7-out-lang-badge a7-badge-ar">عربية</div>
+            <div class="a7-out-text a7-rtl" id="a7-text-ar" dir="rtl"></div>
+            <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="a7Copy('ar')">📋 نسخ</button>
+          </div>
+          <div id="a7-output-all" class="a7-out-block" style="display:none">
+            <div class="a7-all-lang-grid">
+              <div>
+                <div class="a7-out-lang-badge a7-badge-fr">Français</div>
+                <div class="a7-out-text" id="a7-all-fr"></div>
+              </div>
+              <div>
+                <div class="a7-out-lang-badge a7-badge-en">English</div>
+                <div class="a7-out-text" id="a7-all-en"></div>
+              </div>
+              <div>
+                <div class="a7-out-lang-badge a7-badge-ar">عربية</div>
+                <div class="a7-out-text a7-rtl" id="a7-all-ar" dir="rtl"></div>
+              </div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
+            <button class="btn btn-primary btn-sm" onclick="a7SaveToLibrary()">
+              <div class="spinner"></div><span class="btn-text">📚 Archiver Trilingue</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="a7ExportDocx()">📄 Exporter .txt</button>
+          </div>
+        </div>
+
+        <!-- A7: Bibliothèque de textes -->
+        <div class="card" id="a7-library-card" style="display:none">
+          <div class="card-title">Bibliothèque de Textes</div>
+          <div id="a7-library-list"></div>
+        </div>
+
+        <!-- A7: Glossaire Wolof -->
+        <div class="card">
+          <div class="card-title">Glossaire Termes Clés — Wolof / FR / EN</div>
+          <div class="a7-glossary-list">
+            <div class="a7-glossary-item"><span class="a7-term-wo">Teranga</span><span class="a7-term-fr">Hospitalité</span><span class="a7-term-en">Hospitality</span></div>
+            <div class="a7-glossary-item"><span class="a7-term-wo">Thiof</span><span class="a7-term-fr">Mérou sacré</span><span class="a7-term-en">Sacred grouper</span></div>
+            <div class="a7-glossary-item"><span class="a7-term-wo">Xam-xam</span><span class="a7-term-fr">Connaissance</span><span class="a7-term-en">Knowledge</span></div>
+            <div class="a7-glossary-item"><span class="a7-term-wo">Ndakaaru</span><span class="a7-term-fr">Dakar (origines)</span><span class="a7-term-en">Dakar (origin)</span></div>
+            <div class="a7-glossary-item"><span class="a7-term-wo">Jaraaf</span><span class="a7-term-fr">Chef / Autorité</span><span class="a7-term-en">Chief / Authority</span></div>
+            <div class="a7-glossary-item"><span class="a7-term-wo">Yëgël</span><span class="a7-term-fr">Transmettre</span><span class="a7-term-en">To transmit</span></div>
+          </div>
+        </div>
+
+      </div><!-- /agent-redacteur -->
+
+      <!-- =====================================================
+           AGENT 8 — CORRECTEUR ÉDITORIAL
+           ===================================================== -->
+      <div class="agent-panel" id="agent-correcteur">
+
+        <!-- A8: Mode de vérification -->
+        <div class="card">
+          <div class="card-title">Censeur Éditorial — Édition d'Art Luxe</div>
+          <div class="a8-mode-row">
+            <button class="a8-mode-btn a8-mode-active" data-mode="full" onclick="a8SetMode('full',this)">Analyse Complète</button>
+            <button class="a8-mode-btn" data-mode="ortho" onclick="a8SetMode('ortho',this)">Orthographe</button>
+            <button class="a8-mode-btn" data-mode="style" onclick="a8SetMode('style',this)">Style Luxe</button>
+            <button class="a8-mode-btn" data-mode="mise" onclick="a8SetMode('mise',this)">Mise en Page</button>
+          </div>
+        </div>
+
+        <!-- A8: Éditeur soumission -->
+        <div class="card">
+          <div class="card-title">Texte à Valider</div>
+          <div class="input-group">
+            <label class="input-label">Contexte éditorial</label>
+            <select class="input-field" id="a8-context">
+              <option value="legende">Légende photographique (max 25 mots)</option>
+              <option value="intro_chap">Introduction chapitre (max 120 mots)</option>
+              <option value="corps">Corps de texte (max 300 mots)</option>
+              <option value="citation">Citation / Exergue (max 15 mots)</option>
+              <option value="couverture">Texte de couverture (max 40 mots)</option>
+              <option value="quatrieme">4e de couverture (max 200 mots)</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Texte soumis</label>
+            <textarea class="input-field" id="a8-text-input"
+              placeholder="Coller le texte à soumettre au censeur éditorial…"
+              style="min-height:130px" autocomplete="off" spellcheck="false"></textarea>
+          </div>
+          <div class="a8-meta-row">
+            <span class="pill" id="a8-wc-pill" style="border-color:var(--border);color:var(--text-muted)">0 mots</span>
+            <span class="pill" id="a8-limit-pill" style="border-color:var(--border);color:var(--text-muted)">Limite : 25</span>
+            <span class="a8-compliance-badge" id="a8-compliance-badge">—</span>
+          </div>
+          <button class="btn btn-primary btn-full" style="margin-top:10px" onclick="a8Analyser()">
+            <div class="spinner"></div><span class="btn-text">🔍 Analyser & Valider</span>
+          </button>
+        </div>
+
+        <!-- A8: Rapport de conformité -->
+        <div class="card" id="a8-report-card" style="display:none">
+          <div class="card-title">Rapport de Conformité Éditoriale</div>
+
+          <!-- Score global -->
+          <div class="a8-score-row">
+            <div class="a8-score-circle" id="a8-score-circle">
+              <span id="a8-score-val">—</span>
+            </div>
+            <div class="a8-score-detail">
+              <div class="a8-verdict" id="a8-verdict">—</div>
+              <div class="a8-verdict-sub" id="a8-verdict-sub">—</div>
+            </div>
+          </div>
+
+          <!-- Critères -->
+          <div class="a8-criteria-list" id="a8-criteria-list"></div>
+
+          <!-- Annotations inline -->
+          <div class="a8-annotations" id="a8-annotations" style="margin-top:12px"></div>
+
+          <!-- Texte corrigé -->
+          <div class="a8-corrected-wrap" id="a8-corrected-wrap" style="display:none">
+            <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">Version Corrigée</div>
+            <div class="a8-corrected-text" id="a8-corrected-text"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+              <button class="btn btn-success btn-sm" onclick="a8AcceptCorrection()">
+                <div class="spinner"></div><span class="btn-text">✅ Accepter</span>
+              </button>
+              <button class="btn btn-ghost btn-sm" onclick="a8CopyCorrection()">📋 Copier</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- A8: Règles édition luxe -->
+        <div class="card">
+          <div class="card-title">Charte Éditoriale — Édition d'Art</div>
+          <div class="a8-rules-accordion" id="a8-rules-accordion">
+            <div class="a8-rule-group" onclick="a8ToggleRule(this)">
+              <div class="a8-rule-head">📏 Longueurs & Formats</div>
+              <div class="a8-rule-body">
+                <div class="a8-rule-item">Légende photo : 15–25 mots, pas de point final</div>
+                <div class="a8-rule-item">Intro chapitre : 80–120 mots, 3 phrases max</div>
+                <div class="a8-rule-item">Corps de texte : 200–300 mots, paragraphes de 60–80 mots</div>
+                <div class="a8-rule-item">Citation / exergue : 10–15 mots, italique obligatoire</div>
+              </div>
+            </div>
+            <div class="a8-rule-group" onclick="a8ToggleRule(this)">
+              <div class="a8-rule-head">✍️ Style & Ton</div>
+              <div class="a8-rule-body">
+                <div class="a8-rule-item">Registre soutenu — aucune familiarité</div>
+                <div class="a8-rule-item">Voix active préférée, sauf effet poétique</div>
+                <div class="a8-rule-item">Ponctuation française : espace avant «:», «;», «!», «?»</div>
+                <div class="a8-rule-item">Guillemets français «  » obligatoires</div>
+                <div class="a8-rule-item">Nombres de 1 à 9 en lettres, ≥10 en chiffres</div>
+              </div>
+            </div>
+            <div class="a8-rule-group" onclick="a8ToggleRule(this)">
+              <div class="a8-rule-head">🚫 Interdictions Absolues</div>
+              <div class="a8-rule-body">
+                <div class="a8-rule-item">Anglicismes non justifiés</div>
+                <div class="a8-rule-item">Clichés touristiques ("paradis", "incontournable")</div>
+                <div class="a8-rule-item">Superlatifs sans ancrage factuel</div>
+                <div class="a8-rule-item">Double ponctuation (?!, ...) sauf en citation</div>
+                <div class="a8-rule-item">Acronymes non définis à la première occurrence</div>
+              </div>
+            </div>
+            <div class="a8-rule-group" onclick="a8ToggleRule(this)">
+              <div class="a8-rule-head">🖨️ Mise en Page Impression</div>
+              <div class="a8-rule-body">
+                <div class="a8-rule-item">Corps texte : Garamond 10pt, interligne 14pt</div>
+                <div class="a8-rule-item">Légendes : Futura Light 8pt, couleur #333</div>
+                <div class="a8-rule-item">Titres chapitres : Futura Bold 18pt, capitales</div>
+                <div class="a8-rule-item">Gouttière intérieure : 20mm minimum (reliure japonaise)</div>
+                <div class="a8-rule-item">Marges extérieures : 12mm · Haut/Bas : 15mm</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- A8: Historique validations -->
+        <div class="card" id="a8-history-card" style="display:none">
+          <div class="card-title">Historique Validations</div>
+          <div id="a8-history-list"></div>
+        </div>
+
+      </div><!-- /agent-correcteur -->
+
+      <!-- =====================================================
+           AGENT 9 — COMMERCIAL SPONSORING
+           ===================================================== -->
+      <div class="agent-panel" id="agent-commercial">
+
+        <!-- A9: Tableau de bord Sponsoring -->
+        <div class="card">
+          <div class="card-title">Fonds MTAC & Mécénat Privé</div>
+          <div class="a9-fund-grid">
+            <div class="a9-fund-box a9-fund-mtac">
+              <div class="a9-fund-label">Fonds MTAC</div>
+              <div class="a9-fund-val" id="a9-mtac-val">0 FCFA</div>
+              <div class="a9-fund-sub">Institutionnel</div>
+              <div class="a9-fund-bar"><div class="a9-fund-fill a9-fill-mtac" id="a9-mtac-bar" style="width:0%"></div></div>
+            </div>
+            <div class="a9-fund-box a9-fund-privé">
+              <div class="a9-fund-label">Mécénat Privé</div>
+              <div class="a9-fund-val" id="a9-priv-val">0 FCFA</div>
+              <div class="a9-fund-sub">Entreprises & Particuliers</div>
+              <div class="a9-fund-bar"><div class="a9-fund-fill a9-fill-priv" id="a9-priv-bar" style="width:0%"></div></div>
+            </div>
+          </div>
+          <div class="a9-total-row">
+            <div class="a9-total-label">Total levé</div>
+            <div class="a9-total-val" id="a9-total-raised">0 FCFA</div>
+            <div class="a9-total-obj">/ 100 000 000 FCFA</div>
+          </div>
+          <div class="a9-global-bar-track">
+            <div class="a9-global-bar-fill" id="a9-global-bar" style="width:0%"></div>
+            <span class="a9-global-pct" id="a9-global-pct">0%</span>
+          </div>
+        </div>
+
+        <!-- A9: Sponsors actifs -->
+        <div class="card">
+          <div class="card-title">Portefeuille Sponsors
+            <button class="btn btn-primary btn-sm" style="margin-left:auto;min-height:28px;padding:4px 10px" onclick="a9OpenAddSponsor()">+ Ajouter</button>
+          </div>
+          <div id="a9-sponsors-list">
+            <div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);text-align:center;padding:16px">Aucun sponsor enregistré</div>
+          </div>
+        </div>
+
+        <!-- A9: Formulaire ajout sponsor (inline) -->
+        <div class="card" id="a9-add-sponsor-form" style="display:none">
+          <div class="card-title">Nouveau Partenaire</div>
+          <div class="input-group">
+            <label class="input-label">Nom / Organisation</label>
+            <input type="text" class="input-field" id="a9-sp-name" placeholder="ex: Orange Sénégal" autocomplete="off">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Type</label>
+            <select class="input-field" id="a9-sp-type">
+              <option value="mtac">🏛️ Fonds MTAC (Institutionnel)</option>
+              <option value="prive">🤝 Mécénat Privé (Entreprise)</option>
+              <option value="particulier">👤 Particulier / Diaspora</option>
+              <option value="inkind">📦 Apport en nature</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Montant engagé (FCFA)</label>
+            <input type="number" class="input-field" id="a9-sp-amount" placeholder="0" min="0" autocomplete="off" style="font-size:1rem">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Statut</label>
+            <select class="input-field" id="a9-sp-status">
+              <option value="prospect">🔵 Prospect</option>
+              <option value="negocie">🟡 En négociation</option>
+              <option value="signe">🟢 Signé</option>
+              <option value="verse">✅ Versé</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Contreparties offertes</label>
+            <textarea class="input-field" id="a9-sp-contra" placeholder="Visibilité logo, mentions presse, accès vernissage…" style="min-height:64px" autocomplete="off" spellcheck="false"></textarea>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <button class="btn btn-success" onclick="a9SaveSponsor()">
+              <div class="spinner"></div><span class="btn-text">💾 Enregistrer</span>
+            </button>
+            <button class="btn btn-ghost" onclick="a9CancelSponsor()">Annuler</button>
+          </div>
+        </div>
+
+        <!-- A9: Générateur de dossier d'impact -->
+        <div class="card">
+          <div class="card-title">Générateur Dossier d'Impact</div>
+          <div class="input-group">
+            <label class="input-label">Destinataire</label>
+            <select class="input-field" id="a9-dossier-target">
+              <option value="mtac">🏛️ Fonds Institutionnel MTAC</option>
+              <option value="entreprise">🏢 Entreprise (RSE / Mécénat)</option>
+              <option value="diaspora">🌍 Diaspora Sénégalaise</option>
+              <option value="ong">🤝 ONG / Fondation</option>
+              <option value="ambassade">🎌 Ambassade / Coopération</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Montant sollicité (FCFA)</label>
+            <input type="number" class="input-field" id="a9-dossier-amount" placeholder="5 000 000" autocomplete="off">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Argument principal</label>
+            <select class="input-field" id="a9-dossier-angle">
+              <option value="culture">Rayonnement culturel national</option>
+              <option value="eco">Retombées économiques tourisme</option>
+              <option value="heritage">Préservation du patrimoine</option>
+              <option value="visibilite">Visibilité internationale du Sénégal</option>
+              <option value="jeunesse">Impact éducatif / jeunesse</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="a9GenerateDossier()">
+            <div class="spinner"></div><span class="btn-text">📄 Générer Dossier d'Impact</span>
+          </button>
+        </div>
+
+        <!-- A9: Dossier généré -->
+        <div class="card" id="a9-dossier-card" style="display:none">
+          <div class="card-title">Dossier d'Impact — <span id="a9-dossier-title-badge"></span></div>
+          <div class="a9-dossier-output" id="a9-dossier-output"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
+            <button class="btn btn-ghost btn-sm" onclick="a9CopyDossier()">📋 Copier</button>
+            <button class="btn btn-primary btn-sm" onclick="a9ExportDossier()">
+              <div class="spinner"></div><span class="btn-text">📤 Exporter .txt</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- A9: Pipeline pipeline statuts -->
+        <div class="card">
+          <div class="card-title">Pipeline Commercial</div>
+          <div class="a9-pipeline">
+            <div class="a9-pipe-col">
+              <div class="a9-pipe-head">🔵 Prospects</div>
+              <div class="a9-pipe-body" id="a9-pipe-prospect"></div>
+            </div>
+            <div class="a9-pipe-col">
+              <div class="a9-pipe-head">🟡 Négoc.</div>
+              <div class="a9-pipe-body" id="a9-pipe-negocie"></div>
+            </div>
+            <div class="a9-pipe-col">
+              <div class="a9-pipe-head">🟢 Signés</div>
+              <div class="a9-pipe-body" id="a9-pipe-signe"></div>
+            </div>
+            <div class="a9-pipe-col">
+              <div class="a9-pipe-head">✅ Versés</div>
+              <div class="a9-pipe-body" id="a9-pipe-verse"></div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /agent-commercial -->
+
+      <!-- =====================================================
+           AGENT 10 — ASSISTANT JURIDIQUE
+           ===================================================== -->
+      <div class="agent-panel" id="agent-juridique">
+        <div class="card">
+          <div class="card-title">Autorisations de Tournage</div>
+          <div class="a10-filter-row">
+            <button class="a10-filter-btn a10-f-active" onclick="a10Filter('all',this)">Toutes</button>
+            <button class="a10-filter-btn" onclick="a10Filter('valide',this)">✅ Validées</button>
+            <button class="a10-filter-btn" onclick="a10Filter('encours',this)">🔵 En cours</button>
+            <button class="a10-filter-btn" onclick="a10Filter('relance',this)">🔴 Relance</button>
+          </div>
+          <div id="a10-auth-table"></div>
+        </div>
+        <div class="card" id="a10-relance-card" style="display:none">
+          <div class="card-title">Template Relance Généré</div>
+          <div class="a10-relance-output" id="a10-relance-output"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+            <button class="btn btn-ghost btn-sm" onclick="a10CopyRelance()">📋 Copier</button>
+            <button class="btn btn-primary btn-sm" onclick="a10MarkSent(event)"><div class="spinner"></div><span class="btn-text">📤 Marquer Envoyé</span></button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Ajouter Autorisation</div>
+          <div class="input-group"><label class="input-label">Site</label><select class="input-field" id="a10-new-site"></select></div>
+          <div class="input-group"><label class="input-label">Organisme</label><input type="text" class="input-field" id="a10-new-org" placeholder="ex: Port Autonome de Dakar" autocomplete="off"></div>
+          <div class="input-group"><label class="input-label">Statut</label>
+            <select class="input-field" id="a10-new-status">
+              <option value="encours">🔵 En cours</option>
+              <option value="valide">✅ Validé</option>
+              <option value="relance">🔴 Relance requise</option>
+            </select>
+          </div>
+          <div class="input-group"><label class="input-label">Référence dossier</label><input type="text" class="input-field" id="a10-new-ref" placeholder="ex: PAD-2024-0892" autocomplete="off"></div>
+          <button class="btn btn-primary btn-full" onclick="a10AddAuth(event)"><div class="spinner"></div><span class="btn-text">➕ Enregistrer</span></button>
+        </div>
+        <div class="card" id="a10-journal-card" style="display:none">
+          <div class="card-title">Journal Juridique</div>
+          <div id="a10-journal-list"></div>
+        </div>
+      </div>
+
+      <!-- =====================================================
+           AGENT 11 — LOGISTIQUE MATÉRIEL
+           ===================================================== -->
+      <div class="agent-panel" id="agent-logistique">
+        <div class="card">
+          <div class="card-title">Parc Technique</div>
+          <div class="a11-filter-row">
+            <button class="a11-filter-btn a11-f-active" onclick="a11FilterEq('all',this)">Tout</button>
+            <button class="a11-filter-btn" onclick="a11FilterEq('operationnel',this)">✅ Opérationnel</button>
+            <button class="a11-filter-btn" onclick="a11FilterEq('tournage',this)">🎬 Tournage</button>
+            <button class="a11-filter-btn" onclick="a11FilterEq('maintenance',this)">🔧 Maintenance</button>
+          </div>
+          <div id="a11-equip-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Check-In / Check-Out</div>
+          <div class="input-group"><label class="input-label">Équipement</label><select class="input-field" id="a11-co-select"></select></div>
+          <div class="input-group"><label class="input-label">Opération</label>
+            <select class="input-field" id="a11-co-op">
+              <option value="checkout">📤 Check-Out (Départ terrain)</option>
+              <option value="checkin">📥 Check-In (Retour base)</option>
+              <option value="maintenance">🔧 Envoi maintenance</option>
+              <option value="retour">✅ Retour maintenance</option>
+            </select>
+          </div>
+          <div class="input-group"><label class="input-label">Note</label><input type="text" class="input-field" id="a11-co-note" placeholder="Remarque optionnelle…" autocomplete="off"></div>
+          <button class="btn btn-primary btn-full" onclick="a11CheckOp(event)"><div class="spinner"></div><span class="btn-text">✅ Valider Opération</span></button>
+        </div>
+        <div class="card">
+          <div class="card-title">Validation Backups Cloud</div>
+          <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted);margin-bottom:10px;letter-spacing:0.08em">Cartes mémoire à synchroniser · Déduction API automatique</div>
+          <div id="a11-backup-list"></div>
+          <button class="btn btn-primary btn-full" style="margin-top:10px" onclick="a11SyncAll(event)"><div class="spinner"></div><span class="btn-text">☁️ Synchroniser Toutes</span></button>
+        </div>
+        <div class="card">
+          <div class="card-title">Résumé Parc</div>
+          <div class="a11-summary-grid" id="a11-summary-grid"></div>
+        </div>
+      </div>
+
+      <!-- =====================================================
+           AGENT 12 — DISTRIBUTION VENTES
+           ===================================================== -->
+      <div class="agent-panel" id="agent-distribution">
+        <div class="card">
+          <div class="card-title">Points de Vente Prestige</div>
+          <div id="a12-points-list"><div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);text-align:center;padding:16px">Aucun point de vente enregistré</div></div>
+          <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="a12OpenAddPoint()">+ Ajouter Point de Vente</button>
+        </div>
+        <div class="card" id="a12-add-point-card" style="display:none">
+          <div class="card-title">Nouveau Point de Vente</div>
+          <div class="input-group"><label class="input-label">Nom</label><input type="text" class="input-field" id="a12-pv-name" placeholder="ex: Librairie Aux Quatre Vents" autocomplete="off"></div>
+          <div class="input-group"><label class="input-label">Ville / Zone</label><input type="text" class="input-field" id="a12-pv-ville" placeholder="ex: Dakar — Plateau" autocomplete="off"></div>
+          <div class="input-group"><label class="input-label">Exemplaires alloués</label><input type="number" class="input-field" id="a12-pv-stock" placeholder="0" min="0" autocomplete="off"></div>
+          <div class="input-group"><label class="input-label">Type</label>
+            <select class="input-field" id="a12-pv-type">
+              <option value="librairie">📚 Librairie</option>
+              <option value="boutique">🛍️ Boutique prestige</option>
+              <option value="musee">🏛️ Musée / Institution</option>
+              <option value="hotel">🏨 Hôtel 5★</option>
+              <option value="online">💻 En ligne</option>
+            </select>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <button class="btn btn-success" onclick="a12SavePoint(event)"><div class="spinner"></div><span class="btn-text">💾 Enregistrer</span></button>
+            <button class="btn btn-ghost" onclick="a12CancelPoint()">Annuler</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Simulateur Stock Global — 500 ex.</div>
+          <div class="a12-stock-summary">
+            <div class="a12-stock-kpi"><span class="a12-kv">500</span><span class="a12-kl">Édition</span></div>
+            <div class="a12-stock-kpi"><span class="a12-kv" id="a12-kv-alloues">0</span><span class="a12-kl">Alloués</span></div>
+            <div class="a12-stock-kpi"><span class="a12-kv" id="a12-kv-vendus">0</span><span class="a12-kl">Vendus</span></div>
+            <div class="a12-stock-kpi"><span class="a12-kv" id="a12-kv-dispo" style="color:var(--emerald)">500</span><span class="a12-kl">Disponibles</span></div>
+          </div>
+          <div class="a12-stock-bar-track" style="margin:12px 0">
+            <div class="a12-stock-bar-alloc" id="a12-bar-alloc" style="width:0%"></div>
+            <div class="a12-stock-bar-sold" id="a12-bar-sold" style="width:0%"></div>
+          </div>
+          <div class="input-group"><label class="input-label">Enregistrer une vente</label>
+            <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end">
+              <select class="input-field" id="a12-sale-point"></select>
+              <input type="number" class="input-field" id="a12-sale-qty" placeholder="Qté" min="1" style="width:70px" autocomplete="off">
+            </div>
+          </div>
+          <button class="btn btn-success btn-full" onclick="a12RecordSale(event)"><div class="spinner"></div><span class="btn-text">🛒 Valider Vente</span></button>
+        </div>
+        <div class="card" id="a12-alert-card" style="display:none">
+          <div class="card-title" style="color:var(--red)">⚠️ Alertes Stock Critique</div>
+          <div id="a12-alert-list"></div>
+        </div>
+      </div>
+
+      <!-- =====================================================
+           AGENT 13 — EXPÉRIENCE NUMÉRIQUE
+           ===================================================== -->
+      <div class="agent-panel" id="agent-numerique">
+        <div class="card">
+          <div class="card-title">Générateur QR Codes Immersifs</div>
+          <div class="input-group"><label class="input-label">Site source</label><select class="input-field" id="a13-qr-site"></select></div>
+          <div class="input-group"><label class="input-label">Type de contenu</label>
+            <select class="input-field" id="a13-qr-type">
+              <option value="galerie">🖼️ Galerie photo immersive</option>
+              <option value="audio">🎙️ Narration audio du site</option>
+              <option value="map">📍 Carte &amp; coordonnées GPS</option>
+              <option value="achat">🛒 Page achat directe</option>
+              <option value="bts">🎬 Behind The Scenes</option>
+            </select>
+          </div>
+          <div class="input-group"><label class="input-label">Style visuel</label>
+            <select class="input-field" id="a13-qr-style">
+              <option value="cyber">⬡ Cyber Néon (cyan)</option>
+              <option value="gold">✦ Or Teranga</option>
+              <option value="dark">◼ Dark Premium</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="a13GenerateQR(event)"><div class="spinner"></div><span class="btn-text">⬡ Générer QR Code</span></button>
+        </div>
+        <div class="card" id="a13-qr-output-card" style="display:none">
+          <div class="card-title">QR Code — <span id="a13-qr-site-label"></span></div>
+          <div class="a13-qr-display"><canvas id="a13-qr-canvas" width="200" height="200"></canvas></div>
+          <div class="a13-qr-meta" id="a13-qr-meta"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+            <button class="btn btn-ghost btn-sm" onclick="a13DownloadQR()">💾 Télécharger PNG</button>
+            <button class="btn btn-primary btn-sm" onclick="a13CopyURL()">📋 Copier URL</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Résilience Mobile — Anti-Veille</div>
+          <div class="a13-resilience-status">
+            <div class="a13-res-dot" id="a13-res-dot"></div>
+            <div id="a13-res-label" style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted)">Inactif</div>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:0.53rem;color:var(--text-muted);margin:8px 0;line-height:1.5">
+            Silent Audio Loop + WakeLock API — maintient l'écran actif en session terrain
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <button class="btn btn-success" id="a13-res-start-btn" onclick="a13StartResilience()"><div class="spinner"></div><span class="btn-text">▶ Activer</span></button>
+            <button class="btn btn-danger btn-sm" id="a13-res-stop-btn" onclick="a13StopResilience()" style="display:none">⏹ Désactiver</button>
+          </div>
+          <div id="a13-tech-badges" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Bibliothèque QR</div>
+          <div id="a13-qr-library"><div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);text-align:center;padding:16px">Aucun QR généré</div></div>
+        </div>
+      </div>
+
+      <!-- =====================================================
+           AGENT 14 — VEILLE MÉTÉO
+           ===================================================== -->
+      <div class="agent-panel" id="agent-meteo">
+        <div class="card">
+          <div class="card-title">Bulletin ANACIM — Simulation Terrain</div>
+          <div class="a14-region-tabs" id="a14-region-tabs">
+            <button class="a14-rtab a14-rtab-active" onclick="a14SelectRegion('dakar',this)">Dakar</button>
+            <button class="a14-rtab" onclick="a14SelectRegion('saintlouis',this)">Saint-Louis</button>
+            <button class="a14-rtab" onclick="a14SelectRegion('ziguinchor',this)">Ziguinchor</button>
+            <button class="a14-rtab" onclick="a14SelectRegion('tambacounda',this)">Tambacounda</button>
+            <button class="a14-rtab" onclick="a14SelectRegion('kedougou',this)">Kédougou</button>
+          </div>
+          <div class="a14-meteo-hero" id="a14-meteo-hero"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Prévisions 5 Jours</div>
+          <div class="a14-forecast-row" id="a14-forecast-row"></div>
+        </div>
+        <div class="card" id="a14-alert-card">
+          <div class="card-title">Alertes Climatiques Actives</div>
+          <div id="a14-alert-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Fenêtres Photographiques Optimales</div>
+          <div id="a14-windows-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Simuler Bulletin Personnalisé</div>
+          <div class="input-group">
+            <label class="input-label">Site de mission</label>
+            <select class="input-field" id="a14-site-select"></select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Saison simulée</label>
+            <select class="input-field" id="a14-saison-select">
+              <option value="harmattan">Harmattan (Nov–Mar) — Vent de sable</option>
+              <option value="hivernage">Hivernage (Jun–Sep) — Pluies</option>
+              <option value="fraiche">Saison fraîche (Oct–Nov)</option>
+              <option value="seche">Saison sèche (Fev–Mai)</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="a14SimulateBulletin(event)"><div class="spinner"></div><span class="btn-text">🌤 Générer Bulletin</span></button>
+        </div>
+        <div class="card" id="a14-sim-card" style="display:none">
+          <div class="card-title">Bulletin Simulé — <span id="a14-sim-site-label"></span></div>
+          <div id="a14-sim-output"></div>
+        </div>
+      </div>
+
+      <!-- =====================================================
+           AGENT 15 — NÉGOCIATEUR ACHATS
+           ===================================================== -->
+      <div class="agent-panel" id="agent-achats">
+        <div class="card">
+          <div class="card-title">Comparateur Devis Prestataires</div>
+          <div class="a15-filter-row">
+            <button class="a15-ftab a15-ftab-active" onclick="a15FilterCat('all',this)">Tous</button>
+            <button class="a15-ftab" onclick="a15FilterCat('impression',this)">Impression</button>
+            <button class="a15-ftab" onclick="a15FilterCat('transport',this)">Transport</button>
+            <button class="a15-ftab" onclick="a15FilterCat('hebergement',this)">Hébergement</button>
+            <button class="a15-ftab" onclick="a15FilterCat('autre',this)">Autre</button>
+          </div>
+          <div id="a15-devis-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Ajouter Devis Reçu</div>
+          <div class="input-group"><label class="input-label">Prestataire</label><input type="text" class="input-field" id="a15-prest-name" placeholder="ex: Imprimerie Graphi Plus" autocomplete="off"></div>
+          <div class="input-group"><label class="input-label">Catégorie</label>
+            <select class="input-field" id="a15-prest-cat">
+              <option value="impression">🖨️ Impression / Production</option>
+              <option value="transport">🚗 Transport / Location 4x4</option>
+              <option value="hebergement">🏨 Hébergement</option>
+              <option value="pirogue">⛵ Location Pirogue</option>
+              <option value="guide">🧭 Guide / Interprète</option>
+              <option value="autre">📦 Autre</option>
+            </select>
+          </div>
+          <div class="input-group"><label class="input-label">Montant devis reçu (FCFA)</label><input type="number" class="input-field" id="a15-prest-reel" placeholder="0" min="0" autocomplete="off"></div>
+          <div class="input-group"><label class="input-label">Estimation initiale (FCFA)</label><input type="number" class="input-field" id="a15-prest-est" placeholder="0" min="0" autocomplete="off"></div>
+          <div class="input-group"><label class="input-label">Note / Conditions</label><input type="text" class="input-field" id="a15-prest-note" placeholder="ex: délai 15j, 3 volumes, remise 10%…" autocomplete="off"></div>
+          <button class="btn btn-primary btn-full" onclick="a15AddDevis(event)"><div class="spinner"></div><span class="btn-text">➕ Enregistrer Devis</span></button>
+        </div>
+        <div class="card">
+          <div class="card-title">Synthèse Négociation</div>
+          <div class="a15-synth-grid" id="a15-synth-grid"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Générateur Argumentaire</div>
+          <div class="input-group"><label class="input-label">Prestataire cible</label><select class="input-field" id="a15-arg-select"></select></div>
+          <button class="btn btn-primary btn-full" onclick="a15GenArgumentaire(event)"><div class="spinner"></div><span class="btn-text">✍️ Générer Argumentaire</span></button>
+        </div>
+        <div class="card" id="a15-arg-card" style="display:none">
+          <div class="card-title">Argumentaire de Négociation</div>
+          <div class="a15-arg-output" id="a15-arg-output"></div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="a15CopyArg()">📋 Copier</button>
+        </div>
+      </div>
+
+      <!-- =====================================================
+           AGENT 16 — STRATÈGE CROWDFUNDING
+           ===================================================== -->
+      <div class="agent-panel" id="agent-crowdfunding">
+        <div class="card">
+          <div class="card-title">Campagne Diaspora — Levée de Fonds</div>
+          <div class="a16-campaign-hero">
+            <div class="a16-camp-name" id="a16-camp-name">SÉNÉGAL 32 — Édition Collector Diaspora</div>
+            <div class="a16-camp-tagline">500 exemplaires numérotés · Patrimoine sénégalais immortalisé</div>
+          </div>
+          <div class="a16-jauge-wrap">
+            <div class="a16-jauge-vals">
+              <div class="a16-jauge-raised"><span id="a16-raised-val">0</span><span class="a16-jl">FCFA levés</span></div>
+              <div class="a16-jauge-goal"><span id="a16-goal-val">25 000 000</span><span class="a16-jl">Objectif</span></div>
+            </div>
+            <div class="a16-jauge-track"><div class="a16-jauge-fill" id="a16-jauge-fill" style="width:0%"></div></div>
+            <div class="a16-jauge-stats">
+              <span class="pill pill-cyan" id="a16-pct-pill">0%</span>
+              <span class="pill" style="border-color:var(--border);color:var(--text-muted)" id="a16-backers-pill">0 contributeurs</span>
+              <span class="pill" style="border-color:var(--border);color:var(--text-muted)" id="a16-days-pill">45 jours restants</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Paliers de Contribution</div>
+          <div id="a16-paliers-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Enregistrer Contribution</div>
+          <div class="input-group"><label class="input-label">Contributeur (alias / prénom)</label><input type="text" class="input-field" id="a16-contrib-name" placeholder="ex: Ibrahima D. — Paris" autocomplete="off"></div>
+          <div class="input-group"><label class="input-label">Palier choisi</label><select class="input-field" id="a16-palier-select"></select></div>
+          <div class="input-group"><label class="input-label">Montant libre (FCFA) — optionnel</label><input type="number" class="input-field" id="a16-contrib-libre" placeholder="0" min="0" autocomplete="off"></div>
+          <div class="input-group"><label class="input-label">Pays / Ville</label><input type="text" class="input-field" id="a16-contrib-pays" placeholder="ex: France — Lyon" autocomplete="off"></div>
+          <button class="btn btn-primary btn-full" onclick="a16AddContrib(event)"><div class="spinner"></div><span class="btn-text">💰 Enregistrer Contribution</span></button>
+        </div>
+        <div class="card">
+          <div class="card-title">Objectif de Campagne</div>
+          <div class="input-group">
+            <label class="input-label">Objectif (FCFA)</label>
+            <input type="number" class="input-field" id="a16-goal-input" value="25000000" min="0" autocomplete="off" oninput="a16UpdateGoal(this.value)">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Durée restante (jours)</label>
+            <input type="number" class="input-field" id="a16-days-input" value="45" min="0" autocomplete="off" oninput="a16UpdateDays(this.value)">
+          </div>
+        </div>
+        <div class="card" id="a16-backers-card" style="display:none">
+          <div class="card-title">Contributeurs</div>
+          <div id="a16-backers-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Générateur Message Diaspora</div>
+          <div class="input-group"><label class="input-label">Réseau cible</label>
+            <select class="input-field" id="a16-msg-reseau">
+              <option value="whatsapp">WhatsApp</option>
+              <option value="facebook">Facebook</option>
+              <option value="twitter">X / Twitter</option>
+              <option value="email">Email</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="a16GenMessage(event)"><div class="spinner"></div><span class="btn-text">📣 Générer Message</span></button>
+        </div>
+        <div class="card" id="a16-msg-card" style="display:none">
+          <div class="card-title">Message Généré</div>
+          <div class="a16-msg-output" id="a16-msg-output"></div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="a16CopyMsg()">📋 Copier</button>
+        </div>
+      </div>
+
+      <!-- =====================================================
+           AGENT 17 — RISK MANAGER
+           ===================================================== -->
+      <div class="agent-panel" id="agent-risk">
+        <div class="card" id="a17-status-card">
+          <div class="card-title">Moniteur de Dérive Temporelle</div>
+          <div class="a17-status-hero" id="a17-status-hero">
+            <div class="a17-mode-badge" id="a17-mode-badge">⬡ NOMINAL</div>
+            <div class="a17-delta-display" id="a17-delta-display">Δ +0h</div>
+            <div class="a17-delta-sub" id="a17-delta-sub">En phase avec le planning — 66 jours terrain</div>
+          </div>
+          <div class="a17-kpi-row">
+            <div class="a17-kpi-box"><div class="a17-kpi-val" id="a17-k-done">0</div><div class="a17-kpi-label">J. Effectués</div></div>
+            <div class="a17-kpi-box"><div class="a17-kpi-val" id="a17-k-theorique">0</div><div class="a17-kpi-label">J. Théoriques</div></div>
+            <div class="a17-kpi-box"><div class="a17-kpi-val" id="a17-k-repos">35</div><div class="a17-kpi-label">J. Repos Dispo</div></div>
+            <div class="a17-kpi-box"><div class="a17-kpi-val" id="a17-k-delta" style="color:var(--emerald)">0</div><div class="a17-kpi-label">Δ Jours</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Matrice des Risques</div>
+          <div id="a17-risk-matrix"></div>
+        </div>
+        <div class="card" id="a17-optim-card" style="display:none">
+          <div class="card-title">💡 Recommandations d'Optimisation</div>
+          <div id="a17-optim-list"></div>
+          <button class="btn btn-primary btn-full" style="margin-top:10px" onclick="a17ApplyOptim(event)"><div class="spinner"></div><span class="btn-text">⚡ Appliquer Recalibration</span></button>
+        </div>
+        <div class="card" id="a17-planb-card" style="display:none">
+          <div class="card-title" style="color:var(--red)">🚨 Plan B Critique — Fusion de Sites</div>
+          <div id="a17-planb-list"></div>
+          <div class="a17-planb-tx" id="a17-planb-tx" style="display:none"></div>
+          <button class="btn btn-danger btn-full" style="margin-top:10px" onclick="a17ActivatePlanB(event)"><div class="spinner"></div><span class="btn-text">🚨 Activer Plan B</span></button>
+        </div>
+        <div class="card">
+          <div class="card-title">Contrôle Watcher Financier</div>
+          <div class="a17-watcher-status" id="a17-watcher-status">
+            <div class="a17-w-dot" id="a17-w-dot"></div>
+            <span id="a17-w-label" style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted)">Watcher inactif</span>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted);margin:8px 0;line-height:1.5">
+            Surveille state.transactionQueue · Dépile vers Agent 4 · Mise à jour DOM budgétaire
+          </div>
+          <div class="a17-queue-display" id="a17-queue-display">
+            <span style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted)">Queue vide</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+            <button class="btn btn-primary btn-sm" onclick="a17ForceWatcherCycle()"><div class="spinner"></div><span class="btn-text">⚙️ Forcer Cycle</span></button>
+            <button class="btn btn-ghost btn-sm" onclick="a17InjectTestTx()">🧪 Test Injection</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Log Risk Manager</div>
+          <div id="a17-log-list"></div>
+        </div>
+      </div>
+
+      <!-- =====================================================
+           MAP PANEL (index 17)
+           ===================================================== -->
+      <div class="agent-panel" id="agent-map" style="padding:0;overflow:hidden">
+        <div id="map-container">
+          <div id="leaflet-map"></div>
+          <div id="map-fallback">
+            <div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--amber);padding:8px 0 12px;letter-spacing:0.1em">
+              ⚠ CARTE HORS-LIGNE — Affichage vectoriel CSS
+            </div>
+            <div class="map-grid" id="map-fallback-grid"></div>
+          </div>
+          <div id="map-controls">
+            <div id="gps-info-box">
+              <div class="gps-coords" id="gps-coords-display">GPS inactif</div>
+              <div class="gps-site" id="gps-site-display"></div>
+              <div class="gps-dist" id="gps-dist-display"></div>
+            </div>
+            <button id="gps-toggle-btn" onclick="toggleGPS()">
+              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+                <circle cx="12" cy="12" r="9" stroke-dasharray="2 3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <!-- Offshore Section -->
+        <div style="padding:12px;border-top:1px solid var(--border);background:var(--bg-card)">
+          <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--amber);letter-spacing:0.12em;margin-bottom:8px">⚓ MISSION HORS-TERRAIN · 0 JOUR</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <div style="background:var(--bg-card-2);border:1px dashed rgba(255,171,64,0.3);border-radius:var(--r-sm);padding:10px">
+              <div style="font-family:var(--font-display);font-size:0.55rem;color:var(--amber);letter-spacing:0.1em;margin-bottom:4px">SANGOMAR</div>
+              <div style="font-size:0.65rem;color:var(--text-secondary);line-height:1.3">Zone pétrolière offshore · Double page documentaire</div>
+              <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-top:4px">13.9000°N / 17.4500°W</div>
+            </div>
+            <div style="background:var(--bg-card-2);border:1px dashed rgba(255,171,64,0.3);border-radius:var(--r-sm);padding:10px">
+              <div style="font-family:var(--font-display);font-size:0.55rem;color:var(--amber);letter-spacing:0.1em;margin-bottom:4px">GTA</div>
+              <div style="font-size:0.65rem;color:var(--text-secondary);line-height:1.3">Gas To Africa — Section documentaire stratégique</div>
+              <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-top:4px">14.2000°N / 18.0000°W</div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /agent-map -->
+
+    </div><!-- /agents-slider -->
   </div><!-- /agents-wrap -->
 
   <!-- BOTTOM NAVIGATION -->
@@ -1909,6 +3373,11 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="" id="leaflet-script"></script>
+
+<!-- Supabase JS — doit être chargé APRÈS le DOM et AVANT supabase-sync -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- Supabase Sync — dépend de supabase.min.js, doit précéder le script principal -->
+<script src="supabase-sync-1.js"></script>
 
 <script>
 /* ============================================================
@@ -2028,7 +3497,12 @@ function dbReadAll(store) {
     } catch(e) { res([]); }
   });
 }
-function saveStateToDB() { dbWrite('state', { id:1, data: { spent:state.spent, transactions:state.transactions, catSpend:state.catSpend, vault:state.vault, daysDone:state.daysDone, sitesDone:state.sitesDone, printRate:state.printRate } }); }
+function saveStateToDB() {
+  dbWrite('state', { id:1, data: { spent:state.spent, transactions:state.transactions, catSpend:state.catSpend, vault:state.vault, daysDone:state.daysDone, sitesDone:state.sitesDone, printRate:state.printRate } });
+  // Sync cloud non-bloquant
+  SupaSync.syncState(state);
+}
+
 async function loadStateFromDB() {
   const rows = await dbReadAll('state');
   if (rows && rows.length > 0 && rows[0].data) {
@@ -2222,1569 +3696,23 @@ function updateMapPulse(siteId, active) {
    TAB NAVIGATION — CSS3 translate3d 60FPS
    ============================================================ */
 const TAB_COUNT = 18;
-
-/* ============================================================
-   LAZY RENDERING SYSTEM — Premium Transition Engine
-   ============================================================ */
-
-const AGENT_TEMPLATES = {
-  0: `<div class="agent-panel" id="agent-superviseur">
-
-        <!-- Mission Progress Ring -->
-        <div class="card">
-          <div class="card-title">Avancement Mission</div>
-          <div style="display:block">
-          <div class="progress-ring-wrap">
-            <div class="ring-wrap-pos">
-              <svg class="progress-ring-svg" viewBox="0 0 72 72">
-                <defs>
-                  <linearGradient id="ringGradCOO" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#00f2fe"/><stop offset="100%" stop-color="#4facfe"/>
-                  </linearGradient>
-                </defs>
-                <circle class="ring-bg" cx="36" cy="36" r="30"/>
-                <circle class="ring-fill" id="mission-ring" cx="36" cy="36" r="30" style="stroke:url(#ringGradCOO)"/>
-              </svg>
-              <div class="ring-label" id="ring-pct">0%</div>
-            </div>
-            <div class="ring-info">
-              <div class="ring-info-val" id="days-done-coo">0 / 66</div>
-              <div class="ring-info-sub">jours terrain effectués</div>
-              <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
-                <span class="pill pill-cyan" id="coo-sites-done">0 sites</span>
-                <span class="pill pill-green" id="coo-budget-pct">100% budget</span>
-              </div>
-            </div>
-          </div>
-          </div><!-- /.progress-ring-wrap wrapper -->
-        </div>
-
-        <!-- Pending Approvals -->
-        <div class="card">
-          <div class="card-title">File d'Approbations <span class="pill pill-amber" style="margin-left:auto;font-size:0.5rem" id="approval-count">3 en attente</span></div>
-          <div id="approval-list"></div>
-        </div>
-
-        <!-- Notifications Critiques -->
-        <div class="card">
-          <div class="card-title">Notifications Critiques</div>
-          <div id="notifications-list"></div>
-        </div>
-
-        <!-- Activité Récente -->
-        <div class="card">
-          <div class="card-title">Journal d'Activité</div>
-          <div id="activity-feed"></div>
-        </div>
-
-        <!-- WhatsApp Broadcast -->
-        <div class="card">
-          <div class="card-title">Diffusion WhatsApp</div>
-          <div class="input-group">
-            <label class="input-label">Message d'alerte</label>
-            <textarea class="input-field" id="wa-broadcast-msg" placeholder="Saisir le message à diffuser à l'équipe…" autocomplete="off" spellcheck="false" style="min-height:70px"></textarea>
-          </div>
-          <div class="wa-btn-row">
-            <button class="btn btn-primary" onclick="triggerWhatsAppBroadcast('team')">
-              <div class="spinner"></div><span class="btn-text">📣 Équipe</span>
-            </button>
-            <button class="btn btn-danger" onclick="triggerWhatsAppBroadcast('emergency')">
-              <div class="spinner"></div><span class="btn-text">🚨 Urgence</span>
-            </button>
-          </div>
-          <div style="margin-top:8px">
-            <div class="queue-status" id="wa-queue-status">
-              <div class="online-dot" style="width:6px;height:6px" id="wa-queue-dot"></div>
-              <span id="wa-queue-label">File vide — 0 message en attente</span>
-            </div>
-          </div>
-        </div>
-
-      </div>`,
-  1: `<div class="agent-panel" id="agent-coffre">
-
-        <!-- PIN Lock Screen -->
-        <div class="card" id="vault-lock-card">
-          <div class="card-title">Coffre-Fort Chiffré</div>
-          <div class="vault-lock-screen">
-            <div class="vault-icon">
-              <svg width="28" height="28" fill="none" stroke="#00f2fe" stroke-width="1.5" viewBox="0 0 24 24">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                <circle cx="12" cy="16" r="1" fill="#00f2fe"/>
-              </svg>
-            </div>
-            <div style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);letter-spacing:0.12em">CODE PIN (4 chiffres)</div>
-            <div class="vault-pin-row" id="vault-pin-dots">
-              <div class="vault-pin-dot" id="pin-d0"></div>
-              <div class="vault-pin-dot" id="pin-d1"></div>
-              <div class="vault-pin-dot" id="pin-d2"></div>
-              <div class="vault-pin-dot" id="pin-d3"></div>
-            </div>
-            <div class="vault-error" id="vault-error">Code incorrect — Réessayez</div>
-            <div class="vault-numpad" id="vault-numpad">
-              <button class="numpad-btn" onclick="vaultPinInput('1')">1</button>
-              <button class="numpad-btn" onclick="vaultPinInput('2')">2</button>
-              <button class="numpad-btn" onclick="vaultPinInput('3')">3</button>
-              <button class="numpad-btn" onclick="vaultPinInput('4')">4</button>
-              <button class="numpad-btn" onclick="vaultPinInput('5')">5</button>
-              <button class="numpad-btn" onclick="vaultPinInput('6')">6</button>
-              <button class="numpad-btn" onclick="vaultPinInput('7')">7</button>
-              <button class="numpad-btn" onclick="vaultPinInput('8')">8</button>
-              <button class="numpad-btn" onclick="vaultPinInput('9')">9</button>
-              <button class="numpad-btn wide" onclick="vaultPinInput('0')">0</button>
-              <button class="numpad-btn" onclick="vaultPinBackspace()">⌫</button>
-            </div>
-            <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted);opacity:0.5;text-align:center">PIN par défaut : 1234 · Modifiable dans le coffre</div>
-          </div>
-        </div>
-
-        <!-- Vault Content (shown after unlock) -->
-        <div id="vault-content-area" class="vault-content">
-
-          <div class="card" style="margin-bottom:8px">
-            <div style="display:flex;align-items:center;justify-content:space-between">
-              <div class="card-title" style="margin-bottom:0">Clés API & Webhooks</div>
-              <button class="btn btn-ghost btn-sm" onclick="lockVault()">🔒 Verrouiller</button>
-            </div>
-          </div>
-
-          <!-- WhatsApp Keys -->
-          <div class="card">
-            <div class="key-category">
-              <svg width="12" height="12" fill="#25d366" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
-              WhatsApp Business API
-            </div>
-            <div id="vault-keys-whatsapp"></div>
-            <button class="btn btn-ghost btn-sm btn-full" onclick="addKeyToCategory('whatsapp')" style="margin-top:6px">+ Ajouter clé</button>
-          </div>
-
-          <!-- Maps / GPS Keys -->
-          <div class="card">
-            <div class="key-category">🗺 Cartographie & GPS</div>
-            <div id="vault-keys-maps"></div>
-            <button class="btn btn-ghost btn-sm btn-full" onclick="addKeyToCategory('maps')" style="margin-top:6px">+ Ajouter clé</button>
-          </div>
-
-          <!-- Cloud Keys -->
-          <div class="card">
-            <div class="key-category">☁️ Cloud & Stockage</div>
-            <div id="vault-keys-cloud"></div>
-            <button class="btn btn-ghost btn-sm btn-full" onclick="addKeyToCategory('cloud')" style="margin-top:6px">+ Ajouter clé</button>
-          </div>
-
-          <!-- Social Keys -->
-          <div class="card">
-            <div class="key-category">📲 Réseaux Sociaux</div>
-            <div id="vault-keys-social"></div>
-            <button class="btn btn-ghost btn-sm btn-full" onclick="addKeyToCategory('social')" style="margin-top:6px">+ Ajouter clé</button>
-          </div>
-
-          <!-- Add Key Modal inline -->
-          <div class="add-key-form" id="add-key-form" style="display:none">
-            <div class="card-title" style="margin-bottom:10px">Nouvelle entrée</div>
-            <div class="input-group">
-              <label class="input-label">Nom / Service</label>
-              <input type="text" class="input-field" id="new-key-name" placeholder="ex: WhatsApp Token" autocomplete="new-password" spellcheck="false">
-            </div>
-            <div class="input-group">
-              <label class="input-label">Valeur / Clé</label>
-              <input type="password" class="input-field" id="new-key-value" placeholder="Coller la clé ici…" autocomplete="new-password" spellcheck="false">
-            </div>
-            <input type="hidden" id="new-key-category">
-            <div style="display:flex;gap:8px">
-              <button class="btn btn-success btn-sm" style="flex:1" onclick="saveNewKey()">
-                <div class="spinner"></div><span class="btn-text">💾 Sauvegarder</span>
-              </button>
-              <button class="btn btn-ghost btn-sm" onclick="cancelAddKey()">Annuler</button>
-            </div>
-          </div>
-
-          <!-- Export -->
-          <div class="card" style="margin-top:8px">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <button class="btn btn-primary btn-sm" onclick="exportVault()">
-                <div class="spinner"></div><span class="btn-text">📤 Exporter</span>
-              </button>
-              <button class="btn btn-ghost btn-sm" onclick="changePIN()">🔑 Changer PIN</button>
-            </div>
-          </div>
-        </div>
-
-      </div>`,
-  2: `<div class="agent-panel" id="agent-cm">
-
-        <!-- Platform Selector -->
-        <div class="card">
-          <div class="card-title">Plateforme cible</div>
-          <div class="platform-tabs" id="platform-tabs">
-            <button class="plat-tab active-tiktok" data-plat="tiktok" onclick="selectPlatform('tiktok',this)">
-              <svg width="14" height="14" fill="#ee1d52" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
-              TikTok
-            </button>
-            <button class="plat-tab" data-plat="youtube" onclick="selectPlatform('youtube',this)">
-              <svg width="14" height="14" fill="#ff0000" viewBox="0 0 24 24"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>
-              YouTube
-            </button>
-            <button class="plat-tab" data-plat="linkedin" onclick="selectPlatform('linkedin',this)">
-              <svg width="14" height="14" fill="#0077b5" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-              LinkedIn
-            </button>
-            <button class="plat-tab" data-plat="instagram" onclick="selectPlatform('instagram',this)">
-              <svg width="14" height="14" fill="url(#igGrad)" viewBox="0 0 24 24">
-                <defs><linearGradient id="igGrad" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="25%" stop-color="#e6683c"/><stop offset="50%" stop-color="#dc2743"/><stop offset="75%" stop-color="#cc2366"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs>
-                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/>
-              </svg>
-              Instagram
-            </button>
-          </div>
-        </div>
-
-        <!-- Content Generator -->
-        <div class="card">
-          <div class="card-title">Générateur de Contenu</div>
-          <div class="input-group">
-            <label class="input-label">Site / Lieu</label>
-            <select class="input-field" id="cm-site-select">
-              <option value="">— Sélectionner un site —</option>
-            </select>
-          </div>
-          <div class="input-group">
-            <label class="input-label">Tonalité</label>
-            <select class="input-field" id="cm-tone-select">
-              <option value="inspiring">Inspirant & Poétique</option>
-              <option value="informative">Informatif & Documentaire</option>
-              <option value="exciting">Dynamique & Engageant</option>
-              <option value="cultural">Culturel & Éducatif</option>
-              <option value="promotional">Promotionnel & Viral</option>
-            </select>
-          </div>
-          <div class="input-group" id="yt-specific" style="display:none">
-            <label class="input-label">Durée vidéo estimée</label>
-            <select class="input-field" id="cm-duration">
-              <option value="short">Court (< 5 min) — Reel / Short</option>
-              <option value="medium">Moyen (5-20 min) — Documentaire Web</option>
-              <option value="long">Long (> 20 min) — Documentaire Complet</option>
-            </select>
-          </div>
-          <div class="gen-controls">
-            <button class="btn btn-primary" style="flex:1" onclick="generateContent()">
-              <div class="spinner"></div><span class="btn-text">✨ Générer</span>
-            </button>
-            <button class="btn btn-ghost btn-sm" onclick="copyPreview()" id="copy-btn" style="display:none">📋 Copier</button>
-          </div>
-        </div>
-
-        <!-- Preview -->
-        <div class="card">
-          <div class="card-title">Aperçu <span id="preview-plat-badge" class="pill pill-cyan" style="margin-left:auto;font-size:0.48rem">TikTok</span></div>
-          <div class="preview-box" id="content-preview">
-            <div class="preview-empty">Sélectionner un site et générer le contenu…</div>
-          </div>
-        </div>
-
-        <!-- History -->
-        <div class="card" id="cm-history-card" style="display:none">
-          <div class="card-title">Historique</div>
-          <div id="cm-history-list"></div>
-        </div>
-
-      </div>`,
-  3: `<div class="agent-panel" id="agent-financier">
-
-        <!-- Budget Gauge -->
-        <div class="card">
-          <div class="card-title">Budget Mission — 100 000 000 FCFA</div>
-
-          <div class="budget-gauge">
-            <svg class="gauge-svg" viewBox="0 0 200 110">
-              <path class="gauge-track" d="M20,100 A90,90 0 0,1 180,100" stroke-dasharray="282.7"/>
-              <path class="gauge-fill" id="gauge-fill-path" d="M20,100 A90,90 0 0,1 180,100"/>
-            </svg>
-            <div class="gauge-center" style="bottom:8px">
-              <div class="gauge-val" id="budget-remaining-val">100.0M</div>
-              <div class="gauge-sub">FCFA RESTANT</div>
-            </div>
-          </div>
-
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px">
-            <div style="text-align:center;padding:8px;background:var(--bg-card-2);border:1px solid var(--border);border-radius:var(--r-sm)">
-              <div style="font-family:var(--font-display);font-size:0.75rem;font-weight:700;color:var(--red);font-variant-numeric:tabular-nums" id="total-spent-val">0</div>
-              <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-top:2px">DÉPENSÉ</div>
-            </div>
-            <div style="text-align:center;padding:8px;background:var(--bg-card-2);border:1px solid var(--border);border-radius:var(--r-sm)">
-              <div style="font-family:var(--font-display);font-size:0.75rem;font-weight:700;color:var(--amber);font-variant-numeric:tabular-nums" id="pct-spent-val">0%</div>
-              <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-top:2px">CONSOMMÉ</div>
-            </div>
-            <div style="text-align:center;padding:8px;background:var(--bg-card-2);border:1px solid var(--border);border-radius:var(--r-sm)">
-              <div style="font-family:var(--font-display);font-size:0.75rem;font-weight:700;color:var(--emerald);font-variant-numeric:tabular-nums" id="tx-count-val">0</div>
-              <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-top:2px">TRANSACTIONS</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Catégories -->
-        <div class="card">
-          <div class="card-title">Répartition par Catégorie</div>
-          <div class="fin-cats" id="fin-categories"></div>
-        </div>
-
-        <!-- Printer Rate -->
-        <div class="card">
-          <div class="card-title">Tarif Imprimeur</div>
-          <div class="print-rate-row">
-            <div class="print-rate-label">Coût/page (FCFA)</div>
-            <input type="number" class="input-field print-rate-input" id="print-rate-input" value="150" min="1" autocomplete="off" oninput="updatePrintRate(this.value)">
-          </div>
-          <div style="margin-top:8px;font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted)">
-            Estimation tirage 500 ex. × 200p : <span id="print-estimate" style="color:var(--amber);font-weight:600">15 000 000 FCFA</span>
-          </div>
-        </div>
-
-        <!-- Ajouter Dépense -->
-        <div class="card">
-          <div class="card-title">Enregistrer une Dépense</div>
-          <div class="input-group">
-            <label class="input-label">Catégorie</label>
-            <select class="input-field" id="exp-category">
-              <option value="transport">🚗 Transport & Déplacements</option>
-              <option value="hebergement">🏨 Hébergement</option>
-              <option value="equipement">📷 Équipement & Matériel</option>
-              <option value="api">🔌 Coûts API & Cloud</option>
-              <option value="impression">🖨️ Impression & Production</option>
-              <option value="communication">📣 Communication & Marketing</option>
-              <option value="divers">📦 Divers</option>
-            </select>
-          </div>
-          <div class="input-group">
-            <label class="input-label">Montant (FCFA)</label>
-            <input type="number" class="input-field" id="exp-amount" placeholder="0" min="0" autocomplete="off" style="font-size:1rem">
-          </div>
-          <div class="input-group">
-            <label class="input-label">Description</label>
-            <input type="text" class="input-field" id="exp-desc" placeholder="Détail de la dépense…" autocomplete="off">
-          </div>
-          <button class="btn btn-primary btn-full" onclick="addExpense()">
-            <div class="spinner"></div><span class="btn-text">➕ Enregistrer</span>
-          </button>
-        </div>
-
-        <!-- Queue Status -->
-        <div class="card">
-          <div class="card-title">File de Transactions</div>
-          <div class="queue-status" id="tx-queue-status">
-            <div class="queue-dot" id="tx-queue-dot"></div>
-            <span id="tx-queue-label">Processeur inactif — File vide</span>
-          </div>
-        </div>
-
-        <!-- Transaction History -->
-        <div class="card">
-          <div class="card-title">Historique des Transactions</div>
-          <div id="transaction-list">
-            <div style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);text-align:center;padding:20px 0">
-              Aucune transaction enregistrée
-            </div>
-          </div>
-        </div>
-
-      </div>`,
-  4: `<div class="agent-panel" id="agent-coordination">
-
-        <!-- A5: Header KPIs -->
-        <div class="card" id="a5-kpi-bar">
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
-            <div class="a5-kpi-box">
-              <div class="a5-kpi-val" id="a5-days-done">0</div>
-              <div class="a5-kpi-label">J. Effectués</div>
-            </div>
-            <div class="a5-kpi-box">
-              <div class="a5-kpi-val" id="a5-days-left">66</div>
-              <div class="a5-kpi-label">J. Restants</div>
-            </div>
-            <div class="a5-kpi-box">
-              <div class="a5-kpi-val" id="a5-sites-done">0</div>
-              <div class="a5-kpi-label">Sites OK</div>
-            </div>
-            <div class="a5-kpi-box">
-              <div class="a5-kpi-val a5-val-cyan" id="a5-chrono-display">00:00:00</div>
-              <div class="a5-kpi-label">Chrono GPS</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- A5: Chronomètre GPS terrain -->
-        <div class="card">
-          <div class="card-title">Chronomètre Terrain GPS Hors-Ligne</div>
-          <div class="a5-chrono-wrap">
-            <div class="a5-chrono-ring-outer">
-              <svg viewBox="0 0 120 120" class="a5-ring-svg">
-                <circle cx="60" cy="60" r="54" fill="none" stroke="var(--border)" stroke-width="6"/>
-                <circle cx="60" cy="60" r="54" fill="none" stroke="url(#a5Grad)" stroke-width="6"
-                  stroke-linecap="round" stroke-dasharray="339.3" id="a5-ring-arc"
-                  stroke-dashoffset="339.3"
-                  style="transform:rotate(-90deg);transform-origin:center;transition:stroke-dashoffset 1s linear"/>
-                <defs>
-                  <linearGradient id="a5Grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#00f2fe"/>
-                    <stop offset="100%" stop-color="#4facfe"/>
-                  </linearGradient>
-                </defs>
-              </svg>
-              <div class="a5-chrono-center">
-                <div class="a5-big-time" id="a5-big-chrono">00:00:00</div>
-                <div class="a5-chrono-site" id="a5-chrono-site-label">—</div>
-                <div class="a5-chrono-gps-badge" id="a5-gps-badge">GPS INACTIF</div>
-              </div>
-            </div>
-          </div>
-          <div class="a5-chrono-controls">
-            <button class="btn btn-primary" id="a5-btn-start" onclick="a5ChronoStart()">
-              <div class="spinner"></div><span class="btn-text">▶ Démarrer</span>
-            </button>
-            <button class="btn btn-ghost" id="a5-btn-pause" onclick="a5ChronoPause()" style="display:none">
-              <div class="spinner"></div><span class="btn-text">⏸ Pause</span>
-            </button>
-            <button class="btn btn-success" id="a5-btn-valider" onclick="a5ValiderJour()" style="display:none">
-              <div class="spinner"></div><span class="btn-text">✅ Valider Jour</span>
-            </button>
-            <button class="btn btn-danger btn-sm" id="a5-btn-reset" onclick="a5ChronoReset()">↺</button>
-          </div>
-          <div class="a5-session-meta" id="a5-session-meta" style="display:none">
-            <span class="pill pill-cyan" id="a5-session-site">Site —</span>
-            <span class="pill pill-green" id="a5-session-km">0 km</span>
-            <span class="pill pill-amber" id="a5-session-start">Départ —</span>
-          </div>
-        </div>
-
-        <!-- A5: Planning 66 jours -->
-        <div class="card">
-          <div class="card-title">Planning Mission — 66 Jours Terrain</div>
-          <div class="a5-plan-filter">
-            <button class="a5-filter-btn active" onclick="a5FilterPlan('all',this)">Tous</button>
-            <button class="a5-filter-btn" onclick="a5FilterPlan('done',this)">✅ Faits</button>
-            <button class="a5-filter-btn" onclick="a5FilterPlan('active',this)">🔵 En cours</button>
-            <button class="a5-filter-btn" onclick="a5FilterPlan('pending',this)">○ À venir</button>
-          </div>
-          <div class="a5-plan-list" id="a5-plan-list"></div>
-        </div>
-
-        <!-- A5: Journal terrain du jour -->
-        <div class="card">
-          <div class="card-title">Journal de Terrain — Entrée du Jour</div>
-          <div class="input-group">
-            <label class="input-label">Site visité</label>
-            <select class="input-field" id="a5-journal-site"></select>
-          </div>
-          <div class="input-group">
-            <label class="input-label">Conditions terrain</label>
-            <select class="input-field" id="a5-journal-conditions">
-              <option value="excellent">🌟 Excellentes</option>
-              <option value="bon">✅ Bonnes</option>
-              <option value="difficile">⚠️ Difficiles</option>
-              <option value="critique">🚨 Critiques</option>
-            </select>
-          </div>
-          <div class="input-group">
-            <label class="input-label">Note de terrain</label>
-            <textarea class="input-field" id="a5-journal-note" placeholder="Observations, incidents, qualité de lumière, accueil local…" style="min-height:80px" autocomplete="off" spellcheck="false"></textarea>
-          </div>
-          <div class="input-group">
-            <label class="input-label">Prises validées (nb)</label>
-            <input type="number" class="input-field" id="a5-journal-shots" placeholder="0" min="0" autocomplete="off">
-          </div>
-          <button class="btn btn-primary btn-full" onclick="a5SaveJournal()">
-            <div class="spinner"></div><span class="btn-text">💾 Enregistrer Entrée</span>
-          </button>
-        </div>
-
-        <!-- A5: Historique sessions -->
-        <div class="card">
-          <div class="card-title">Historique Sessions GPS</div>
-          <div id="a5-sessions-log">
-            <div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);text-align:center;padding:16px">Aucune session enregistrée</div>
-          </div>
-        </div>
-
-      </div>`,
-  5: `<div class="agent-panel" id="agent-direction-artistique">
-
-        <!-- A6: Brief Sélecteur de Site -->
-        <div class="card">
-          <div class="card-title">Générateur de Brief Visuel</div>
-          <div class="input-group">
-            <label class="input-label">Site de référence</label>
-            <select class="input-field" id="a6-site-select"></select>
-          </div>
-          <div class="input-group">
-            <label class="input-label">Style photographique</label>
-            <div class="a6-style-grid" id="a6-style-grid">
-              <button class="a6-style-btn active" data-style="natgeo" onclick="a6SelectStyle(this)">NatGeo</button>
-              <button class="a6-style-btn" data-style="golden" onclick="a6SelectStyle(this)">Golden Hour</button>
-              <button class="a6-style-btn" data-style="blue" onclick="a6SelectStyle(this)">Blue Hour</button>
-              <button class="a6-style-btn" data-style="aerial" onclick="a6SelectStyle(this)">Drone Aerial</button>
-              <button class="a6-style-btn" data-style="portrait" onclick="a6SelectStyle(this)">Portrait</button>
-              <button class="a6-style-btn" data-style="street" onclick="a6SelectStyle(this)">Street</button>
-              <button class="a6-style-btn" data-style="macro" onclick="a6SelectStyle(this)">Macro Détail</button>
-              <button class="a6-style-btn" data-style="longexp" onclick="a6SelectStyle(this)">Long Exp.</button>
-            </div>
-          </div>
-          <div class="input-group">
-            <label class="input-label">Intention narrative</label>
-            <select class="input-field" id="a6-intention">
-              <option value="grandiose">Grandeur & Immensité</option>
-              <option value="intime">Intimité & Humanité</option>
-              <option value="spirituel">Spiritualité & Lumière</option>
-              <option value="economique">Économie & Modernité</option>
-              <option value="heritage">Héritage & Mémoire</option>
-              <option value="nature">Nature & Biodiversité</option>
-            </select>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <button class="btn btn-primary" onclick="a6GenerateBrief()">
-              <div class="spinner"></div><span class="btn-text">📋 Générer Brief</span>
-            </button>
-            <button class="btn btn-ghost" onclick="a6GeneratePrompt()">
-              <div class="spinner"></div><span class="btn-text">✨ Prompt 8K</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- A6: Brief Output -->
-        <div class="card" id="a6-brief-card" style="display:none">
-          <div class="card-title">Brief Technique Visuel <span class="pill pill-cyan" id="a6-brief-badge" style="margin-left:auto;font-size:0.48rem">NatGeo</span></div>
-          <div class="a6-brief-section" id="a6-brief-output"></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
-            <button class="btn btn-ghost btn-sm" onclick="a6CopyBrief('brief')">📋 Copier Brief</button>
-            <button class="btn btn-primary btn-sm" onclick="a6SaveBrief()">
-              <div class="spinner"></div><span class="btn-text">💾 Archiver</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- A6: Prompt 8K Output -->
-        <div class="card" id="a6-prompt-card" style="display:none">
-          <div class="card-title">Prompt Image 8K — National Geographic Style</div>
-          <div class="a6-prompt-box" id="a6-prompt-output"></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
-            <button class="btn btn-primary btn-sm" onclick="a6CopyBrief('prompt')">📋 Copier Prompt</button>
-            <button class="btn btn-ghost btn-sm" onclick="a6VariatePrompt()">
-              <div class="spinner"></div><span class="btn-text">🎲 Varier</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- A6: Charte Colorimétrique -->
-        <div class="card">
-          <div class="card-title">Charte Colorimétrique Mission</div>
-          <div class="a6-palette-row" id="a6-palette-row">
-            <div class="a6-swatch" style="background:#c4872a" title="Or Teranga"></div>
-            <div class="a6-swatch" style="background:#1a3a5c" title="Bleu Dakar"></div>
-            <div class="a6-swatch" style="background:#d4522a" title="Latérite"></div>
-            <div class="a6-swatch" style="background:#2d6e3e" title="Forêt Casamance"></div>
-            <div class="a6-swatch" style="background:#8b5e3c" title="Terre Sénégal"></div>
-            <div class="a6-swatch" style="background:#e8c97e" title="Lumière Sahel"></div>
-          </div>
-          <div class="a6-palette-labels">
-            <span>Or Teranga</span><span>Bleu Dakar</span><span>Latérite</span>
-            <span>Forêt Cas.</span><span>Terre Sén.</span><span>Lumière Sah.</span>
-          </div>
-        </div>
-
-        <!-- A6: Ratios & Formats -->
-        <div class="card">
-          <div class="card-title">Formats Techniques Édition</div>
-          <div class="a6-format-grid">
-            <div class="a6-format-box">
-              <div class="a6-format-ratio">4:3</div>
-              <div class="a6-format-label">Double Page</div>
-              <div class="a6-format-spec">420×315mm · 300 DPI</div>
-            </div>
-            <div class="a6-format-box">
-              <div class="a6-format-ratio">16:9</div>
-              <div class="a6-format-label">Pleine Page</div>
-              <div class="a6-format-spec">210×280mm · 300 DPI</div>
-            </div>
-            <div class="a6-format-box">
-              <div class="a6-format-ratio">1:1</div>
-              <div class="a6-format-label">Vignette</div>
-              <div class="a6-format-spec">105×105mm · 300 DPI</div>
-            </div>
-            <div class="a6-format-box">
-              <div class="a6-format-ratio">2:3</div>
-              <div class="a6-format-label">Portrait</div>
-              <div class="a6-format-spec">140×210mm · 300 DPI</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- A6: Briefs archivés -->
-        <div class="card" id="a6-archive-card" style="display:none">
-          <div class="card-title">Briefs Archivés</div>
-          <div id="a6-archive-list"></div>
-        </div>
-
-      </div>`,
-  6: `<div class="agent-panel" id="agent-redacteur">
-
-        <!-- A7: Langue cible -->
-        <div class="card">
-          <div class="card-title">Processeur Trilangue</div>
-          <div class="a7-lang-tabs">
-            <button class="a7-lang-tab a7-active-fr" data-lang="fr" onclick="a7SelectLang('fr',this)">
-              <span class="a7-flag">🇫🇷</span> Français
-            </button>
-            <button class="a7-lang-tab" data-lang="en" onclick="a7SelectLang('en',this)">
-              <span class="a7-flag">🇬🇧</span> English
-            </button>
-            <button class="a7-lang-tab" data-lang="ar" onclick="a7SelectLang('ar',this)">
-              <span class="a7-flag">🇸🇳</span> عربية
-            </button>
-          </div>
-        </div>
-
-        <!-- A7: Éditeur source -->
-        <div class="card">
-          <div class="card-title">Texte Source</div>
-          <div class="input-group">
-            <label class="input-label">Type de contenu</label>
-            <select class="input-field" id="a7-content-type">
-              <option value="caption">Légende photographique</option>
-              <option value="intro">Introduction de chapitre</option>
-              <option value="narration">Narration documentaire</option>
-              <option value="description">Description de site</option>
-              <option value="poeme">Poème / Texte poétique</option>
-              <option value="citation">Citation / Exergue</option>
-            </select>
-          </div>
-          <div class="input-group">
-            <label class="input-label">Texte à traiter</label>
-            <textarea class="input-field" id="a7-source-text"
-              placeholder="Saisir le texte source en français ou coller depuis le terrain…"
-              style="min-height:120px" autocomplete="off" spellcheck="true" lang="fr"></textarea>
-          </div>
-          <div class="a7-meta-row">
-            <span class="pill pill-cyan" id="a7-char-count">0 car.</span>
-            <span class="pill" id="a7-word-count" style="border-color:var(--border);color:var(--text-muted)">0 mots</span>
-            <span class="pill pill-amber" id="a7-lang-badge">FR</span>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px">
-            <button class="btn btn-primary btn-sm" onclick="a7Poetiser()">
-              <div class="spinner"></div><span class="btn-text">✨ Poétiser</span>
-            </button>
-            <button class="btn btn-ghost btn-sm" onclick="a7Traduire()">
-              <div class="spinner"></div><span class="btn-text">🌍 Traduire</span>
-            </button>
-            <button class="btn btn-ghost btn-sm" onclick="a7Condenser()">
-              <div class="spinner"></div><span class="btn-text">✂️ Condenser</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- A7: Sortie trilingue -->
-        <div class="card" id="a7-output-card" style="display:none">
-          <div class="card-title">Versions Trilingues</div>
-          <div class="a7-output-tabs">
-            <button class="a7-out-tab a7-out-active" onclick="a7ShowOutput('fr',this)">🇫🇷 FR</button>
-            <button class="a7-out-tab" onclick="a7ShowOutput('en',this)">🇬🇧 EN</button>
-            <button class="a7-out-tab" onclick="a7ShowOutput('ar',this)">🇸🇳 AR</button>
-            <button class="a7-out-tab" onclick="a7ShowOutput('all',this)">⊞ Tout</button>
-          </div>
-          <div id="a7-output-fr" class="a7-out-block a7-out-fr">
-            <div class="a7-out-lang-badge a7-badge-fr">Français</div>
-            <div class="a7-out-text" id="a7-text-fr"></div>
-            <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="a7Copy('fr')">📋 Copier FR</button>
-          </div>
-          <div id="a7-output-en" class="a7-out-block a7-out-en" style="display:none">
-            <div class="a7-out-lang-badge a7-badge-en">English</div>
-            <div class="a7-out-text" id="a7-text-en"></div>
-            <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="a7Copy('en')">📋 Copy EN</button>
-          </div>
-          <div id="a7-output-ar" class="a7-out-block a7-out-ar" style="display:none">
-            <div class="a7-out-lang-badge a7-badge-ar">عربية</div>
-            <div class="a7-out-text a7-rtl" id="a7-text-ar" dir="rtl"></div>
-            <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="a7Copy('ar')">📋 نسخ</button>
-          </div>
-          <div id="a7-output-all" class="a7-out-block" style="display:none">
-            <div class="a7-all-lang-grid">
-              <div>
-                <div class="a7-out-lang-badge a7-badge-fr">Français</div>
-                <div class="a7-out-text" id="a7-all-fr"></div>
-              </div>
-              <div>
-                <div class="a7-out-lang-badge a7-badge-en">English</div>
-                <div class="a7-out-text" id="a7-all-en"></div>
-              </div>
-              <div>
-                <div class="a7-out-lang-badge a7-badge-ar">عربية</div>
-                <div class="a7-out-text a7-rtl" id="a7-all-ar" dir="rtl"></div>
-              </div>
-            </div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
-            <button class="btn btn-primary btn-sm" onclick="a7SaveToLibrary()">
-              <div class="spinner"></div><span class="btn-text">📚 Archiver Trilingue</span>
-            </button>
-            <button class="btn btn-ghost btn-sm" onclick="a7ExportDocx()">📄 Exporter .txt</button>
-          </div>
-        </div>
-
-        <!-- A7: Bibliothèque de textes -->
-        <div class="card" id="a7-library-card" style="display:none">
-          <div class="card-title">Bibliothèque de Textes</div>
-          <div id="a7-library-list"></div>
-        </div>
-
-        <!-- A7: Glossaire Wolof -->
-        <div class="card">
-          <div class="card-title">Glossaire Termes Clés — Wolof / FR / EN</div>
-          <div class="a7-glossary-list">
-            <div class="a7-glossary-item"><span class="a7-term-wo">Teranga</span><span class="a7-term-fr">Hospitalité</span><span class="a7-term-en">Hospitality</span></div>
-            <div class="a7-glossary-item"><span class="a7-term-wo">Thiof</span><span class="a7-term-fr">Mérou sacré</span><span class="a7-term-en">Sacred grouper</span></div>
-            <div class="a7-glossary-item"><span class="a7-term-wo">Xam-xam</span><span class="a7-term-fr">Connaissance</span><span class="a7-term-en">Knowledge</span></div>
-            <div class="a7-glossary-item"><span class="a7-term-wo">Ndakaaru</span><span class="a7-term-fr">Dakar (origines)</span><span class="a7-term-en">Dakar (origin)</span></div>
-            <div class="a7-glossary-item"><span class="a7-term-wo">Jaraaf</span><span class="a7-term-fr">Chef / Autorité</span><span class="a7-term-en">Chief / Authority</span></div>
-            <div class="a7-glossary-item"><span class="a7-term-wo">Yëgël</span><span class="a7-term-fr">Transmettre</span><span class="a7-term-en">To transmit</span></div>
-          </div>
-        </div>
-
-      </div>`,
-  7: `<div class="agent-panel" id="agent-correcteur">
-
-        <!-- A8: Mode de vérification -->
-        <div class="card">
-          <div class="card-title">Censeur Éditorial — Édition d'Art Luxe</div>
-          <div class="a8-mode-row">
-            <button class="a8-mode-btn a8-mode-active" data-mode="full" onclick="a8SetMode('full',this)">Analyse Complète</button>
-            <button class="a8-mode-btn" data-mode="ortho" onclick="a8SetMode('ortho',this)">Orthographe</button>
-            <button class="a8-mode-btn" data-mode="style" onclick="a8SetMode('style',this)">Style Luxe</button>
-            <button class="a8-mode-btn" data-mode="mise" onclick="a8SetMode('mise',this)">Mise en Page</button>
-          </div>
-        </div>
-
-        <!-- A8: Éditeur soumission -->
-        <div class="card">
-          <div class="card-title">Texte à Valider</div>
-          <div class="input-group">
-            <label class="input-label">Contexte éditorial</label>
-            <select class="input-field" id="a8-context">
-              <option value="legende">Légende photographique (max 25 mots)</option>
-              <option value="intro_chap">Introduction chapitre (max 120 mots)</option>
-              <option value="corps">Corps de texte (max 300 mots)</option>
-              <option value="citation">Citation / Exergue (max 15 mots)</option>
-              <option value="couverture">Texte de couverture (max 40 mots)</option>
-              <option value="quatrieme">4e de couverture (max 200 mots)</option>
-            </select>
-          </div>
-          <div class="input-group">
-            <label class="input-label">Texte soumis</label>
-            <textarea class="input-field" id="a8-text-input"
-              placeholder="Coller le texte à soumettre au censeur éditorial…"
-              style="min-height:130px" autocomplete="off" spellcheck="false"></textarea>
-          </div>
-          <div class="a8-meta-row">
-            <span class="pill" id="a8-wc-pill" style="border-color:var(--border);color:var(--text-muted)">0 mots</span>
-            <span class="pill" id="a8-limit-pill" style="border-color:var(--border);color:var(--text-muted)">Limite : 25</span>
-            <span class="a8-compliance-badge" id="a8-compliance-badge">—</span>
-          </div>
-          <button class="btn btn-primary btn-full" style="margin-top:10px" onclick="a8Analyser()">
-            <div class="spinner"></div><span class="btn-text">🔍 Analyser & Valider</span>
-          </button>
-        </div>
-
-        <!-- A8: Rapport de conformité -->
-        <div class="card" id="a8-report-card" style="display:none">
-          <div class="card-title">Rapport de Conformité Éditoriale</div>
-
-          <!-- Score global -->
-          <div class="a8-score-row">
-            <div class="a8-score-circle" id="a8-score-circle">
-              <span id="a8-score-val">—</span>
-            </div>
-            <div class="a8-score-detail">
-              <div class="a8-verdict" id="a8-verdict">—</div>
-              <div class="a8-verdict-sub" id="a8-verdict-sub">—</div>
-            </div>
-          </div>
-
-          <!-- Critères -->
-          <div class="a8-criteria-list" id="a8-criteria-list"></div>
-
-          <!-- Annotations inline -->
-          <div class="a8-annotations" id="a8-annotations" style="margin-top:12px"></div>
-
-          <!-- Texte corrigé -->
-          <div class="a8-corrected-wrap" id="a8-corrected-wrap" style="display:none">
-            <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">Version Corrigée</div>
-            <div class="a8-corrected-text" id="a8-corrected-text"></div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-              <button class="btn btn-success btn-sm" onclick="a8AcceptCorrection()">
-                <div class="spinner"></div><span class="btn-text">✅ Accepter</span>
-              </button>
-              <button class="btn btn-ghost btn-sm" onclick="a8CopyCorrection()">📋 Copier</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- A8: Règles édition luxe -->
-        <div class="card">
-          <div class="card-title">Charte Éditoriale — Édition d'Art</div>
-          <div class="a8-rules-accordion" id="a8-rules-accordion">
-            <div class="a8-rule-group" onclick="a8ToggleRule(this)">
-              <div class="a8-rule-head">📏 Longueurs & Formats</div>
-              <div class="a8-rule-body">
-                <div class="a8-rule-item">Légende photo : 15–25 mots, pas de point final</div>
-                <div class="a8-rule-item">Intro chapitre : 80–120 mots, 3 phrases max</div>
-                <div class="a8-rule-item">Corps de texte : 200–300 mots, paragraphes de 60–80 mots</div>
-                <div class="a8-rule-item">Citation / exergue : 10–15 mots, italique obligatoire</div>
-              </div>
-            </div>
-            <div class="a8-rule-group" onclick="a8ToggleRule(this)">
-              <div class="a8-rule-head">✍️ Style & Ton</div>
-              <div class="a8-rule-body">
-                <div class="a8-rule-item">Registre soutenu — aucune familiarité</div>
-                <div class="a8-rule-item">Voix active préférée, sauf effet poétique</div>
-                <div class="a8-rule-item">Ponctuation française : espace avant «:», «;», «!», «?»</div>
-                <div class="a8-rule-item">Guillemets français «  » obligatoires</div>
-                <div class="a8-rule-item">Nombres de 1 à 9 en lettres, ≥10 en chiffres</div>
-              </div>
-            </div>
-            <div class="a8-rule-group" onclick="a8ToggleRule(this)">
-              <div class="a8-rule-head">🚫 Interdictions Absolues</div>
-              <div class="a8-rule-body">
-                <div class="a8-rule-item">Anglicismes non justifiés</div>
-                <div class="a8-rule-item">Clichés touristiques ("paradis", "incontournable")</div>
-                <div class="a8-rule-item">Superlatifs sans ancrage factuel</div>
-                <div class="a8-rule-item">Double ponctuation (?!, ...) sauf en citation</div>
-                <div class="a8-rule-item">Acronymes non définis à la première occurrence</div>
-              </div>
-            </div>
-            <div class="a8-rule-group" onclick="a8ToggleRule(this)">
-              <div class="a8-rule-head">🖨️ Mise en Page Impression</div>
-              <div class="a8-rule-body">
-                <div class="a8-rule-item">Corps texte : Garamond 10pt, interligne 14pt</div>
-                <div class="a8-rule-item">Légendes : Futura Light 8pt, couleur #333</div>
-                <div class="a8-rule-item">Titres chapitres : Futura Bold 18pt, capitales</div>
-                <div class="a8-rule-item">Gouttière intérieure : 20mm minimum (reliure japonaise)</div>
-                <div class="a8-rule-item">Marges extérieures : 12mm · Haut/Bas : 15mm</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- A8: Historique validations -->
-        <div class="card" id="a8-history-card" style="display:none">
-          <div class="card-title">Historique Validations</div>
-          <div id="a8-history-list"></div>
-        </div>
-
-      </div>`,
-  8: `<div class="agent-panel" id="agent-commercial">
-
-        <!-- A9: Tableau de bord Sponsoring -->
-        <div class="card">
-          <div class="card-title">Fonds MTAC & Mécénat Privé</div>
-          <div class="a9-fund-grid">
-            <div class="a9-fund-box a9-fund-mtac">
-              <div class="a9-fund-label">Fonds MTAC</div>
-              <div class="a9-fund-val" id="a9-mtac-val">0 FCFA</div>
-              <div class="a9-fund-sub">Institutionnel</div>
-              <div class="a9-fund-bar"><div class="a9-fund-fill a9-fill-mtac" id="a9-mtac-bar" style="width:0%"></div></div>
-            </div>
-            <div class="a9-fund-box a9-fund-privé">
-              <div class="a9-fund-label">Mécénat Privé</div>
-              <div class="a9-fund-val" id="a9-priv-val">0 FCFA</div>
-              <div class="a9-fund-sub">Entreprises & Particuliers</div>
-              <div class="a9-fund-bar"><div class="a9-fund-fill a9-fill-priv" id="a9-priv-bar" style="width:0%"></div></div>
-            </div>
-          </div>
-          <div class="a9-total-row">
-            <div class="a9-total-label">Total levé</div>
-            <div class="a9-total-val" id="a9-total-raised">0 FCFA</div>
-            <div class="a9-total-obj">/ 100 000 000 FCFA</div>
-          </div>
-          <div class="a9-global-bar-track">
-            <div class="a9-global-bar-fill" id="a9-global-bar" style="width:0%"></div>
-            <span class="a9-global-pct" id="a9-global-pct">0%</span>
-          </div>
-        </div>
-
-        <!-- A9: Sponsors actifs -->
-        <div class="card">
-          <div class="card-title">Portefeuille Sponsors
-            <button class="btn btn-primary btn-sm" style="margin-left:auto;min-height:28px;padding:4px 10px" onclick="a9OpenAddSponsor()">+ Ajouter</button>
-          </div>
-          <div id="a9-sponsors-list">
-            <div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);text-align:center;padding:16px">Aucun sponsor enregistré</div>
-          </div>
-        </div>
-
-        <!-- A9: Formulaire ajout sponsor (inline) -->
-        <div class="card" id="a9-add-sponsor-form" style="display:none">
-          <div class="card-title">Nouveau Partenaire</div>
-          <div class="input-group">
-            <label class="input-label">Nom / Organisation</label>
-            <input type="text" class="input-field" id="a9-sp-name" placeholder="ex: Orange Sénégal" autocomplete="off">
-          </div>
-          <div class="input-group">
-            <label class="input-label">Type</label>
-            <select class="input-field" id="a9-sp-type">
-              <option value="mtac">🏛️ Fonds MTAC (Institutionnel)</option>
-              <option value="prive">🤝 Mécénat Privé (Entreprise)</option>
-              <option value="particulier">👤 Particulier / Diaspora</option>
-              <option value="inkind">📦 Apport en nature</option>
-            </select>
-          </div>
-          <div class="input-group">
-            <label class="input-label">Montant engagé (FCFA)</label>
-            <input type="number" class="input-field" id="a9-sp-amount" placeholder="0" min="0" autocomplete="off" style="font-size:1rem">
-          </div>
-          <div class="input-group">
-            <label class="input-label">Statut</label>
-            <select class="input-field" id="a9-sp-status">
-              <option value="prospect">🔵 Prospect</option>
-              <option value="negocie">🟡 En négociation</option>
-              <option value="signe">🟢 Signé</option>
-              <option value="verse">✅ Versé</option>
-            </select>
-          </div>
-          <div class="input-group">
-            <label class="input-label">Contreparties offertes</label>
-            <textarea class="input-field" id="a9-sp-contra" placeholder="Visibilité logo, mentions presse, accès vernissage…" style="min-height:64px" autocomplete="off" spellcheck="false"></textarea>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <button class="btn btn-success" onclick="a9SaveSponsor()">
-              <div class="spinner"></div><span class="btn-text">💾 Enregistrer</span>
-            </button>
-            <button class="btn btn-ghost" onclick="a9CancelSponsor()">Annuler</button>
-          </div>
-        </div>
-
-        <!-- A9: Générateur de dossier d'impact -->
-        <div class="card">
-          <div class="card-title">Générateur Dossier d'Impact</div>
-          <div class="input-group">
-            <label class="input-label">Destinataire</label>
-            <select class="input-field" id="a9-dossier-target">
-              <option value="mtac">🏛️ Fonds Institutionnel MTAC</option>
-              <option value="entreprise">🏢 Entreprise (RSE / Mécénat)</option>
-              <option value="diaspora">🌍 Diaspora Sénégalaise</option>
-              <option value="ong">🤝 ONG / Fondation</option>
-              <option value="ambassade">🎌 Ambassade / Coopération</option>
-            </select>
-          </div>
-          <div class="input-group">
-            <label class="input-label">Montant sollicité (FCFA)</label>
-            <input type="number" class="input-field" id="a9-dossier-amount" placeholder="5 000 000" autocomplete="off">
-          </div>
-          <div class="input-group">
-            <label class="input-label">Argument principal</label>
-            <select class="input-field" id="a9-dossier-angle">
-              <option value="culture">Rayonnement culturel national</option>
-              <option value="eco">Retombées économiques tourisme</option>
-              <option value="heritage">Préservation du patrimoine</option>
-              <option value="visibilite">Visibilité internationale du Sénégal</option>
-              <option value="jeunesse">Impact éducatif / jeunesse</option>
-            </select>
-          </div>
-          <button class="btn btn-primary btn-full" onclick="a9GenerateDossier()">
-            <div class="spinner"></div><span class="btn-text">📄 Générer Dossier d'Impact</span>
-          </button>
-        </div>
-
-        <!-- A9: Dossier généré -->
-        <div class="card" id="a9-dossier-card" style="display:none">
-          <div class="card-title">Dossier d'Impact — <span id="a9-dossier-title-badge"></span></div>
-          <div class="a9-dossier-output" id="a9-dossier-output"></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
-            <button class="btn btn-ghost btn-sm" onclick="a9CopyDossier()">📋 Copier</button>
-            <button class="btn btn-primary btn-sm" onclick="a9ExportDossier()">
-              <div class="spinner"></div><span class="btn-text">📤 Exporter .txt</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- A9: Pipeline pipeline statuts -->
-        <div class="card">
-          <div class="card-title">Pipeline Commercial</div>
-          <div class="a9-pipeline">
-            <div class="a9-pipe-col">
-              <div class="a9-pipe-head">🔵 Prospects</div>
-              <div class="a9-pipe-body" id="a9-pipe-prospect"></div>
-            </div>
-            <div class="a9-pipe-col">
-              <div class="a9-pipe-head">🟡 Négoc.</div>
-              <div class="a9-pipe-body" id="a9-pipe-negocie"></div>
-            </div>
-            <div class="a9-pipe-col">
-              <div class="a9-pipe-head">🟢 Signés</div>
-              <div class="a9-pipe-body" id="a9-pipe-signe"></div>
-            </div>
-            <div class="a9-pipe-col">
-              <div class="a9-pipe-head">✅ Versés</div>
-              <div class="a9-pipe-body" id="a9-pipe-verse"></div>
-            </div>
-          </div>
-        </div>
-
-      </div>`,
-  9: `<div class="agent-panel" id="agent-juridique">
-        <div class="card">
-          <div class="card-title">Autorisations de Tournage</div>
-          <div class="a10-filter-row">
-            <button class="a10-filter-btn a10-f-active" onclick="a10Filter('all',this)">Toutes</button>
-            <button class="a10-filter-btn" onclick="a10Filter('valide',this)">✅ Validées</button>
-            <button class="a10-filter-btn" onclick="a10Filter('encours',this)">🔵 En cours</button>
-            <button class="a10-filter-btn" onclick="a10Filter('relance',this)">🔴 Relance</button>
-          </div>
-          <div id="a10-auth-table"></div>
-        </div>
-        <div class="card" id="a10-relance-card" style="display:none">
-          <div class="card-title">Template Relance Généré</div>
-          <div class="a10-relance-output" id="a10-relance-output"></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
-            <button class="btn btn-ghost btn-sm" onclick="a10CopyRelance()">📋 Copier</button>
-            <button class="btn btn-primary btn-sm" onclick="a10MarkSent(event)"><div class="spinner"></div><span class="btn-text">📤 Marquer Envoyé</span></button>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-title">Ajouter Autorisation</div>
-          <div class="input-group"><label class="input-label">Site</label><select class="input-field" id="a10-new-site"></select></div>
-          <div class="input-group"><label class="input-label">Organisme</label><input type="text" class="input-field" id="a10-new-org" placeholder="ex: Port Autonome de Dakar" autocomplete="off"></div>
-          <div class="input-group"><label class="input-label">Statut</label>
-            <select class="input-field" id="a10-new-status">
-              <option value="encours">🔵 En cours</option>
-              <option value="valide">✅ Validé</option>
-              <option value="relance">🔴 Relance requise</option>
-            </select>
-          </div>
-          <div class="input-group"><label class="input-label">Référence dossier</label><input type="text" class="input-field" id="a10-new-ref" placeholder="ex: PAD-2024-0892" autocomplete="off"></div>
-          <button class="btn btn-primary btn-full" onclick="a10AddAuth(event)"><div class="spinner"></div><span class="btn-text">➕ Enregistrer</span></button>
-        </div>
-        <div class="card" id="a10-journal-card" style="display:none">
-          <div class="card-title">Journal Juridique</div>
-          <div id="a10-journal-list"></div>
-        </div>
-      </div>`,
-  10: `<div class="agent-panel" id="agent-logistique">
-        <div class="card">
-          <div class="card-title">Parc Technique</div>
-          <div class="a11-filter-row">
-            <button class="a11-filter-btn a11-f-active" onclick="a11FilterEq('all',this)">Tout</button>
-            <button class="a11-filter-btn" onclick="a11FilterEq('operationnel',this)">✅ Opérationnel</button>
-            <button class="a11-filter-btn" onclick="a11FilterEq('tournage',this)">🎬 Tournage</button>
-            <button class="a11-filter-btn" onclick="a11FilterEq('maintenance',this)">🔧 Maintenance</button>
-          </div>
-          <div id="a11-equip-list"></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Check-In / Check-Out</div>
-          <div class="input-group"><label class="input-label">Équipement</label><select class="input-field" id="a11-co-select"></select></div>
-          <div class="input-group"><label class="input-label">Opération</label>
-            <select class="input-field" id="a11-co-op">
-              <option value="checkout">📤 Check-Out (Départ terrain)</option>
-              <option value="checkin">📥 Check-In (Retour base)</option>
-              <option value="maintenance">🔧 Envoi maintenance</option>
-              <option value="retour">✅ Retour maintenance</option>
-            </select>
-          </div>
-          <div class="input-group"><label class="input-label">Note</label><input type="text" class="input-field" id="a11-co-note" placeholder="Remarque optionnelle…" autocomplete="off"></div>
-          <button class="btn btn-primary btn-full" onclick="a11CheckOp(event)"><div class="spinner"></div><span class="btn-text">✅ Valider Opération</span></button>
-        </div>
-        <div class="card">
-          <div class="card-title">Validation Backups Cloud</div>
-          <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted);margin-bottom:10px;letter-spacing:0.08em">Cartes mémoire à synchroniser · Déduction API automatique</div>
-          <div id="a11-backup-list"></div>
-          <button class="btn btn-primary btn-full" style="margin-top:10px" onclick="a11SyncAll(event)"><div class="spinner"></div><span class="btn-text">☁️ Synchroniser Toutes</span></button>
-        </div>
-        <div class="card">
-          <div class="card-title">Résumé Parc</div>
-          <div class="a11-summary-grid" id="a11-summary-grid"></div>
-        </div>
-      </div>`,
-  11: `<div class="agent-panel" id="agent-distribution">
-        <div class="card">
-          <div class="card-title">Points de Vente Prestige</div>
-          <div id="a12-points-list"><div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);text-align:center;padding:16px">Aucun point de vente enregistré</div></div>
-          <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="a12OpenAddPoint()">+ Ajouter Point de Vente</button>
-        </div>
-        <div class="card" id="a12-add-point-card" style="display:none">
-          <div class="card-title">Nouveau Point de Vente</div>
-          <div class="input-group"><label class="input-label">Nom</label><input type="text" class="input-field" id="a12-pv-name" placeholder="ex: Librairie Aux Quatre Vents" autocomplete="off"></div>
-          <div class="input-group"><label class="input-label">Ville / Zone</label><input type="text" class="input-field" id="a12-pv-ville" placeholder="ex: Dakar — Plateau" autocomplete="off"></div>
-          <div class="input-group"><label class="input-label">Exemplaires alloués</label><input type="number" class="input-field" id="a12-pv-stock" placeholder="0" min="0" autocomplete="off"></div>
-          <div class="input-group"><label class="input-label">Type</label>
-            <select class="input-field" id="a12-pv-type">
-              <option value="librairie">📚 Librairie</option>
-              <option value="boutique">🛍️ Boutique prestige</option>
-              <option value="musee">🏛️ Musée / Institution</option>
-              <option value="hotel">🏨 Hôtel 5★</option>
-              <option value="online">💻 En ligne</option>
-            </select>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <button class="btn btn-success" onclick="a12SavePoint(event)"><div class="spinner"></div><span class="btn-text">💾 Enregistrer</span></button>
-            <button class="btn btn-ghost" onclick="a12CancelPoint()">Annuler</button>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-title">Simulateur Stock Global — 500 ex.</div>
-          <div class="a12-stock-summary">
-            <div class="a12-stock-kpi"><span class="a12-kv">500</span><span class="a12-kl">Édition</span></div>
-            <div class="a12-stock-kpi"><span class="a12-kv" id="a12-kv-alloues">0</span><span class="a12-kl">Alloués</span></div>
-            <div class="a12-stock-kpi"><span class="a12-kv" id="a12-kv-vendus">0</span><span class="a12-kl">Vendus</span></div>
-            <div class="a12-stock-kpi"><span class="a12-kv" id="a12-kv-dispo" style="color:var(--emerald)">500</span><span class="a12-kl">Disponibles</span></div>
-          </div>
-          <div class="a12-stock-bar-track" style="margin:12px 0">
-            <div class="a12-stock-bar-alloc" id="a12-bar-alloc" style="width:0%"></div>
-            <div class="a12-stock-bar-sold" id="a12-bar-sold" style="width:0%"></div>
-          </div>
-          <div class="input-group"><label class="input-label">Enregistrer une vente</label>
-            <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end">
-              <select class="input-field" id="a12-sale-point"></select>
-              <input type="number" class="input-field" id="a12-sale-qty" placeholder="Qté" min="1" style="width:70px" autocomplete="off">
-            </div>
-          </div>
-          <button class="btn btn-success btn-full" onclick="a12RecordSale(event)"><div class="spinner"></div><span class="btn-text">🛒 Valider Vente</span></button>
-        </div>
-        <div class="card" id="a12-alert-card" style="display:none">
-          <div class="card-title" style="color:var(--red)">⚠️ Alertes Stock Critique</div>
-          <div id="a12-alert-list"></div>
-        </div>
-      </div>`,
-  12: `<div class="agent-panel" id="agent-numerique">
-        <div class="card">
-          <div class="card-title">Générateur QR Codes Immersifs</div>
-          <div class="input-group"><label class="input-label">Site source</label><select class="input-field" id="a13-qr-site"></select></div>
-          <div class="input-group"><label class="input-label">Type de contenu</label>
-            <select class="input-field" id="a13-qr-type">
-              <option value="galerie">🖼️ Galerie photo immersive</option>
-              <option value="audio">🎙️ Narration audio du site</option>
-              <option value="map">📍 Carte &amp; coordonnées GPS</option>
-              <option value="achat">🛒 Page achat directe</option>
-              <option value="bts">🎬 Behind The Scenes</option>
-            </select>
-          </div>
-          <div class="input-group"><label class="input-label">Style visuel</label>
-            <select class="input-field" id="a13-qr-style">
-              <option value="cyber">⬡ Cyber Néon (cyan)</option>
-              <option value="gold">✦ Or Teranga</option>
-              <option value="dark">◼ Dark Premium</option>
-            </select>
-          </div>
-          <button class="btn btn-primary btn-full" onclick="a13GenerateQR(event)"><div class="spinner"></div><span class="btn-text">⬡ Générer QR Code</span></button>
-        </div>
-        <div class="card" id="a13-qr-output-card" style="display:none">
-          <div class="card-title">QR Code — <span id="a13-qr-site-label"></span></div>
-          <div class="a13-qr-display"><canvas id="a13-qr-canvas" width="200" height="200"></canvas></div>
-          <div class="a13-qr-meta" id="a13-qr-meta"></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
-            <button class="btn btn-ghost btn-sm" onclick="a13DownloadQR()">💾 Télécharger PNG</button>
-            <button class="btn btn-primary btn-sm" onclick="a13CopyURL()">📋 Copier URL</button>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-title">Résilience Mobile — Anti-Veille</div>
-          <div class="a13-resilience-status">
-            <div class="a13-res-dot" id="a13-res-dot"></div>
-            <div id="a13-res-label" style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted)">Inactif</div>
-          </div>
-          <div style="font-family:var(--font-mono);font-size:0.53rem;color:var(--text-muted);margin:8px 0;line-height:1.5">
-            Silent Audio Loop + WakeLock API — maintient l'écran actif en session terrain
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <button class="btn btn-success" id="a13-res-start-btn" onclick="a13StartResilience()"><div class="spinner"></div><span class="btn-text">▶ Activer</span></button>
-            <button class="btn btn-danger btn-sm" id="a13-res-stop-btn" onclick="a13StopResilience()" style="display:none">⏹ Désactiver</button>
-          </div>
-          <div id="a13-tech-badges" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px"></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Bibliothèque QR</div>
-          <div id="a13-qr-library"><div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);text-align:center;padding:16px">Aucun QR généré</div></div>
-        </div>
-      </div>`,
-  13: `<div class="agent-panel" id="agent-meteo">
-        <div class="card">
-          <div class="card-title">Bulletin ANACIM — Simulation Terrain</div>
-          <div class="a14-region-tabs" id="a14-region-tabs">
-            <button class="a14-rtab a14-rtab-active" onclick="a14SelectRegion('dakar',this)">Dakar</button>
-            <button class="a14-rtab" onclick="a14SelectRegion('saintlouis',this)">Saint-Louis</button>
-            <button class="a14-rtab" onclick="a14SelectRegion('ziguinchor',this)">Ziguinchor</button>
-            <button class="a14-rtab" onclick="a14SelectRegion('tambacounda',this)">Tambacounda</button>
-            <button class="a14-rtab" onclick="a14SelectRegion('kedougou',this)">Kédougou</button>
-          </div>
-          <div class="a14-meteo-hero" id="a14-meteo-hero"></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Prévisions 5 Jours</div>
-          <div class="a14-forecast-row" id="a14-forecast-row"></div>
-        </div>
-        <div class="card" id="a14-alert-card">
-          <div class="card-title">Alertes Climatiques Actives</div>
-          <div id="a14-alert-list"></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Fenêtres Photographiques Optimales</div>
-          <div id="a14-windows-list"></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Simuler Bulletin Personnalisé</div>
-          <div class="input-group">
-            <label class="input-label">Site de mission</label>
-            <select class="input-field" id="a14-site-select"></select>
-          </div>
-          <div class="input-group">
-            <label class="input-label">Saison simulée</label>
-            <select class="input-field" id="a14-saison-select">
-              <option value="harmattan">Harmattan (Nov–Mar) — Vent de sable</option>
-              <option value="hivernage">Hivernage (Jun–Sep) — Pluies</option>
-              <option value="fraiche">Saison fraîche (Oct–Nov)</option>
-              <option value="seche">Saison sèche (Fev–Mai)</option>
-            </select>
-          </div>
-          <button class="btn btn-primary btn-full" onclick="a14SimulateBulletin(event)"><div class="spinner"></div><span class="btn-text">🌤 Générer Bulletin</span></button>
-        </div>
-        <div class="card" id="a14-sim-card" style="display:none">
-          <div class="card-title">Bulletin Simulé — <span id="a14-sim-site-label"></span></div>
-          <div id="a14-sim-output"></div>
-        </div>
-      </div>`,
-  14: `<div class="agent-panel" id="agent-achats">
-        <div class="card">
-          <div class="card-title">Comparateur Devis Prestataires</div>
-          <div class="a15-filter-row">
-            <button class="a15-ftab a15-ftab-active" onclick="a15FilterCat('all',this)">Tous</button>
-            <button class="a15-ftab" onclick="a15FilterCat('impression',this)">Impression</button>
-            <button class="a15-ftab" onclick="a15FilterCat('transport',this)">Transport</button>
-            <button class="a15-ftab" onclick="a15FilterCat('hebergement',this)">Hébergement</button>
-            <button class="a15-ftab" onclick="a15FilterCat('autre',this)">Autre</button>
-          </div>
-          <div id="a15-devis-list"></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Ajouter Devis Reçu</div>
-          <div class="input-group"><label class="input-label">Prestataire</label><input type="text" class="input-field" id="a15-prest-name" placeholder="ex: Imprimerie Graphi Plus" autocomplete="off"></div>
-          <div class="input-group"><label class="input-label">Catégorie</label>
-            <select class="input-field" id="a15-prest-cat">
-              <option value="impression">🖨️ Impression / Production</option>
-              <option value="transport">🚗 Transport / Location 4x4</option>
-              <option value="hebergement">🏨 Hébergement</option>
-              <option value="pirogue">⛵ Location Pirogue</option>
-              <option value="guide">🧭 Guide / Interprète</option>
-              <option value="autre">📦 Autre</option>
-            </select>
-          </div>
-          <div class="input-group"><label class="input-label">Montant devis reçu (FCFA)</label><input type="number" class="input-field" id="a15-prest-reel" placeholder="0" min="0" autocomplete="off"></div>
-          <div class="input-group"><label class="input-label">Estimation initiale (FCFA)</label><input type="number" class="input-field" id="a15-prest-est" placeholder="0" min="0" autocomplete="off"></div>
-          <div class="input-group"><label class="input-label">Note / Conditions</label><input type="text" class="input-field" id="a15-prest-note" placeholder="ex: délai 15j, 3 volumes, remise 10%…" autocomplete="off"></div>
-          <button class="btn btn-primary btn-full" onclick="a15AddDevis(event)"><div class="spinner"></div><span class="btn-text">➕ Enregistrer Devis</span></button>
-        </div>
-        <div class="card">
-          <div class="card-title">Synthèse Négociation</div>
-          <div class="a15-synth-grid" id="a15-synth-grid"></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Générateur Argumentaire</div>
-          <div class="input-group"><label class="input-label">Prestataire cible</label><select class="input-field" id="a15-arg-select"></select></div>
-          <button class="btn btn-primary btn-full" onclick="a15GenArgumentaire(event)"><div class="spinner"></div><span class="btn-text">✍️ Générer Argumentaire</span></button>
-        </div>
-        <div class="card" id="a15-arg-card" style="display:none">
-          <div class="card-title">Argumentaire de Négociation</div>
-          <div class="a15-arg-output" id="a15-arg-output"></div>
-          <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="a15CopyArg()">📋 Copier</button>
-        </div>
-      </div>`,
-  15: `<div class="agent-panel" id="agent-crowdfunding">
-        <div class="card">
-          <div class="card-title">Campagne Diaspora — Levée de Fonds</div>
-          <div class="a16-campaign-hero">
-            <div class="a16-camp-name" id="a16-camp-name">SÉNÉGAL 32 — Édition Collector Diaspora</div>
-            <div class="a16-camp-tagline">500 exemplaires numérotés · Patrimoine sénégalais immortalisé</div>
-          </div>
-          <div class="a16-jauge-wrap">
-            <div class="a16-jauge-vals">
-              <div class="a16-jauge-raised"><span id="a16-raised-val">0</span><span class="a16-jl">FCFA levés</span></div>
-              <div class="a16-jauge-goal"><span id="a16-goal-val">25 000 000</span><span class="a16-jl">Objectif</span></div>
-            </div>
-            <div class="a16-jauge-track"><div class="a16-jauge-fill" id="a16-jauge-fill" style="width:0%"></div></div>
-            <div class="a16-jauge-stats">
-              <span class="pill pill-cyan" id="a16-pct-pill">0%</span>
-              <span class="pill" style="border-color:var(--border);color:var(--text-muted)" id="a16-backers-pill">0 contributeurs</span>
-              <span class="pill" style="border-color:var(--border);color:var(--text-muted)" id="a16-days-pill">45 jours restants</span>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-title">Paliers de Contribution</div>
-          <div id="a16-paliers-list"></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Enregistrer Contribution</div>
-          <div class="input-group"><label class="input-label">Contributeur (alias / prénom)</label><input type="text" class="input-field" id="a16-contrib-name" placeholder="ex: Ibrahima D. — Paris" autocomplete="off"></div>
-          <div class="input-group"><label class="input-label">Palier choisi</label><select class="input-field" id="a16-palier-select"></select></div>
-          <div class="input-group"><label class="input-label">Montant libre (FCFA) — optionnel</label><input type="number" class="input-field" id="a16-contrib-libre" placeholder="0" min="0" autocomplete="off"></div>
-          <div class="input-group"><label class="input-label">Pays / Ville</label><input type="text" class="input-field" id="a16-contrib-pays" placeholder="ex: France — Lyon" autocomplete="off"></div>
-          <button class="btn btn-primary btn-full" onclick="a16AddContrib(event)"><div class="spinner"></div><span class="btn-text">💰 Enregistrer Contribution</span></button>
-        </div>
-        <div class="card">
-          <div class="card-title">Objectif de Campagne</div>
-          <div class="input-group">
-            <label class="input-label">Objectif (FCFA)</label>
-            <input type="number" class="input-field" id="a16-goal-input" value="25000000" min="0" autocomplete="off" oninput="a16UpdateGoal(this.value)">
-          </div>
-          <div class="input-group">
-            <label class="input-label">Durée restante (jours)</label>
-            <input type="number" class="input-field" id="a16-days-input" value="45" min="0" autocomplete="off" oninput="a16UpdateDays(this.value)">
-          </div>
-        </div>
-        <div class="card" id="a16-backers-card" style="display:none">
-          <div class="card-title">Contributeurs</div>
-          <div id="a16-backers-list"></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Générateur Message Diaspora</div>
-          <div class="input-group"><label class="input-label">Réseau cible</label>
-            <select class="input-field" id="a16-msg-reseau">
-              <option value="whatsapp">WhatsApp</option>
-              <option value="facebook">Facebook</option>
-              <option value="twitter">X / Twitter</option>
-              <option value="email">Email</option>
-            </select>
-          </div>
-          <button class="btn btn-primary btn-full" onclick="a16GenMessage(event)"><div class="spinner"></div><span class="btn-text">📣 Générer Message</span></button>
-        </div>
-        <div class="card" id="a16-msg-card" style="display:none">
-          <div class="card-title">Message Généré</div>
-          <div class="a16-msg-output" id="a16-msg-output"></div>
-          <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="a16CopyMsg()">📋 Copier</button>
-        </div>
-      </div>`,
-  16: `<div class="agent-panel" id="agent-risk">
-        <div class="card" id="a17-status-card">
-          <div class="card-title">Moniteur de Dérive Temporelle</div>
-          <div class="a17-status-hero" id="a17-status-hero">
-            <div class="a17-mode-badge" id="a17-mode-badge">⬡ NOMINAL</div>
-            <div class="a17-delta-display" id="a17-delta-display">Δ +0h</div>
-            <div class="a17-delta-sub" id="a17-delta-sub">En phase avec le planning — 66 jours terrain</div>
-          </div>
-          <div class="a17-kpi-row">
-            <div class="a17-kpi-box"><div class="a17-kpi-val" id="a17-k-done">0</div><div class="a17-kpi-label">J. Effectués</div></div>
-            <div class="a17-kpi-box"><div class="a17-kpi-val" id="a17-k-theorique">0</div><div class="a17-kpi-label">J. Théoriques</div></div>
-            <div class="a17-kpi-box"><div class="a17-kpi-val" id="a17-k-repos">35</div><div class="a17-kpi-label">J. Repos Dispo</div></div>
-            <div class="a17-kpi-box"><div class="a17-kpi-val" id="a17-k-delta" style="color:var(--emerald)">0</div><div class="a17-kpi-label">Δ Jours</div></div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-title">Matrice des Risques</div>
-          <div id="a17-risk-matrix"></div>
-        </div>
-        <div class="card" id="a17-optim-card" style="display:none">
-          <div class="card-title">💡 Recommandations d'Optimisation</div>
-          <div id="a17-optim-list"></div>
-          <button class="btn btn-primary btn-full" style="margin-top:10px" onclick="a17ApplyOptim(event)"><div class="spinner"></div><span class="btn-text">⚡ Appliquer Recalibration</span></button>
-        </div>
-        <div class="card" id="a17-planb-card" style="display:none">
-          <div class="card-title" style="color:var(--red)">🚨 Plan B Critique — Fusion de Sites</div>
-          <div id="a17-planb-list"></div>
-          <div class="a17-planb-tx" id="a17-planb-tx" style="display:none"></div>
-          <button class="btn btn-danger btn-full" style="margin-top:10px" onclick="a17ActivatePlanB(event)"><div class="spinner"></div><span class="btn-text">🚨 Activer Plan B</span></button>
-        </div>
-        <div class="card">
-          <div class="card-title">Contrôle Watcher Financier</div>
-          <div class="a17-watcher-status" id="a17-watcher-status">
-            <div class="a17-w-dot" id="a17-w-dot"></div>
-            <span id="a17-w-label" style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted)">Watcher inactif</span>
-          </div>
-          <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted);margin:8px 0;line-height:1.5">
-            Surveille state.transactionQueue · Dépile vers Agent 4 · Mise à jour DOM budgétaire
-          </div>
-          <div class="a17-queue-display" id="a17-queue-display">
-            <span style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted)">Queue vide</span>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
-            <button class="btn btn-primary btn-sm" onclick="a17ForceWatcherCycle()"><div class="spinner"></div><span class="btn-text">⚙️ Forcer Cycle</span></button>
-            <button class="btn btn-ghost btn-sm" onclick="a17InjectTestTx()">🧪 Test Injection</button>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-title">Log Risk Manager</div>
-          <div id="a17-log-list"></div>
-        </div>
-      </div>`,
-  17: `<div class="agent-panel" id="agent-map" style="padding:0">
-        <div id="map-container">
-          <div id="leaflet-map"></div>
-          <div id="map-fallback">
-            <div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--amber);padding:8px 0 12px;letter-spacing:0.1em">
-              ⚠ CARTE HORS-LIGNE — Affichage vectoriel CSS
-            </div>
-            <div class="map-grid" id="map-fallback-grid"></div>
-          </div>
-          <div id="map-controls">
-            <div id="gps-info-box">
-              <div class="gps-coords" id="gps-coords-display">GPS inactif</div>
-              <div class="gps-site" id="gps-site-display"></div>
-              <div class="gps-dist" id="gps-dist-display"></div>
-            </div>
-            <button id="gps-toggle-btn" onclick="toggleGPS()">
-              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
-                <circle cx="12" cy="12" r="9" stroke-dasharray="2 3"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-        <!-- Offshore Section -->
-        <div style="padding:12px;border-top:1px solid var(--border);background:var(--bg-card)">
-          <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--amber);letter-spacing:0.12em;margin-bottom:8px">⚓ MISSION HORS-TERRAIN · 0 JOUR</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-            <div style="background:var(--bg-card-2);border:1px dashed rgba(255,171,64,0.3);border-radius:var(--r-sm);padding:10px">
-              <div style="font-family:var(--font-display);font-size:0.55rem;color:var(--amber);letter-spacing:0.1em;margin-bottom:4px">SANGOMAR</div>
-              <div style="font-size:0.65rem;color:var(--text-secondary);line-height:1.3">Zone pétrolière offshore · Double page documentaire</div>
-              <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-top:4px">13.9000°N / 17.4500°W</div>
-            </div>
-            <div style="background:var(--bg-card-2);border:1px dashed rgba(255,171,64,0.3);border-radius:var(--r-sm);padding:10px">
-              <div style="font-family:var(--font-display);font-size:0.55rem;color:var(--amber);letter-spacing:0.1em;margin-bottom:4px">GTA</div>
-              <div style="font-size:0.65rem;color:var(--text-secondary);line-height:1.3">Gas To Africa — Section documentaire stratégique</div>
-              <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-top:4px">14.2000°N / 18.0000°W</div>
-            </div>
-          </div>
-        </div>
-      </div>`,
-};
-
-/* Per-agent refresh functions (called every time agent is shown) */
-const AGENT_REFRESH = [
-  () => { renderApprovals(); renderNotifications(); },
-  () => { /* vault: lock state managed by vaultPinInput */ },
-  () => { renderCMHistory(); },
-  () => { try { updateFinancialUI(); const pr = document.getElementById('print-rate-input'); if (pr) { pr.value = state.printRate; updatePrintRate(state.printRate); } } catch(e){} },
-  () => { a5UpdateKPIs(); a5RenderPlan(); a5RenderSessionLog(); },
-  () => { /* briefs archivés */ },
-  () => { /* bibliothèque textes */ },
-  () => { a8UpdateComplianceLive(); a8RenderHistory(); },
-  () => { a9RenderSponsors(); a9ComputeTotals(); },
-  () => { a10RenderTable(); },
-  () => { a11RenderEquipment(); a11RenderBackups(); a11RenderSummary(); },
-  () => { a12RenderPoints(); a12UpdateStockUI(); },
-  () => { a13RenderLibrary(); },
-  () => { a14RenderHero(); a14RenderForecast(); a14RenderAlerts(); a14RenderWindows(); },
-  () => { a15RenderDevis(); a15RenderSynth(); },
-  () => { a16RenderPaliers(); a16UpdateJauge(); a16RenderBackers(); },
-  () => { a17RenderRisks(); a17UpdateDriftUI(); a17UpdateQueueDisplay(); },
-  () => { requestAnimationFrame(() => { if (state.leafletMap) state.leafletMap.invalidateSize(); }); },
-];
-
-/* Per-agent init functions (called once on first mount) */
-const AGENT_INIT_FNS = [
-  initSuperviseur, null /* vault no-op */, initCMAgent, null,
-  initAgent5, initAgent6, initAgent7, initAgent8, initAgent9,
-  initAgent10, initAgent11, initAgent12, initAgent13,
-  initAgent14, initAgent15, initAgent16,
-  null, /* a17 watcher started at boot separately */
-  () => { if (!state.leafletMap && !state.mapFallback) { try { initMap(); } catch(e) { state.mapFallback = true; } } else if (state.leafletMap) { requestAnimationFrame(() => state.leafletMap.invalidateSize()); } },
-];
-
-const agentInitialized = new Set();
-let _transitionLock = false;
-let _loadBarTimer = null;
-
-function _showLoadBar() {
-  const bar = document.getElementById('agent-load-bar');
-  if (!bar) return;
-  bar.className = '';
-  bar.style.opacity = '1';
-  void bar.offsetWidth; // reflow
-  bar.className = 'lb-loading';
-}
-
-function _hideLoadBar() {
-  const bar = document.getElementById('agent-load-bar');
-  if (!bar) return;
-  bar.className = 'lb-done';
-  clearTimeout(_loadBarTimer);
-  _loadBarTimer = setTimeout(() => {
-    bar.className = '';
-    bar.style.opacity = '';
-  }, 300);
-}
-
-function renderAgent(idx) {
-  if (_transitionLock) return;
-  if (!AGENT_TEMPLATES[idx]) return;
-
-  const viewport = document.getElementById('agent-viewport');
-  if (!viewport) return;
-
-  _transitionLock = true;
-  _showLoadBar();
-
-  const existing = viewport.firstElementChild;
-
-  const doInject = () => {
-    // Inject template
-    viewport.innerHTML = AGENT_TEMPLATES[idx];
-    viewport.scrollTop = 0;
-
-    // Init on first mount
-    if (!agentInitialized.has(idx)) {
-      const initFn = AGENT_INIT_FNS[idx];
-      if (typeof initFn === 'function') {
-        try { initFn(); } catch(e) { console.warn('initAgent', idx, e); }
-      }
-      agentInitialized.add(idx);
-    }
-
-    // Refresh dynamic data
-    try { AGENT_REFRESH[idx]?.(); } catch(e) {}
-
-    // Entrance animation via RAF double-frame
-    const panel = viewport.firstElementChild;
-    if (panel) {
-      panel.classList.add('ap-enter');
-      const onEnd = () => {
-        panel.classList.remove('ap-enter');
-        panel.style.animation = '';
-        _hideLoadBar();
-        _transitionLock = false;
-      };
-      panel.addEventListener('animationend', onEnd, { once: true });
-      // Safety fallback
-      setTimeout(() => { if (_transitionLock) { _hideLoadBar(); _transitionLock = false; } }, 400);
-    } else {
-      _hideLoadBar();
-      _transitionLock = false;
-    }
-  };
-
-  if (existing) {
-    // Fade out current panel
-    existing.classList.add('ap-leave');
-    const onLeaveEnd = () => {
-      doInject();
-    };
-    existing.addEventListener('animationend', onLeaveEnd, { once: true });
-    // Fallback
-    setTimeout(() => { if (existing.classList.contains('ap-leave')) doInject(); }, 160);
-  } else {
-    requestAnimationFrame(doInject);
-  }
-}
-
 function switchTab(idx) {
-  if (state.currentTab === idx) return;
   state.currentTab = idx;
-
-  // ── Nav tab bar highlight ──
-  document.querySelectorAll('.agent-tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+  document.getElementById('agents-slider').style.transform = `translate3d(${-idx * 100}vw, 0, 0)`;
+  document.querySelectorAll('.agent-tab').forEach((t,i) => t.classList.toggle('active', i === idx));
   const navMap = {0:'nav-0',1:'nav-1',2:'nav-2',3:'nav-3',17:'nav-map'};
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   const activeNav = navMap[idx];
   if (activeNav) document.getElementById(activeNav)?.classList.add('active');
   scrollTabIntoView(idx);
-
-  // ── Lazy render ──
-  renderAgent(idx);
+  if (idx === 17) setTimeout(() => { if (state.leafletMap) state.leafletMap.invalidateSize(); }, 320);
+  if (idx === 4) { a5UpdateKPIs(); a5RenderPlan(); }
+  if (idx === 4) a5UpdateKPIs();
+  if (idx === 3) {
+    updateFinancialUI();
+    document.getElementById('print-rate-input').value = state.printRate;
+    updatePrintRate(state.printRate);
+  }
 }
 function scrollTabIntoView(idx) {
   const tabs = document.querySelectorAll('.agent-tab');
@@ -4185,6 +4113,8 @@ async function processTransactionQueue() {
     tx.balanceAfter = Math.round(state.budget - state.spent);
     state.transactions.unshift(tx);
     await dbWrite('transactions', tx);
+    SupaSync.syncTransaction(tx);
+
     updateFinancialUI();
     updateCOORing();
     addActivity('💸', `Dépense ${CAT_LABELS[tx.cat]} : ${fmtFCFA(tx.amount)} — ${tx.description}`, 'À l\'instant');
@@ -4299,20 +4229,40 @@ async function init() {
   setStatus('Chargement IndexedDB…');
   await initDB();
   await loadStateFromDB();
+  setStatus('Connexion cloud Supabase…');
+  if (typeof SupaSync !== 'undefined' && typeof SupaSync.init === 'function') {
+    await SupaSync.init();
+  } else {
+    console.warn('[MISSION CTRL] supabase-sync-1.js non chargé — mode hors-ligne activé.');
+  }
+
 
   setStatus('Initialisation WakeLock…');
   await requestWakeLock();
 
   setStatus('Montage carte interactive…');
   await sleep(200);
-  // Map init deferred to first renderAgent(17) call
+  initMap();
 
   setStatus('Initialisation agents…');
   await sleep(100);
-  // Boot: only start critical background services + first-view render
-  // All per-agent inits are deferred to first renderAgent() call via AGENT_INIT_FNS
+  initSuperviseur();
+  initCMAgent();
+  initAgent5();
+  initAgent6();
+  initAgent7();
+  initAgent8();
+  initAgent9();
+  initAgent10();
+  initAgent11();
+  initAgent12();
+  initAgent13();
+  initAgent14();
+  initAgent15();
+  initAgent16();
+  initAgent17();
+  updateFinancialUI();
   updateOnlineStatus();
-  initAgent17(); // starts Watcher + drift observer (background, must run early)
 
   setStatus('Calibration interface…');
   await sleep(300);
@@ -4321,9 +4271,6 @@ async function init() {
   const printIn = document.getElementById('print-rate-input');
   if (printIn) { printIn.value = state.printRate; updatePrintRate(state.printRate); }
 
-  // Fire updateFinancialUI once at boot (Agent 4 DOM may not exist yet — harmless)
-  updateFinancialUI();
-  updateCOORing();
   // Animate odometers
   await sleep(200);
   animateCounter(document.getElementById('odo-sites'), MISSION.sites, 1400);
@@ -4350,8 +4297,6 @@ async function init() {
   setStatus('Système prêt ✓');
   await sleep(600);
   splash.classList.add('hidden');
-  // Render the first agent (Superviseur) after splash fades
-  requestAnimationFrame(() => renderAgent(0));
 }
 
 
@@ -6312,39 +6257,36 @@ function a17UpdateDriftUI() {
   const d = a17CalcDrift();
   const absDeltaH = Math.abs(d.deltaHours);
   const isBehind = d.deltaHours < 0;
-  const reposDispo = Math.max(0, MISSION.joursRepos - Math.max(0, -d.deltaDays));
-
-  const kDone     = document.getElementById('a17-k-done');
-  const kTheo     = document.getElementById('a17-k-theorique');
-  const kRepos    = document.getElementById('a17-k-repos');
-  const kDelta    = document.getElementById('a17-k-delta');
   const modeBadge = document.getElementById('a17-mode-badge');
   const deltaDisp = document.getElementById('a17-delta-display');
-  const deltaSub  = document.getElementById('a17-delta-sub');
-  const optimCard = document.getElementById('a17-optim-card');
-  const planbCard = document.getElementById('a17-planb-card');
+  const deltaSub = document.getElementById('a17-delta-sub');
+  const kDone = document.getElementById('a17-k-done');
+  const kTheo = document.getElementById('a17-k-theorique');
+  const kRepos = document.getElementById('a17-k-repos');
+  const kDelta = document.getElementById('a17-k-delta');
+  const reposDispo = Math.max(0, MISSION.joursRepos - Math.max(0, -d.deltaDays));
 
-  if (kDone)  kDone.textContent  = d.actualDone;
-  if (kTheo)  kTheo.textContent  = d.theoreticalDays;
+  if (kDone) kDone.textContent = d.actualDone;
+  if (kTheo) kTheo.textContent = d.theoreticalDays;
   if (kRepos) kRepos.textContent = Math.round(reposDispo);
   if (kDelta) { kDelta.textContent = d.deltaHours; kDelta.style.color = isBehind ? 'var(--red)' : 'var(--emerald)'; }
 
   if (!isBehind || absDeltaH < 24) {
     if (modeBadge) { modeBadge.textContent = '⬡ NOMINAL'; modeBadge.className = 'a17-mode-badge'; }
     if (deltaDisp) { deltaDisp.textContent = `Δ ${d.deltaHours >= 0 ? '+' : ''}${d.deltaHours}h`; deltaDisp.className = 'a17-delta-display'; }
-    if (deltaSub)  deltaSub.textContent = 'En phase avec le planning — aucune action requise';
-    if (optimCard) optimCard.style.display = 'none';
-    if (planbCard) planbCard.style.display = 'none';
+    if (deltaSub) deltaSub.textContent = 'En phase avec le planning — aucune action requise';
+    document.getElementById('a17-optim-card').style.display = 'none';
+    document.getElementById('a17-planb-card').style.display = 'none';
   } else if (absDeltaH >= 24 && absDeltaH < 72) {
     if (modeBadge) { modeBadge.textContent = '⚠️ OPTIMISATION RECOMMANDÉE'; modeBadge.className = 'a17-mode-badge mode-optim'; }
     if (deltaDisp) { deltaDisp.textContent = `Δ ${d.deltaHours}h`; deltaDisp.className = 'a17-delta-display warn'; }
-    if (deltaSub)  deltaSub.textContent = `Retard de ${absDeltaH}h détecté — optimisation recommandée`;
+    if (deltaSub) deltaSub.textContent = `Retard de ${absDeltaH}h détecté — optimisation recommandée`;
     a17ShowOptim(d);
-    if (planbCard) planbCard.style.display = 'none';
+    document.getElementById('a17-planb-card').style.display = 'none';
   } else {
     if (modeBadge) { modeBadge.textContent = '🚨 PLAN B CRITIQUE'; modeBadge.className = 'a17-mode-badge mode-planb'; }
     if (deltaDisp) { deltaDisp.textContent = `Δ ${d.deltaHours}h`; deltaDisp.className = 'a17-delta-display critical'; }
-    if (deltaSub)  deltaSub.textContent = `Retard critique de ${absDeltaH}h — Plan B requis`;
+    if (deltaSub) deltaSub.textContent = `Retard critique de ${absDeltaH}h — Plan B requis`;
     a17ShowOptim(d);
     a17ShowPlanB(d);
   }
@@ -6532,12 +6474,10 @@ function a17AddLog(text) {
 }
 
 function initAgent17() {
-  try { a17RenderRisks();       } catch(e) { console.warn('a17RenderRisks:', e.message); }
-  try { a17UpdateDriftUI();     } catch(e) { console.warn('a17UpdateDriftUI:', e.message); }
-  try { a17UpdateQueueDisplay();} catch(e) { console.warn('a17UpdateQueueDisplay:', e.message); }
-  try {
-    if (!a17State.watcherInterval) a17StartWatcher();
-  } catch(e) { console.warn('a17StartWatcher:', e.message); }
+  a17RenderRisks();
+  a17UpdateDriftUI();
+  a17UpdateQueueDisplay();
+  a17StartWatcher();
   a17AddLog('Agent 17 initialisé — Risk Manager & Watcher actifs');
 }
 
