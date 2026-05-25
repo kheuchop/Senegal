@@ -1902,7 +1902,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
               <div class="ring-label" id="ring-pct">0%</div>
             </div>
             <div class="ring-info">
-              <div class="ring-info-val" id="days-done-coo">0 / 66</div>
+              <div class="ring-info-val" id="days-done-coo">0 / 59</div>
               <div class="ring-info-sub">jours terrain effectués</div>
               <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
                 <span class="pill pill-cyan" id="coo-sites-done">0 sites</span>
@@ -2269,7 +2269,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
               <div class="a5-kpi-label">J. Effectués</div>
             </div>
             <div class="a5-kpi-box">
-              <div class="a5-kpi-val" id="a5-days-left">66</div>
+              <div class="a5-kpi-val" id="a5-days-left">59</div>
               <div class="a5-kpi-label">J. Restants</div>
             </div>
             <div class="a5-kpi-box">
@@ -2327,9 +2327,9 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           </div>
         </div>
 
-        <!-- A5: Planning 66 jours -->
+        <!-- A5: Planning 59 jours -->
         <div class="card">
-          <div class="card-title">Planning Mission — 66 Jours Terrain</div>
+          <div class="card-title">Planning Mission — 59 Jours Terrain</div>
           <div class="a5-plan-filter">
             <button class="a5-filter-btn active" onclick="a5FilterPlan('all',this)">Tous</button>
             <button class="a5-filter-btn" onclick="a5FilterPlan('done',this)">✅ Faits</button>
@@ -2766,6 +2766,19 @@ textarea.input-field { resize: vertical; min-height: 80px; }
            AGENT 9 — COMMERCIAL SPONSORING
            ===================================================== -->
       <div class="agent-panel" id="agent-commercial">
+
+        <!-- A9: IA Sourcing — Radar sponsors -->
+        <div class="card">
+          <div class="card-title">🤖 IA Sourcing — Radar Sponsors
+            <button class="btn btn-primary btn-sm" style="margin-left:auto;min-height:28px;padding:4px 12px" onclick="a9LaunchSourcing(this)">
+              <div class="spinner"></div><span class="btn-text">⚡ Lancer le Radar</span>
+            </button>
+          </div>
+          <div id="a9-sourcing-status" style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);padding:4px 0">
+            Analyse le pipeline existant et suggère des prospects inédits via Claude IA.
+          </div>
+          <div id="a9-sourcing-results" style="display:none;margin-top:10px"></div>
+        </div>
 
         <!-- A9: Tableau de bord Sponsoring -->
         <div class="card">
@@ -3283,12 +3296,12 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <div class="a17-status-hero" id="a17-status-hero">
             <div class="a17-mode-badge" id="a17-mode-badge">⬡ NOMINAL</div>
             <div class="a17-delta-display" id="a17-delta-display">Δ +0h</div>
-            <div class="a17-delta-sub" id="a17-delta-sub">En phase avec le planning — 66 jours terrain</div>
+            <div class="a17-delta-sub" id="a17-delta-sub">En phase avec le planning — 59 jours terrain</div>
           </div>
           <div class="a17-kpi-row">
             <div class="a17-kpi-box"><div class="a17-kpi-val" id="a17-k-done">0</div><div class="a17-kpi-label">J. Effectués</div></div>
             <div class="a17-kpi-box"><div class="a17-kpi-val" id="a17-k-theorique">0</div><div class="a17-kpi-label">J. Théoriques</div></div>
-            <div class="a17-kpi-box"><div class="a17-kpi-val" id="a17-k-repos">35</div><div class="a17-kpi-label">J. Repos Dispo</div></div>
+            <div class="a17-kpi-box"><div class="a17-kpi-val" id="a17-k-repos">28</div><div class="a17-kpi-label">J. Repos Dispo</div></div>
             <div class="a17-kpi-box"><div class="a17-kpi-val" id="a17-k-delta" style="color:var(--emerald)">0</div><div class="a17-kpi-label">Δ Jours</div></div>
           </div>
         </div>
@@ -3429,11 +3442,14 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 <!-- Supabase Sync — dépend de supabase.min.js, doit précéder le script principal -->
 <script src="supabase-sync-1.js"></script>
 
+<!-- Agent Commercial — Sourcing sponsors (module séparé) -->
+<script src="agentCommercial.js"></script>
+
 <script>
 /* ============================================================
    MISSION DATA & CONSTANTS
    ============================================================ */
-const MISSION = { sites: 32, joursTerrain: 66, joursRepos: 35, joursTotal: 101, km: 5400, budget: 100000000 };
+const MISSION = { sites: 32, joursTerrain: 59, joursRepos: 28, joursTotal: 87, km: 5400, budget: 100000000, startYear: 2027 };
 
 const SITES = [
   { id:1, zone:'A', name:'Île de Gorée', coords:[14.6680,-17.3991], days:2, km:4 },
@@ -3442,14 +3458,14 @@ const SITES = [
   { id:4, zone:'A', name:'Plage de Yoff', coords:[14.7683,-17.5083], days:1, km:22 },
   { id:5, zone:'A', name:'Lac Rose — Lac Retba', coords:[14.8333,-17.2333], days:2, km:45 },
   { id:6, zone:'A', name:'Petite Côte — Saly Portudal', coords:[14.4500,-17.0167], days:2, km:85 },
-  { id:7, zone:'A', name:'Musée des Civilisations Noires', coords:[14.7068,-17.4552], days:1, km:5 },
+  { id:7, zone:'A', name:'Musée des Civilisations Noires + Village des Arts', coords:[14.7068,-17.4552], days:2, km:5 },
   { id:8, zone:'A', name:'Village Artisanal de Soumbédioune', coords:[14.6900,-17.4700], days:1, km:7 },
-  { id:9, zone:'A', name:'Mosquée Massalikul Djinaan', coords:[14.6931,-17.4449], days:1, km:6 },
+  { id:9, zone:'A', name:'Mosquée Massalikul Djinaan', coords:[14.6931,-17.4449], days:2, km:6 },
   { id:10, zone:'A', name:'Port Autonome de Dakar', coords:[14.6822,-17.4260], days:2, km:3 },
   { id:11, zone:'B', name:'Saint-Louis — Ville UNESCO', coords:[16.0333,-16.5000], days:3, km:265 },
   { id:12, zone:'B', name:'Parc National des Oiseaux du Djoudj', coords:[16.5167,-16.1500], days:2, km:320 },
   { id:13, zone:'B', name:'Langue de Barbarie', coords:[15.9500,-16.4833], days:1, km:250 },
-  { id:14, zone:'B', name:'Parc du Delta du Saloum', coords:[13.7833,-16.7167], days:3, km:140 },
+  { id:14, zone:'B', name:'Parc du Delta du Saloum — Mangroves & Bolongs', coords:[13.7833,-16.7167], days:4, km:140 },
   { id:15, zone:'B', name:'Touba — Grande Mosquée', coords:[14.8500,-15.8833], days:2, km:195 },
   { id:16, zone:'C', name:'Ziguinchor — Casamance', coords:[12.5667,-16.2667], days:2, km:460 },
   { id:17, zone:'C', name:'Cap Skirring', coords:[12.3833,-16.7333], days:2, km:510 },
@@ -3461,9 +3477,9 @@ const SITES = [
   { id:23, zone:'D', name:'Kédougou', coords:[12.5500,-12.1833], days:2, km:690 },
   { id:24, zone:'D', name:'Pays Bassari (UNESCO)', coords:[12.5000,-12.3333], days:2, km:670 },
   { id:25, zone:'D', name:'Gorges de la Falémé', coords:[13.0000,-11.8000], days:2, km:720 },
-  { id:26, zone:'E', name:'Thiès — Art Mural', coords:[14.7833,-16.9167], days:1, km:75 },
+  { id:26, zone:'E', name:'Manufacture de Tapisseries de Thiès', coords:[14.7833,-16.9167], days:2, km:75 },
   { id:27, zone:'E', name:'Kaolack — Grand Marché', coords:[14.1500,-16.0667], days:1, km:195 },
-  { id:28, zone:'E', name:'Fatick — Delta du Saloum', coords:[14.3333,-16.4000], days:1, km:155 },
+  { id:28, zone:'E', name:'Fatick — Réserve de Bandia', coords:[14.3333,-16.4000], days:2, km:155 },
   { id:29, zone:'E', name:'Diourbel — Sanctuaire Baye Fall', coords:[14.6500,-16.2333], days:1, km:145 },
   { id:30, zone:'F', name:'Louga — Terroir Sahelien', coords:[15.6167,-16.2333], days:1, km:205 },
   { id:31, zone:'F', name:'Matam — Fouta Toro', coords:[15.6500,-13.2500], days:2, km:680 },
@@ -3548,9 +3564,23 @@ function dbReadAll(store) {
   });
 }
 function saveStateToDB() {
-  dbWrite('state', { id:1, data: { spent:state.spent, transactions:state.transactions, catSpend:state.catSpend, vault:state.vault, daysDone:state.daysDone, sitesDone:state.sitesDone, printRate:state.printRate } });
-  // Sync cloud non-bloquant
-  SupaSync.syncState(state);
+  dbWrite('state', {
+    id: 1,
+    data: {
+      spent:        state.spent,
+      transactions: state.transactions,
+      catSpend:     state.catSpend,
+      vault:        state.vault,
+      daysDone:     state.daysDone,
+      sitesDone:    state.sitesDone,
+      printRate:    state.printRate
+    }
+  }).catch(e => console.error('[DB] saveState échoué:', e));
+
+  // Sync cloud non-bloquant — guard complet
+  if (typeof SupaSync !== 'undefined' && typeof SupaSync.syncState === 'function') {
+    SupaSync.syncState(state).catch(e => console.warn('[Sync] syncState:', e.message));
+  }
 }
 
 async function loadStateFromDB() {
@@ -3837,24 +3867,14 @@ function initMap() {
 /* ============================================================
    SUPERVISEUR — COO AGENT
    ============================================================ */
-const INITIAL_APPROVALS = [
-  { id:'a1', source:'Agent Financier', msg:'Demande de validation : dépense équipement drone 450 000 FCFA pour tournage Gorée.', time:'10:42', status:'pending' },
-  { id:'a2', source:'Agent Commercial', msg:'Contrat sponsoring Orange Sénégal : 8 000 000 FCFA — signature requise avant vendredi.', time:'09:15', status:'pending' },
-  { id:'a3', source:'Agent Logistique', msg:'Réservation véhicule 4x4 Niokolo-Koba : 3 jours × 120 000 FCFA = 360 000 FCFA.', time:'08:30', status:'pending' },
-];
+const INITIAL_APPROVALS = [];
 const INITIAL_NOTIFICATIONS = [
-  { type:'critical', text:'⚡ Accès site Pays Bassari — autorisation administrative requise avant J-3', time:'Aujourd\'hui 11:20' },
-  { type:'warn', text:'🌩️ Alerte météo : harmattan prévu zone Est — vents > 50 km/h vendredi', time:'Aujourd\'hui 10:05' },
-  { type:'info', text:'📷 Matériel caméra principal livré à Dakar — vérification inventaire en cours', time:'Hier 16:30' },
-  { type:'ok', text:'✅ Autorisations tournage Port Autonome de Dakar validées (Réf. PAD-2024-0892)', time:'Hier 14:15' },
-  { type:'info', text:'💰 Virement initial 25M FCFA reçu sur compte mission — solde opérationnel confirmé', time:'Hier 09:00' },
+  { type:'info', text:'🚀 Mission Control initialisé — Démarrage prévu Janvier 2027', time:'Aujourd\'hui' },
+  { type:'ok', text:'✅ Base de données Supabase connectée — sync active', time:'Aujourd\'hui' },
+  { type:'info', text:'📋 32 sites chargés — 59 jours terrain planifiés sur 6 zones', time:'Aujourd\'hui' },
 ];
 const INITIAL_ACTIVITY = [
-  { icon:'📍', title:'Site 9 — Mosquée Massalikul Djinaan marqué comme visité', time:'Il y a 2h' },
-  { icon:'💸', title:'Dépense transport enregistrée : 45 000 FCFA', time:'Il y a 3h' },
-  { icon:'📱', title:'3 posts TikTok générés pour la Zone A', time:'Il y a 5h' },
-  { icon:'🔐', title:'Coffre-fort déverrouillé — nouvelle clé API ajoutée', time:'Hier 23:15' },
-  { icon:'📊', title:'Rapport quotidien envoyé à l\'équipe direction', time:'Hier 20:00' },
+  { icon:'🎯', title:'Mission documentaire Sénégal V3 — Initialisation système', time:'Aujourd\'hui' },
 ];
 
 function renderApprovals() {
@@ -4055,24 +4075,24 @@ function selectPlatform(plat, el) {
 const CM_TEMPLATES = {
   tiktok: (site, tone, extra) => {
     const hooks = { inspiring:`✨ Le Sénégal t'appelle — ${site.name}`, informative:`📍 Site ${site.id} — ${site.name}`, exciting:`🔥 ON EST ICI → ${site.name} !`, cultural:`🌍 Découverte : ${site.name}`, promotional:`🎥 EXCLUSIF : Coulisses tournage à ${site.name}` };
-    const bodies = { inspiring:`Un lieu qui suspend le temps.\nChaque pierre, chaque lumière raconte une histoire vieille de siècles. Zone ${site.zone}, à ${site.km}km de Dakar.\n\nCe documentaire, c'est pour VOUS. 🎬`, informative:`Zone ${site.zone} de notre mission documentaire. ${site.days} jour${site.days>1?'s':''} de tournage pour capturer l'essence de ce lieu exceptionnel.\n📏 Distance parcourue : ~${site.km} km`, exciting:`WOOOW ! 🤩\nOn vient de poser le matériel à ${site.name} et les images sont FOLLES.\n32 sites, 5400km, 101 jours de mission — on NE LÂCHE RIEN !`, cultural:`${site.name} — Zone ${site.zone}\n\nUn patrimoine inestimable au cœur du Sénégal. Notre équipe documentaire y passe ${site.days} jour${site.days>1?'s':''} pour en capturer chaque détail.\n🎥 Bientôt dans votre livre collector.`, promotional:`🚨 RÉSERVEZ VOTRE EXEMPLAIRE MAINTENANT 🚨\n\nCe livre documentaire sur le Sénégal sera UNIQUE. 32 sites, 100M FCFA de production.\nOn tourne à ${site.name} — et c'est MAGNIFIQUE.` };
+    const bodies = { inspiring:`Un lieu qui suspend le temps.\nChaque pierre, chaque lumière raconte une histoire vieille de siècles. Zone ${site.zone}, à ${site.km}km de Dakar.\n\nCe documentaire, c'est pour VOUS. 🎬`, informative:`Zone ${site.zone} de notre mission documentaire. ${site.days} jour${site.days>1?'s':''} de tournage pour capturer l'essence de ce lieu exceptionnel.\n📏 Distance parcourue : ~${site.km} km`, exciting:`WOOOW ! 🤩\nOn vient de poser le matériel à ${site.name} et les images sont FOLLES.\n32 sites, 5400km, 87 jours de mission — on NE LÂCHE RIEN !`, cultural:`${site.name} — Zone ${site.zone}\n\nUn patrimoine inestimable au cœur du Sénégal. Notre équipe documentaire y passe ${site.days} jour${site.days>1?'s':''} pour en capturer chaque détail.\n🎥 Bientôt dans votre livre collector.`, promotional:`🚨 RÉSERVEZ VOTRE EXEMPLAIRE MAINTENANT 🚨\n\nCe livre documentaire sur le Sénégal sera UNIQUE. 32 sites, 100M FCFA de production.\nOn tourne à ${site.name} — et c'est MAGNIFIQUE.` };
     const tags = `#Sénégal #${site.name.replace(/\s+/g,'').replace(/[^\w]/g,'')} #Documentaire #Afrique #ZoneA #Photography #Africa #Documentary #WestAfrica #BeautifulAfrica`;
     return { text: `${hooks[tone]}\n\n${bodies[tone]}`, hashtags: tags, meta: `Format : Vertical · 15-60s · Sous-titres FR recommandés · Musique afrobeat conseillée` };
   },
   youtube: (site, tone, duration) => {
     const dur = duration || 'medium';
-    const titles = { inspiring:`${site.name} — Quand le Sénégal vous coupe le souffle | Documentaire 4K`, informative:`[DOCUMENTAIRE] ${site.name} : Zone ${site.zone} | Mission Photographique Sénégal`, exciting:`INCROYABLE ! 32 sites en 101 jours — On était à ${site.name} 🔥`, cultural:`${site.name} — Histoire & Patrimoine du Sénégal | Série Documentaire`, promotional:`${site.name} : Le livre qui va changer votre regard sur l'Afrique` };
+    const titles = { inspiring:`${site.name} — Quand le Sénégal vous coupe le souffle | Documentaire 4K`, informative:`[DOCUMENTAIRE] ${site.name} : Zone ${site.zone} | Mission Photographique Sénégal`, exciting:`INCROYABLE ! 32 sites en 87 jours — On était à ${site.name} 🔥`, cultural:`${site.name} — Histoire & Patrimoine du Sénégal | Série Documentaire`, promotional:`${site.name} : Le livre qui va changer votre regard sur l'Afrique` };
     const descs = `🎬 DESCRIPTION\nCette vidéo fait partie de notre série documentaire sur les 32 sites emblématiques du Sénégal.\n\nSite ${site.id} sur 32 — Zone ${site.zone}\n📍 ${site.name}\n🗺️ Coordonnées : ${site.coords[0].toFixed(4)}°N / ${Math.abs(site.coords[1]).toFixed(4)}°W\n⏱ ${site.days} jour${site.days>1?'s':''} de tournage\n🚗 ~${site.km}km depuis Dakar\n\n${dur==='short'?'🎯 Format court — Highlights & Best-of':''}${dur==='medium'?'📽 Format documentaire web — Histoire complète du site':''}${dur==='long'?'🎬 Documentaire complet — Récit immersif et archives':''}`;
     const timestamps = dur !== 'short' ? '\n\n⏰ CHAPITRES\n00:00 Introduction\n01:30 Contexte historique\n04:00 Tournage sur site\n${dur==="long"?"08:00 Témoignages & interviews\n15:00 Conclusion":""}\n' : '';
     return { title: titles[tone], text: descs + timestamps, hashtags: `#${site.name.replace(/\s+/g,'')} #Sénégal #Documentaire #Africa4K #Patrimoine`, meta: `Durée recommandée : ${dur==='short'?'< 5 min':dur==='medium'?'5-20 min':'20-60 min'} · Catégorie : Voyage & Événements · Langue : Français` };
   },
   linkedin: (site, tone) => {
-    const texts = { inspiring:`Après ${site.km}km parcourus pour atteindre ${site.name}, je comprends mieux pourquoi ce pays mérite un documentaire de cette envergure.\n\nSite ${site.id}/32 de notre mission photographique nationale. Zone ${site.zone}. ${site.days} jour${site.days>1?'s':''} d'immersion.\n\n🎯 Notre mission : rendre accessible le patrimoine sénégalais à travers un livre documentaire produit avec un budget de 100M FCFA.\n\nL'Afrique mérite des récits à la hauteur de sa beauté.\n\n#Leadership #Afrique #Documentaire #Patrimoine #Sénégal`, informative:`📊 Point d'avancement — Mission Documentaire Sénégal V3\n\n✅ Site ${site.id} : ${site.name} (Zone ${site.zone})\n📍 ${site.coords[0].toFixed(4)}°N\n⏱ ${site.days} jour${site.days>1?'s':''} terrain\n🚗 ${site.km}km depuis Dakar\n\nÉtat global mission :\n• 32 sites · 66j terrain · 101j total\n• ~5 400 km à parcourir\n• Budget : 100 000 000 FCFA\n\n#Gestion de Projet #Documentary #Sénégal`, exciting:'', cultural:`🌍 Héritage Culturel — ${site.name}\n\nSite Zone ${site.zone} de notre série documentaire sur le Sénégal.\n\nCe n'est pas qu'un lieu — c'est une mémoire vivante. Notre équipe y a passé ${site.days} jour${site.days>1?'s':''} pour en capturer chaque nuance.\n\nLe documentaire sort en 2025. Réservez votre exemplaire.\n\n#Culture #Afrique #Heritage #Sénégal`, promotional:`🎥 Nous recherchons des partenaires pour notre documentaire sur les 32 sites emblématiques du Sénégal.\n\nSite en cours : ${site.name} — Zone ${site.zone}\n\nOpportunités :\n• Sponsoring institutionnel\n• Placement de marque\n• Co-production\n• Distribution internationale\n\nContactez notre équipe.\n\n#Sponsoring #Partenariat #Sénégal #Investissement` };
+    const texts = { inspiring:`Après ${site.km}km parcourus pour atteindre ${site.name}, je comprends mieux pourquoi ce pays mérite un documentaire de cette envergure.\n\nSite ${site.id}/32 de notre mission photographique nationale. Zone ${site.zone}. ${site.days} jour${site.days>1?'s':''} d'immersion.\n\n🎯 Notre mission : rendre accessible le patrimoine sénégalais à travers un livre documentaire produit avec un budget de 100M FCFA.\n\nL'Afrique mérite des récits à la hauteur de sa beauté.\n\n#Leadership #Afrique #Documentaire #Patrimoine #Sénégal`, informative:`📊 Point d'avancement — Mission Documentaire Sénégal V3\n\n✅ Site ${site.id} : ${site.name} (Zone ${site.zone})\n📍 ${site.coords[0].toFixed(4)}°N\n⏱ ${site.days} jour${site.days>1?'s':''} terrain\n🚗 ${site.km}km depuis Dakar\n\nÉtat global mission :\n• 32 sites · 59j terrain · 87j total\n• ~5 400 km à parcourir\n• Budget : 100 000 000 FCFA\n\n#Gestion de Projet #Documentary #Sénégal`, exciting:'', cultural:`🌍 Héritage Culturel — ${site.name}\n\nSite Zone ${site.zone} de notre série documentaire sur le Sénégal.\n\nCe n'est pas qu'un lieu — c'est une mémoire vivante. Notre équipe y a passé ${site.days} jour${site.days>1?'s':''} pour en capturer chaque nuance.\n\nLe documentaire sort en 2027. Réservez votre exemplaire.\n\n#Culture #Afrique #Heritage #Sénégal`, promotional:`🎥 Nous recherchons des partenaires pour notre documentaire sur les 32 sites emblématiques du Sénégal.\n\nSite en cours : ${site.name} — Zone ${site.zone}\n\nOpportunités :\n• Sponsoring institutionnel\n• Placement de marque\n• Co-production\n• Distribution internationale\n\nContactez notre équipe.\n\n#Sponsoring #Partenariat #Sénégal #Investissement` };
     const t = texts[tone] || texts['informative'];
     return { text: t, hashtags: '', meta: `Réseau professionnel · Format recommandé : 1200-2000 caractères · Image haute résolution conseillée` };
   },
   instagram: (site, tone) => {
-    const captions = { inspiring:`✨ ${site.name}\n\nCertains endroits ne se décrivent pas. Ils se ressentent.\n\nZone ${site.zone} · Site ${site.id} sur 32\n${site.coords[0].toFixed(4)}°N · ${site.days}j de tournage\n\nCe documentaire est pour vous 🎬\n\n📖 Lien en bio pour précommander`, informative:`📍 ${site.name}\n\n🗺 Zone ${site.zone} · Site ${site.id}/32\n📏 ${site.km}km de Dakar\n⏱ ${site.days} jour${site.days>1?'s':''} sur place\n\nNotre équipe capture l'essence de chaque lieu pour un livre documentaire exceptionnel sur le Sénégal.\n\n📖 32 sites · 100M FCFA · 2025`, exciting:`🔥🔥🔥 ${site.name.toUpperCase()}\n\nON EST LÀ ET C'EST INSANE 🎥\n\nZone ${site.zone} · ${site.km}km · ${site.days}j\n32 SITES. 5400KM. UN LIVRE. 💥\n\nSave this post si tu veux être notifié !\n#VenirVite`, cultural:`🌍 ${site.name}\n\nUne page de l'histoire de l'Afrique de l'Ouest.\nZone ${site.zone}, à ${site.km}km de Dakar.\n\nNotre documentaire raconte ces histoires que le monde doit connaître.\n\n📖 Réservation ouverte — lien en bio`, promotional:`🎬 TOURNAGE EN COURS 📸\n\n${site.name} — Zone ${site.zone}\n\nDevenez les premiers à tenir entre vos mains le documentaire photographique le plus ambitieux jamais réalisé sur le Sénégal.\n\n👉 Lien de précommande en bio\n🔔 Activez les notifications !` };
+    const captions = { inspiring:`✨ ${site.name}\n\nCertains endroits ne se décrivent pas. Ils se ressentent.\n\nZone ${site.zone} · Site ${site.id} sur 32\n${site.coords[0].toFixed(4)}°N · ${site.days}j de tournage\n\nCe documentaire est pour vous 🎬\n\n📖 Lien en bio pour précommander`, informative:`📍 ${site.name}\n\n🗺 Zone ${site.zone} · Site ${site.id}/32\n📏 ${site.km}km de Dakar\n⏱ ${site.days} jour${site.days>1?'s':''} sur place\n\nNotre équipe capture l'essence de chaque lieu pour un livre documentaire exceptionnel sur le Sénégal.\n\n📖 32 sites · 100M FCFA · 2027`, exciting:`🔥🔥🔥 ${site.name.toUpperCase()}\n\nON EST LÀ ET C'EST INSANE 🎥\n\nZone ${site.zone} · ${site.km}km · ${site.days}j\n32 SITES. 5400KM. UN LIVRE. 💥\n\nSave this post si tu veux être notifié !\n#VenirVite`, cultural:`🌍 ${site.name}\n\nUne page de l'histoire de l'Afrique de l'Ouest.\nZone ${site.zone}, à ${site.km}km de Dakar.\n\nNotre documentaire raconte ces histoires que le monde doit connaître.\n\n📖 Réservation ouverte — lien en bio`, promotional:`🎬 TOURNAGE EN COURS 📸\n\n${site.name} — Zone ${site.zone}\n\nDevenez les premiers à tenir entre vos mains le documentaire photographique le plus ambitieux jamais réalisé sur le Sénégal.\n\n👉 Lien de précommande en bio\n🔔 Activez les notifications !` };
     return { text: captions[tone] || captions['informative'], hashtags: `#Sénégal #Dakar #Afrique #${site.zone==='A'?'Dakar':site.zone==='C'?'Casamance':site.zone==='D'?'Kédougou':'Sénégal'} #Documentary #Photography #AfriqueOuest #${site.name.replace(/[^\w]/g,'')} #WestAfrica #NatGeoAfrica #DiscoverAfrica`, meta: `Format : Carré 1080×1080 ou Portrait 4:5 · Premier commentaire : hashtags secondaires` };
   }
 };
@@ -4140,36 +4160,80 @@ const CAT_BUDGET = { transport:15000000, hebergement:12000000, equipement:200000
 
 function addExpense() {
   const btn = event.currentTarget; disableBtn(btn);
-  const cat = document.getElementById('exp-category').value;
-  const amt = Math.round(parseFloat(document.getElementById('exp-amount').value) || 0);
+  const cat  = document.getElementById('exp-category').value;
+  const amt  = Math.round(parseFloat(document.getElementById('exp-amount').value) || 0);
   const desc = document.getElementById('exp-desc').value.trim() || CAT_LABELS[cat];
-  if (amt <= 0) { showToast('Montant invalide', 'warn'); enableBtn(btn); return; }
-  const tx = { id: 'tx_' + Date.now(), cat, amount: amt, description: desc, ts: Date.now(), type: 'debit' };
+
+  // --- Validation ---
+  if (!cat || !CAT_LABELS[cat]) {
+    showToast('Catégorie invalide', 'warn'); enableBtn(btn); return;
+  }
+  if (amt <= 0) {
+    showToast('Le montant doit être supérieur à 0', 'warn'); enableBtn(btn); return;
+  }
+  if (amt > MISSION.budget) {
+    showToast(`Montant supérieur au budget total (${fmtFCFA(MISSION.budget)})`, 'warn'); enableBtn(btn); return;
+  }
+  const remaining = Math.round(state.budget - state.spent);
+  if (amt > remaining) {
+    showToast(`⚠️ Dépassement budget : reste ${fmtFCFA(remaining)} FCFA`, 'warn'); enableBtn(btn); return;
+  }
+  if (desc.length > 200) {
+    showToast('Description trop longue (200 caractères max)', 'warn'); enableBtn(btn); return;
+  }
+
+  const tx = {
+    id:          'tx_' + Date.now(),
+    cat,
+    amount:      amt,
+    description: desc.substring(0, 200),
+    ts:          Date.now(),
+    type:        'debit'
+  };
   state.transactionQueue.push(tx);
   document.getElementById('exp-amount').value = '';
-  document.getElementById('exp-desc').value = '';
-  showToast(`➕ Dépense ajoutée à la file : ${fmtFCFA(amt)}`, 'ok');
+  document.getElementById('exp-desc').value   = '';
+  showToast(`➕ Dépense ajoutée : ${fmtFCFA(amt)}`, 'ok');
   processTransactionQueue();
   setTimeout(() => enableBtn(btn), 500);
 }
+
 async function processTransactionQueue() {
   if (state.processingQueue) return;
   state.processingQueue = true;
   updateQueueStatusUI(true);
+
   while (state.transactionQueue.length > 0) {
     const tx = state.transactionQueue.shift();
-    state.spent = Math.round(state.spent + tx.amount);
-    state.catSpend[tx.cat] = Math.round((state.catSpend[tx.cat] || 0) + tx.amount);
-    tx.balanceAfter = Math.round(state.budget - state.spent);
-    state.transactions.unshift(tx);
-    await dbWrite('transactions', tx);
-    SupaSync.syncTransaction(tx);
 
-    updateFinancialUI();
-    updateCOORing();
-    addActivity('💸', `Dépense ${CAT_LABELS[tx.cat]} : ${fmtFCFA(tx.amount)} — ${tx.description}`, 'À l\'instant');
+    try {
+      state.spent              = Math.round(state.spent + tx.amount);
+      state.catSpend[tx.cat]   = Math.round((state.catSpend[tx.cat] || 0) + tx.amount);
+      tx.balanceAfter          = Math.round(state.budget - state.spent);
+      state.transactions.unshift(tx);
+
+      await dbWrite('transactions', tx).catch(e => {
+        console.error('[DB] transaction write échoué:', e);
+      });
+
+      if (typeof SupaSync !== 'undefined' && typeof SupaSync.syncTransaction === 'function') {
+        SupaSync.syncTransaction(tx).catch(e => console.warn('[Sync] tx:', e.message));
+      }
+
+      updateFinancialUI();
+      updateCOORing();
+      addActivity('💸', `Dépense ${CAT_LABELS[tx.cat]} : ${fmtFCFA(tx.amount)} — ${tx.description}`, 'À l\'instant');
+    } catch (e) {
+      console.error('[processTransactionQueue] erreur:', e);
+      showToast(`Erreur traitement transaction : ${e.message}`, 'warn');
+      // Réinjecte la transaction en queue pour retry
+      state.transactionQueue.unshift(tx);
+      break;
+    }
+
     await sleep(50);
   }
+
   state.processingQueue = false;
   updateQueueStatusUI(false);
   saveStateToDB();
@@ -4300,21 +4364,44 @@ async function init() {
 
   setStatus('Initialisation agents…');
   await sleep(100);
+  // Agents critiques initialisés au démarrage
   initSuperviseur();
-  initCMAgent();
-  initAgent5();
-  initAgent6();
-  initAgent7();
-  initAgent8();
-  initAgent9();
-  initAgent10();
-  initAgent11();
-  initAgent12();
-  initAgent13();
-  initAgent14();
-  initAgent15();
-  initAgent16();
-  initAgent17();
+  initAgent17(); // Risk manager — surveille en continu
+
+  // Agents lazy : initialisés à la première ouverture de leur onglet
+  const _agentInited = {};
+  const _lazyAgents = {
+    cm:    initCMAgent,
+    a5:    initAgent5,
+    a6:    initAgent6,
+    a7:    initAgent7,
+    a8:    initAgent8,
+    a9:    initAgent9,
+    a10:   initAgent10,
+    a11:   initAgent11,
+    a12:   initAgent12,
+    a13:   initAgent13,
+    a14:   initAgent14,
+    a15:   initAgent15,
+    a16:   initAgent16,
+  };
+
+  // Patch showTab pour init lazy
+  const _origShowTab = window.showTab;
+  window.showTab = function(tabId) {
+    if (_origShowTab) _origShowTab(tabId);
+    if (_lazyAgents[tabId] && !_agentInited[tabId]) {
+      try {
+        _lazyAgents[tabId]();
+        _agentInited[tabId] = true;
+      } catch(e) {
+        console.error(`[LazyInit] agent ${tabId}:`, e);
+      }
+    }
+  };
+  // Init immédiate de l'onglet actif par défaut (COO)
+  initCMAgent(); _agentInited['cm'] = true;
+
   updateFinancialUI();
   updateOnlineStatus();
 
@@ -5011,8 +5098,7 @@ function initAgent8() {
   if (ta) ta.addEventListener('input', a8UpdateComplianceLive);
 }
 
-/* ============================================================
-   AGENT 9 — COMMERCIAL SPONSORING (interface avec state global)
+
    ============================================================ */
 const a9State = { sponsors: [], dossierOutput: null };
 
@@ -5108,7 +5194,7 @@ const A9_DOSSIER_TEMPLATES = {
   mtac: (amt, angle) => ({
     title: 'Fonds MTAC',
     sections: [
-      { head:"PRÉSENTATION DU PROJET", body:`La Mission Documentaire Sénégal V3 constitue le projet photographique le plus ambitieux jamais entrepris sur le territoire national. 32 sites répartis sur l'ensemble du territoire, 66 jours de terrain, 101 jours de mission totale, ~5 400 km parcourus — un inventaire exhaustif du patrimoine sénégalais destiné à une édition d'art de 200 pages tirée à 500 exemplaires numérotés.` },
+      { head:"PRÉSENTATION DU PROJET", body:`La Mission Documentaire Sénégal V3 constitue le projet photographique le plus ambitieux jamais entrepris sur le territoire national. 32 sites répartis sur l'ensemble du territoire, 59 jours de terrain, 87 jours de mission totale, ~5 400 km parcourus — un inventaire exhaustif du patrimoine sénégalais destiné à une édition d'art de 200 pages tirée à 500 exemplaires numérotés.` },
       { head:"INDICATEURS D'IMPACT", body:"__KPIS__" },
       { head:"DEMANDE DE FINANCEMENT", body:`Montant sollicité auprès du Fonds MTAC : ${Math.round(amt).toLocaleString('fr-FR')} FCFA.
 
@@ -5119,7 +5205,7 @@ Budget global du projet : 100 000 000 FCFA — dont ${Math.round(amt/1000000)}M 
 • 50 exemplaires numérotés dédicacés remis au Ministère
 • Exposition itinérante dans les institutions culturelles partenaires
 • Droits de diffusion numérique pour les établissements scolaires` },
-      { head:"CALENDRIER D'EXÉCUTION", body:`Phase terrain : 66 jours · Phase édition : 6 mois · Livraison finale : 2025
+      { head:"CALENDRIER D'EXÉCUTION", body:`Phase terrain : 59 jours · Phase édition : 6 mois · Livraison finale : 2027
 Dépôt légal BN du Sénégal · ISBN international · Distribution : Sénégal, France, diaspora mondiale` }
     ]
   }),
@@ -5214,10 +5300,20 @@ function a9ExportDossier() {
 }
 
 function initAgent9() {
-  // Pré-remplir avec sponsors d'exemple
+  // Sponsors suggérés — prospects réels à contacter pour la mission 2027
   a9State.sponsors = [
-    { id:'sp_demo1', name:'Orange Sénégal', type:'prive', amount:8000000, status:'negocie', contra:'Logo couverture + 20 ex.', ts: Date.now() },
-    { id:'sp_demo2', name:'MTAC — Ministère', type:'mtac', amount:15000000, status:'prospect', contra:'Dépôt légal + 50 ex.', ts: Date.now() },
+    { id:'sp_s01', name:'Orange Sénégal',           type:'prive',       amount:8000000,  status:'prospect', contra:'Logo couverture + 30 ex. numérotés + posts réseaux', ts: Date.now() },
+    { id:'sp_s02', name:'Fondation Orange Afrique',  type:'prive',       amount:5000000,  status:'prospect', contra:'Mention mécène + 20 ex. numérotés + exposition', ts: Date.now() },
+    { id:'sp_s03', name:'Total Energies Sénégal',    type:'prive',       amount:10000000, status:'prospect', contra:'Double page intérieure + 25 ex. + communiqué presse', ts: Date.now() },
+    { id:'sp_s04', name:'CBAO — Attijariwafa Bank',  type:'prive',       amount:5000000,  status:'prospect', contra:'Logo intérieur + 15 ex. numérotés', ts: Date.now() },
+    { id:'sp_s05', name:'Air Sénégal',               type:'prive',       amount:3000000,  status:'prospect', contra:'Billets mission + mention partenaire transport', ts: Date.now() },
+    { id:'sp_s06', name:'Groupe Eiffage Sénégal',    type:'prive',       amount:4000000,  status:'prospect', contra:'Mention bâtisseurs + 10 ex. numérotés', ts: Date.now() },
+    { id:'sp_s07', name:'MTAC — Ministère Culture',  type:'mtac',        amount:15000000, status:'prospect', contra:'Dépôt légal + 50 ex. + exposition institutions', ts: Date.now() },
+    { id:'sp_s08', name:'Ministère du Tourisme',     type:'mtac',        amount:10000000, status:'prospect', contra:'Distribution agences + 30 ex. + kit promotion', ts: Date.now() },
+    { id:'sp_s09', name:'SAPCO Sénégal',             type:'prive',       amount:3000000,  status:'prospect', contra:'Distribution hôtels Petite Côte + mention', ts: Date.now() },
+    { id:'sp_s10', name:'Banque Atlantique Sénégal', type:'prive',       amount:3000000,  status:'prospect', contra:'Logo + 10 ex. numérotés + post LinkedIn', ts: Date.now() },
+    { id:'sp_s11', name:'Diaspora USA — Réseau SN',  type:'particulier', amount:2000000,  status:'prospect', contra:'10 ex. numérotés + remerciements page intérieure', ts: Date.now() },
+    { id:'sp_s12', name:'Diaspora France — Paris',   type:'particulier', amount:2000000,  status:'prospect', contra:'10 ex. numérotés + remerciements page intérieure', ts: Date.now() },
   ];
   a9RenderSponsors(); a9ComputeTotals();
 }
@@ -5229,12 +5325,44 @@ function initAgent9() {
 const a10State = {
   filter: 'all',
   auths: [
-    { id:'a10_1', site:'Port Autonome de Dakar', org:'Direction Générale PAD', status:'valide', ref:'PAD-2024-0892', date:'2024-03-15', contact:'dg@portdakar.sn' },
-    { id:'a10_2', site:'Mosquée Massalikul Djinaan', org:'Dahira Mouride — Bureau Communication', status:'encours', ref:'MMD-2024-001', date:'2024-04-02', contact:'communication@massalikul.sn' },
-    { id:'a10_3', site:'Pays Bassari (UNESCO)', org:'Ministère de la Culture — UNESCO', status:'relance', ref:'UNESCO-SN-2024-47', date:'2024-02-28', contact:'culture@gouv.sn' },
-    { id:'a10_4', site:'Touba — Grande Mosquée', org:'Khalife Général Mourides', status:'encours', ref:'KGM-2024-088', date:'2024-04-10', contact:'—' },
-    { id:'a10_5', site:'Parc Niokolo-Koba', org:'DPNS — Direction Parcs Nationaux', status:'valide', ref:'DPNS-2024-NKB-03', date:'2024-03-20', contact:'dpns@environnement.sn' },
-    { id:'a10_6', site:'Saint-Louis — Ville UNESCO', org:'Mairie de Saint-Louis', status:'relance', ref:'MSL-2024-PHOTO-12', date:'2024-03-01', contact:'mairie@saint-louis.sn' },
+    /* ZONE A — DAKAR & PÉRIPHÉRIE */
+    { id:'a10_1',  site:'Île de Gorée',                           org:'OLAG / Mairie de Gorée',                        status:'encours', ref:'AUTH-ZA-01-2026', date:'—', contact:'mairie.goree@dakar.sn' },
+    { id:'a10_2',  site:'Monument de la Renaissance Africaine',   org:'Présidence de la République du Sénégal',        status:'encours', ref:'AUTH-ZA-02-2026', date:'—', contact:'presidence@gouv.sn' },
+    { id:'a10_3',  site:'IFAN — Musée Théodore Monod',           org:'Université Cheikh Anta Diop — Direction IFAN',   status:'encours', ref:'AUTH-ZA-03-2026', date:'—', contact:'ifan@ucad.edu.sn' },
+    { id:'a10_4',  site:'Plage de Yoff',                          org:'Mairie de Yoff / Lébous',                       status:'encours', ref:'AUTH-ZA-04-2026', date:'—', contact:'mairie.yoff@dakar.sn' },
+    { id:'a10_5',  site:'Lac Rose — Lac Retba',                   org:'Mairie de Rufisque / Gestionnaire Réserve',     status:'encours', ref:'AUTH-ZA-05-2026', date:'—', contact:'rufisque@gouvernement.sn' },
+    { id:'a10_6',  site:'Petite Côte — Saly Portudal',           org:'SAPCO Sénégal',                                 status:'encours', ref:'AUTH-ZA-06-2026', date:'—', contact:'info@sapco.sn' },
+    { id:'a10_7',  site:'MCN + Village des Arts',                 org:'Ministère de la Culture / Direction MCN',       status:'encours', ref:'AUTH-ZA-07-2026', date:'—', contact:'culture@gouv.sn' },
+    { id:'a10_8',  site:'Village Artisanal de Soumbédioune',      org:'Mairie de Dakar — Marché de l\'Artisanat',      status:'encours', ref:'AUTH-ZA-08-2026', date:'—', contact:'mairie.dakar@gouv.sn' },
+    { id:'a10_9',  site:'Mosquée Massalikul Djinaan',             org:'Dahira Mouride — Bureau Communication',         status:'encours', ref:'AUTH-ZA-09-2026', date:'—', contact:'communication@massalikul.sn' },
+    { id:'a10_10', site:'Port Autonome de Dakar',                 org:'Direction Générale PAD',                        status:'encours', ref:'AUTH-ZA-10-2026', date:'—', contact:'dg@portdakar.sn' },
+    /* ZONE B — SAINT-LOUIS */
+    { id:'a10_11', site:'Saint-Louis — Ville UNESCO',             org:'Mairie de Saint-Louis / Commission UNESCO',     status:'encours', ref:'AUTH-ZB-11-2026', date:'—', contact:'mairie@saint-louis.sn' },
+    { id:'a10_12', site:'Parc National des Oiseaux du Djoudj',    org:'DPNS — Direction des Parcs Nationaux',          status:'encours', ref:'AUTH-ZB-12-2026', date:'—', contact:'dpns@environnement.sn' },
+    { id:'a10_13', site:'Langue de Barbarie',                     org:'Mairie de Saint-Louis — Service Culturel',      status:'encours', ref:'AUTH-ZB-13-2026', date:'—', contact:'culture@saint-louis.sn' },
+    { id:'a10_14', site:'Delta du Saloum — Mangroves & Bolongs',  org:'DPNS / Réserve Biosphère UNESCO',               status:'encours', ref:'AUTH-ZB-14-2026', date:'—', contact:'dpns@environnement.sn' },
+    { id:'a10_15', site:'Touba — Grande Mosquée',                 org:'Khalife Général des Mourides',                  status:'encours', ref:'AUTH-ZB-15-2026', date:'—', contact:'—' },
+    /* ZONE C — CASAMANCE */
+    { id:'a10_16', site:'Ziguinchor — Casamance',                 org:'Mairie de Ziguinchor / Gouvernance',            status:'encours', ref:'AUTH-ZC-16-2026', date:'—', contact:'mairie.ziguinchor@gouv.sn' },
+    { id:'a10_17', site:'Cap Skirring',                           org:'Mairie d\'Oussouye / SAPCO',                    status:'encours', ref:'AUTH-ZC-17-2026', date:'—', contact:'oussouye@gouvernement.sn' },
+    { id:'a10_18', site:'Forêt de Cabrousse',                     org:'Eaux et Forêts / DREEC Ziguinchor',             status:'encours', ref:'AUTH-ZC-18-2026', date:'—', contact:'dreec.ziguinchor@environnement.sn' },
+    { id:'a10_19', site:'Île de Karabane',                        org:'Mairie d\'Oussouye / Chefs de Village',         status:'encours', ref:'AUTH-ZC-19-2026', date:'—', contact:'oussouye@gouvernement.sn' },
+    { id:'a10_20', site:'Kafountine — Littoral',                  org:'Mairie de Kafountine',                          status:'encours', ref:'AUTH-ZC-20-2026', date:'—', contact:'kafountine@gouvernement.sn' },
+    /* ZONE D — EST & SUD-EST */
+    { id:'a10_21', site:'Tambacounda',                            org:'Mairie de Tambacounda / Gouverneur',            status:'encours', ref:'AUTH-ZD-21-2026', date:'—', contact:'mairie.tamba@gouv.sn' },
+    { id:'a10_22', site:'Parc Niokolo-Koba (UNESCO)',             org:'DPNS — Direction des Parcs Nationaux',          status:'encours', ref:'AUTH-ZD-22-2026', date:'—', contact:'dpns@environnement.sn' },
+    { id:'a10_23', site:'Kédougou',                               org:'Mairie de Kédougou / DREEC',                    status:'encours', ref:'AUTH-ZD-23-2026', date:'—', contact:'kedougou@gouvernement.sn' },
+    { id:'a10_24', site:'Pays Bassari (UNESCO)',                   org:'Ministère de la Culture / UNESCO Dakar',        status:'encours', ref:'AUTH-ZD-24-2026', date:'—', contact:'culture@gouv.sn' },
+    { id:'a10_25', site:'Gorges de la Falémé',                    org:'Mairie de Saraya / DREEC',                      status:'encours', ref:'AUTH-ZD-25-2026', date:'—', contact:'saraya@gouvernement.sn' },
+    /* ZONE E — CENTRE */
+    { id:'a10_26', site:'Manufacture de Tapisseries de Thiès',    org:'Direction Manufacture Nationale Tapisseries',   status:'encours', ref:'AUTH-ZE-26-2026', date:'—', contact:'tapisseries.thies@culture.sn' },
+    { id:'a10_27', site:'Kaolack — Grand Marché',                 org:'Mairie de Kaolack — Service Commerce',          status:'encours', ref:'AUTH-ZE-27-2026', date:'—', contact:'mairie.kaolack@gouv.sn' },
+    { id:'a10_28', site:'Réserve de Bandia',                      org:'Réserve de Bandia SA — Direction',              status:'encours', ref:'AUTH-ZE-28-2026', date:'—', contact:'contact@reservedebandia.com' },
+    { id:'a10_29', site:'Diourbel — Sanctuaire Baye Fall',        org:'Dahira Baye Fall / Mairie de Diourbel',         status:'encours', ref:'AUTH-ZE-29-2026', date:'—', contact:'mairie.diourbel@gouv.sn' },
+    /* ZONE F — NORD */
+    { id:'a10_30', site:'Louga — Terroir Sahélien',               org:'Mairie de Louga / Gouverneur',                  status:'encours', ref:'AUTH-ZF-30-2026', date:'—', contact:'mairie.louga@gouv.sn' },
+    { id:'a10_31', site:'Matam — Fouta Toro',                     org:'Mairie de Matam / Chefs Coutumiers',            status:'encours', ref:'AUTH-ZF-31-2026', date:'—', contact:'matam@gouvernement.sn' },
+    { id:'a10_32', site:'Podor — Fort Saint-Louis',               org:'Mairie de Podor / Direction Patrimoine',        status:'encours', ref:'AUTH-ZF-32-2026', date:'—', contact:'podor@gouvernement.sn' },
   ],
   journal: [],
   currentRelanceId: null
@@ -5297,7 +5425,7 @@ Dans le cadre de notre Mission Documentaire Sénégal V3, notre équipe souhaite
 
 Ce projet, doté d'un budget de 100 000 000 FCFA, vise la production d'un livre d'art de référence en 500 exemplaires numérotés, valorisant le patrimoine sénégalais à l'international.
 
-Nous restons à votre entière disposition pour tout renseignement complémentaire et vous prions de bien vouloir traiter cette demande en priorité, notre calendrier terrain étant fixé sur 66 jours.
+Nous restons à votre entière disposition pour tout renseignement complémentaire et vous prions de bien vouloir traiter cette demande en priorité, notre calendrier terrain étant fixé sur 59 jours.
 
 Dans l'attente de votre retour, veuillez agréer, Madame, Monsieur, l'expression de nos salutations distinguées.
 
@@ -5384,11 +5512,11 @@ const a11State = {
     { id:'e10', name:'Réflecteurs Lastolite ×4', type:'Accessoire', icon:'💡', status:'operationnel', serial:'REF-001', note:'' },
   ],
   backups: [
-    { id:'bk01', name:'CFexpress A — 512Go #1', size:'512 Go', shots: 312, synced: false },
-    { id:'bk02', name:'CFexpress A — 512Go #2', size:'512 Go', shots: 287, synced: false },
-    { id:'bk03', name:'SD UHS-II — 256Go #1', size:'256 Go', shots: 198, synced: true },
-    { id:'bk04', name:'SD UHS-II — 256Go #2', size:'256 Go', shots: 445, synced: false },
-    { id:'bk05', name:'SD UHS-II — 256Go #3', size:'256 Go', shots: 156, synced: true },
+    { id:'bk01', name:'CFexpress A — 512Go #1', size:'512 Go', shots: 0, synced: false },
+    { id:'bk02', name:'CFexpress A — 512Go #2', size:'512 Go', shots: 0, synced: false },
+    { id:'bk03', name:'SD UHS-II — 256Go #1',   size:'256 Go', shots: 0, synced: false },
+    { id:'bk04', name:'SD UHS-II — 256Go #2',   size:'256 Go', shots: 0, synced: false },
+    { id:'bk05', name:'SD UHS-II — 256Go #3',   size:'256 Go', shots: 0, synced: false },
   ],
   log: []
 };
@@ -5517,12 +5645,12 @@ function initAgent11() {
 const a12State = {
   totalEdition: 500,
   points: [
-    { id:'pv01', name:'Librairie Aux Quatre Vents', ville:'Dakar — Plateau', type:'librairie', alloc:60, vendu:0 },
-    { id:'pv02', name:'Librairie Clairafrique', ville:'Dakar — Médina', type:'librairie', alloc:45, vendu:0 },
-    { id:'pv03', name:'Boutique BOMA', ville:'Dakar — Almadies', type:'boutique', alloc:30, vendu:0 },
-    { id:'pv04', name:'Musée des Civilisations Noires', ville:'Dakar', type:'musee', alloc:25, vendu:0 },
-    { id:'pv05', name:'Hôtel Terrou-Bi', ville:'Dakar — Corniche', type:'hotel', alloc:20, vendu:0 },
-    { id:'pv06', name:'Librairie Saint-Louis', ville:'Saint-Louis', type:'librairie', alloc:20, vendu:0 },
+    { id:'pv01', name:'Librairie Aux Quatre Vents',       ville:'Dakar — Plateau',   type:'librairie', alloc:60, vendu:0 },
+    { id:'pv02', name:'Librairie Clairafrique',            ville:'Dakar — Médina',    type:'librairie', alloc:45, vendu:0 },
+    { id:'pv03', name:'Boutique BOMA',                     ville:'Dakar — Almadies',  type:'boutique',  alloc:30, vendu:0 },
+    { id:'pv04', name:'Musée des Civilisations Noires',   ville:'Dakar',             type:'musee',     alloc:25, vendu:0 },
+    { id:'pv05', name:'Hôtel Terrou-Bi',                   ville:'Dakar — Corniche',  type:'hotel',     alloc:20, vendu:0 },
+    { id:'pv06', name:'Librairie Saint-Louis',             ville:'Saint-Louis',       type:'librairie', alloc:20, vendu:0 },
   ],
   seuil: 5
 };
@@ -6252,10 +6380,10 @@ function a16GenMessage(evt) {
   const pct = Math.min(Math.round(a16State.raised / a16State.goal * 100), 100);
   setTimeout(() => {
     const msgs = {
-      whatsapp: `📚 SÉNÉGAL 32 — Livre d'Art Collector\n\n${a16State.raised > 0 ? `Nous avons déjà levé ${fmtFCFA(a16State.raised)} (${pct}%) grâce à ${a16State.backers.length} contributeur(s) de la diaspora !` : 'Notre campagne de financement participatif est lancée !'}\n\n🎯 Objectif : ${fmtFCFA(a16State.goal)}\n📅 ${a16State.daysLeft} jours restants\n\n32 sites photographiés en 101 jours de mission à travers tout le Sénégal. 500 exemplaires numérotés. Un livre qui restera.\n\nSouten-nous dès 5 000 FCFA 👉 documentaire-senegal.sn\n\nPartagez à vos proches ! 🇸🇳`,
+      whatsapp: `📚 SÉNÉGAL 32 — Livre d'Art Collector\n\n${a16State.raised > 0 ? `Nous avons déjà levé ${fmtFCFA(a16State.raised)} (${pct}%) grâce à ${a16State.backers.length} contributeur(s) de la diaspora !` : 'Notre campagne de financement participatif est lancée !'}\n\n🎯 Objectif : ${fmtFCFA(a16State.goal)}\n📅 ${a16State.daysLeft} jours restants\n\n32 sites photographiés en 87 jours de mission à travers tout le Sénégal. 500 exemplaires numérotés. Un livre qui restera.\n\nSouten-nous dès 5 000 FCFA 👉 documentaire-senegal.sn\n\nPartagez à vos proches ! 🇸🇳`,
       facebook: `🇸🇳 SÉNÉGAL 32 — Le documentaire photographique de notre génération\n\n${pct}% de l'objectif atteint — ${a16State.backers.length} contributeurs ont déjà rejoint l'aventure depuis ${[...new Set(a16State.backers.map(b => b.pays.split('—')[0].trim()))].join(', ') || 'la diaspora mondiale'}.\n\nChaque contribution, même symbolique, fait avancer ce projet unique : 32 sites, 5 400 km parcourus, 100 millions FCFA investis dans la valorisation de notre patrimoine.\n\n👉 documentaire-senegal.sn\n\n#Sénégal #Diaspora #Livre #Patrimoine #Crowdfunding`,
       twitter: `🇸🇳 SÉNÉGAL 32 | Livre d'art collector\n\n${pct}% atteint · ${a16State.backers.length} contributeurs · ${a16State.daysLeft}j restants\n\n32 sites · 5400km · 500 exemplaires numérotés\n\nSouten-nous 👉 documentaire-senegal.sn\n\n#Sénégal #Diaspora #Crowdfunding`,
-      email: `Objet : SÉNÉGAL 32 — Soutenez le premier grand livre documentaire sur le Sénégal\n\nChère communauté,\n\nNous vous invitons à rejoindre les ${a16State.backers.length} contributeurs qui ont déjà soutenu la Mission Documentaire Sénégal V3.\n\n🎯 Objectif : ${fmtFCFA(a16State.goal)}\n📊 Progression : ${pct}% (${fmtFCFA(a16State.raised)} levés)\n📅 ${a16State.daysLeft} jours restants\n\nCe projet, c'est 32 sites photographiés en 101 jours, ~5 400 km parcourus, et un budget de 100 000 000 FCFA entièrement dédié à la valorisation du patrimoine sénégalais.\n\nChaque contribution donne droit à un exemplaire numéroté de notre édition collector limitée à 500 exemplaires.\n\n👉 Contribuer sur : documentaire-senegal.sn\n\nMerci pour votre soutien,\nL'équipe Mission Documentaire Sénégal`
+      email: `Objet : SÉNÉGAL 32 — Soutenez le premier grand livre documentaire sur le Sénégal\n\nChère communauté,\n\nNous vous invitons à rejoindre les ${a16State.backers.length} contributeurs qui ont déjà soutenu la Mission Documentaire Sénégal V3.\n\n🎯 Objectif : ${fmtFCFA(a16State.goal)}\n📊 Progression : ${pct}% (${fmtFCFA(a16State.raised)} levés)\n📅 ${a16State.daysLeft} jours restants\n\nCe projet, c'est 32 sites photographiés en 87 jours, ~5 400 km parcourus, et un budget de 100 000 000 FCFA entièrement dédié à la valorisation du patrimoine sénégalais.\n\nChaque contribution donne droit à un exemplaire numéroté de notre édition collector limitée à 500 exemplaires.\n\n👉 Contribuer sur : documentaire-senegal.sn\n\nMerci pour votre soutien,\nL'équipe Mission Documentaire Sénégal`
     };
     const card = document.getElementById('a16-msg-card');
     const out = document.getElementById('a16-msg-output');
@@ -6284,7 +6412,7 @@ const a17State = {
   planBActive: false,
   log: [],
   risks: [
-    { level:'critical', name:'Dérive temporelle terrain', desc:'Retard accumulé > 72h sur le planning des 66 jours.', mitigation:'Plan B : fusion sites proches + puisage jours repos.' },
+    { level:'critical', name:'Dérive temporelle terrain', desc:'Retard accumulé > 72h sur le planning des 59 jours.', mitigation:'Plan B : fusion sites proches + puisage jours repos.' },
     { level:'high',     name:'Budget API Cloud dépassé', desc:'Synchronisation backups > estimation : +15% potentiel.', mitigation:'Compression RAW + sync différée off-peak.' },
     { level:'high',     name:'Harmattan Zone Nord',       desc:'Vents de sable Tambacounda/Saint-Louis — réduction visibilité.', mitigation:'Reporter tournage ou basculer sur sites intérieurs.' },
     { level:'medium',   name:'Panne matériel drone',      desc:'DJI Mavic 3 en maintenance — perte vues aériennes.', mitigation:'Redéploiement DJI Mini 4 + adaptation brief DA.' },
@@ -6538,13 +6666,15 @@ function initAgent17() {
 // Start the app
 /* ==========================================================================
    AUTHENTIFICATION SUPABASE
-   - _authClient : client dédié, distinct de SupaSync (pas d'interférence)
-   - handleLogin : appelé par le bouton auth-wall
+   - _authClient  : client dédié avec persistSession + autoRefreshToken
+   - handleLogin  : appelé par le bouton auth-wall
    - checkAuthSession : vérifié APRÈS SupaSync.init() dans init()
+   - _onSessionReady  : partage la session avec SupaSync + active Realtime
    ========================================================================== */
 const _SUPA_URL  = 'https://ntzmxtewynwddqfuonwp.supabase.co';
-const _SUPA_KEY  = 'sb_publishable_MP6lRgJBpfphbXkV1IpARg__LpAZX2F';
+const _SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50em14dGV3eW53ZGRxZnVvbndwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODg0ODIsImV4cCI6MjA5NTA2NDQ4Mn0.qu4Pu7zeBOLrT1Wo6Qa9ftF2fU_wuCopYa05aTKvtMo';
 let   _authClient = null;
+let   _realtimeChan = null;
 
 function _getAuthClient() {
   if (_authClient) return _authClient;
@@ -6555,19 +6685,83 @@ function _getAuthClient() {
   _authClient = window.supabase.createClient(_SUPA_URL, _SUPA_KEY, {
     auth: { persistSession: true, autoRefreshToken: true }
   });
+
+  // Écoute les refreshs de token → maintient SupaSync synchronisé
+  _authClient.auth.onAuthStateChange((event, session) => {
+    if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+      _onSessionReady(session);
+    }
+    if (event === 'SIGNED_OUT') {
+      document.getElementById('auth-wall')?.classList.remove('hidden');
+    }
+  });
+
   return _authClient;
 }
 
+/** Appelée à chaque login ET à chaque refresh de token */
+function _onSessionReady(session) {
+  // 1. Partage la session avec SupaSync → les writes Supabase seront authentifiés
+  if (typeof SupaSync !== 'undefined') {
+    SupaSync.setSession(session);
+
+    // 2. Active les subscriptions Realtime si pas déjà fait
+    if (!_realtimeChan) {
+      _realtimeChan = SupaSync.subscribeRealtime(
+        // mission_state changé depuis un autre appareil → sync local
+        (newState) => {
+          if (!newState?.data) return;
+          const d = newState.data;
+          let changed = false;
+          if (d.spent       !== undefined && d.spent       !== state.spent)       { state.spent       = d.spent;       changed = true; }
+          if (d.daysDone    !== undefined && d.daysDone    !== state.daysDone)    { state.daysDone    = d.daysDone;    changed = true; }
+          if (d.sitesDone   !== undefined && d.sitesDone   !== state.sitesDone)   { state.sitesDone   = d.sitesDone;   changed = true; }
+          if (d.catSpend    !== undefined)                                         { state.catSpend    = d.catSpend;    changed = true; }
+          if (changed) {
+            updateFinancialUI();
+            updateCOORing();
+            showToast('🔄 Données synchronisées depuis le cloud', 'info');
+          }
+        },
+        // nouvelle transaction depuis un autre appareil
+        (newTx) => {
+          if (!newTx?.id) return;
+          const exists = state.transactions.some(t => String(t.id) === String(newTx.id));
+          if (!exists) {
+            state.transactions.unshift({
+              id:          newTx.id,
+              cat:         newTx.cat,
+              amount:      newTx.amount,
+              description: newTx.description,
+              ts:          newTx.ts,
+              type:        newTx.type,
+              balanceAfter: newTx.balance_after
+            });
+            updateFinancialUI();
+          }
+        }
+      );
+    }
+  }
+}
+
 async function handleLogin() {
-  const email   = document.getElementById('auth-email').value.trim();
+  const email    = document.getElementById('auth-email').value.trim();
   const password = document.getElementById('auth-password').value;
-  const errorEl = document.getElementById('auth-error');
-  const btn     = document.getElementById('auth-btn');
+  const errorEl  = document.getElementById('auth-error');
+  const btn      = document.getElementById('auth-btn');
 
   errorEl.style.display = 'none';
 
   if (!email || !password) {
     errorEl.innerText = 'ERREUR : Identifiants manquants.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  // Validation format email basique
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errorEl.innerText = 'ERREUR : Format email invalide.';
     errorEl.style.display = 'block';
     return;
   }
@@ -6589,25 +6783,30 @@ async function handleLogin() {
     if (error) throw error;
 
     document.getElementById('auth-wall').classList.add('hidden');
+    // _onSessionReady est appelé automatiquement via onAuthStateChange
     showToast('Accès autorisé. Bienvenue Commandant.', 'success');
 
   } catch (err) {
-    errorEl.innerText = 'ACCÈS REFUSÉ : Empreinte non reconnue.';
+    errorEl.innerText = err.message?.includes('Invalid') || err.message?.includes('credentials')
+      ? 'ACCÈS REFUSÉ : Empreinte non reconnue.'
+      : `ERREUR : ${err.message}`;
     errorEl.style.display = 'block';
     btn.disabled = false;
     btn.innerText = "VALIDER L'EMPREINTE";
   }
 }
 
-// Appelée depuis init(), après SupaSync.init() — pas de setTimeout arbitraire
+// Appelée depuis init(), après SupaSync.init()
 async function checkAuthSession() {
   const client = _getAuthClient();
-  if (!client) return; // Supabase non dispo → mur reste affiché
+  if (!client) return;
 
   try {
-    const { data: { session } } = await client.auth.getSession();
+    const { data: { session }, error } = await client.auth.getSession();
+    if (error) throw error;
     if (session) {
       document.getElementById('auth-wall').classList.add('hidden');
+      _onSessionReady(session);
     }
   } catch (e) {
     console.warn('[AUTH] getSession échoué :', e.message);
