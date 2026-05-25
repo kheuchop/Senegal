@@ -548,24 +548,39 @@
     },
 
     /**
+     * Injecte la session authentifiée dans le client sync.
+     * Appeler après signInWithPassword() et à chaque refresh de token.
+     * Sans session → le client reste en mode anon (RLS bloquera les writes).
+     * @param {Object} session — objet session Supabase (access_token, refresh_token)
+     */
+    async setSession(session) {
+      const client = _buildClient();
+      if (!client || !session?.access_token) return;
+      try {
+        await client.auth.setSession({
+          access_token:  session.access_token,
+          refresh_token: session.refresh_token || ''
+        });
+        _log('info', `Session auth injectée — uid: ${session.user?.id?.substring(0, 8)}…`);
+        // Flush immédiat : les ops bloquées par RLS peuvent maintenant passer
+        if (navigator.onLine) setTimeout(_flushQueue, 500);
+      } catch (e) {
+        _log('error', `setSession échoué : ${e.message}`);
+      }
+    },
+
+    /**
      * Synchronise le state global vers Supabase.
-     * Appeler depuis saveStateToDB().
-     * @param {Object} stateData — objet state global de l'app
      */
     syncState: _syncState,
 
     /**
      * Synchronise une transaction individuelle.
-     * Appeler depuis processTransactionQueue() après dbWrite().
-     * @param {Object} tx — même format que state.transactions[]
      */
     syncTransaction: _syncTransaction,
 
     /**
      * Écrit une entrée dans system_logs Supabase.
-     * @param {'info'|'warn'|'error'} level
-     * @param {string} message
-     * @param {Object} [payload]
      */
     writeLog: _writeSystemLog,
 
@@ -575,7 +590,7 @@
     flushQueue: _flushQueue,
 
     /**
-     * Force la reconnexion Realtime (utilisable depuis un bouton debug).
+     * Force la reconnexion Realtime.
      */
     reconnect() {
       _log('info', 'Reconnexion manuelle déclenchée');
@@ -587,8 +602,51 @@
     },
 
     /**
+     * Abonne l'app aux changements temps réel des tables critiques.
+     * @param {Function} onStateChange  — cb(data) quand mission_state change
+     * @param {Function} onTxChange     — cb(data) quand mission_transactions change
+     */
+    subscribeRealtime(onStateChange, onTxChange) {
+      const client = _buildClient();
+      if (!client) return;
+
+      // Canal de données distinct du canal heartbeat
+      const dataChan = client
+        .channel('mission_data_rt', { config: { broadcast: { self: false } } })
+        .on('postgres_changes', {
+            event:  '*',
+            schema: 'public',
+            table:  'mission_state'
+          }, payload => {
+            _log('info', 'Realtime: mission_state mis à jour');
+            if (typeof onStateChange === 'function') {
+              try { onStateChange(payload.new); } catch (e) {
+                _log('error', `onStateChange callback: ${e.message}`);
+              }
+            }
+          })
+        .on('postgres_changes', {
+            event:  'INSERT',
+            schema: 'public',
+            table:  'mission_transactions'
+          }, payload => {
+            _log('info', `Realtime: tx reçue ${payload.new?.id}`);
+            if (typeof onTxChange === 'function') {
+              try { onTxChange(payload.new); } catch (e) {
+                _log('error', `onTxChange callback: ${e.message}`);
+              }
+            }
+          })
+        .subscribe(status => {
+          _log('info', `Realtime données : ${status}`);
+        });
+
+      _log('info', 'Subscriptions Realtime activées (mission_state + mission_transactions)');
+      return dataChan;
+    },
+
+    /**
      * Retourne un snapshot de l'état interne.
-     * Utile pour un panneau debug dans Agent 2 ou Agent 17.
      */
     getStatus() {
       return {
