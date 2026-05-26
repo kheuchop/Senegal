@@ -3644,19 +3644,59 @@ function getWebhookUrl() {
 function sendWebhook(url, payload, eventId) {
   if (webhookFlags[eventId]) return;
   webhookFlags[eventId] = true;
-  if (!state.isOnline) { state.webhookQueue.push({ url, payload, eventId, ts: Date.now() }); updateWAQueueUI(); return; }
-  fetch(url, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
-    .catch(() => { state.webhookQueue.push({ url, payload, eventId, ts: Date.now() }); updateWAQueueUI(); });
+  if (!state.isOnline) {
+    state.webhookQueue.push({ url, payload, eventId, ts: Date.now() });
+    updateWAQueueUI();
+    return;
+  }
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  .then(res => {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    addActivity('📣', `Webhook envoyé (${payload.type}) — réponse ${res.status}`, now());
+  })
+  .catch(err => {
+    console.warn('[Webhook] échec, mise en queue:', err.message);
+    state.webhookQueue.push({ url, payload, eventId, ts: Date.now() });
+    updateWAQueueUI();
+    delete webhookFlags[eventId]; // permet retry
+  });
 }
 function processWebhookQueue() {
   if (webhookProcessing || state.webhookQueue.length === 0 || !state.isOnline) return;
   webhookProcessing = true;
   const next = () => {
-    if (state.webhookQueue.length === 0) { webhookProcessing = false; updateWAQueueUI(); return; }
+    if (state.webhookQueue.length === 0) {
+      webhookProcessing = false;
+      updateWAQueueUI();
+      return;
+    }
     const item = state.webhookQueue.shift();
-    fetch(item.url, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify(item.payload) })
-      .finally(() => setTimeout(next, 2000));
-    updateWAQueueUI();
+    fetch(item.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(item.payload)
+    })
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      updateWAQueueUI();
+      setTimeout(next, 1500);
+    })
+    .catch(err => {
+      console.warn('[WebhookQueue] retry:', err.message);
+      // Réinjecte en tête de queue avec compteur de retry
+      item.retries = (item.retries || 0) + 1;
+      if (item.retries < 3) {
+        state.webhookQueue.unshift(item);
+      } else {
+        showToast(`⚠️ Message non délivré après 3 tentatives`, 'warn');
+      }
+      webhookProcessing = false;
+      updateWAQueueUI();
+    });
   };
   next();
 }
@@ -3670,14 +3710,38 @@ function updateWAQueueUI() {
 function triggerWhatsAppBroadcast(type) {
   const btn = event.currentTarget;
   const msg = document.getElementById('wa-broadcast-msg').value.trim();
+
   if (!msg) { showToast('Saisir un message avant d\'envoyer', 'warn'); return; }
+  if (msg.length > 1000) { showToast('Message trop long (1000 caractères max)', 'warn'); return; }
+
   const url = getWebhookUrl();
-  if (!url) { showToast('Webhook WhatsApp non configuré dans le coffre', 'warn'); return; }
+  if (!url) {
+    showToast('⚙️ Webhook WhatsApp non configuré — Coffre-fort → WhatsApp → ajouter URL Make.com', 'warn');
+    return;
+  }
+
   disableBtn(btn);
+
+  // Préfixe selon le type
+  const prefix = type === 'emergency'
+    ? '🚨 *URGENCE MISSION SÉNÉGAL*\n\n'
+    : '📣 *MISSION SÉNÉGAL — Message Équipe*\n\n';
+
   const eventId = 'wa_' + Date.now();
-  sendWebhook(url, { type, message: msg, mission: 'Sénégal V3', ts: new Date().toISOString() }, eventId);
-  addNotification({ type:'info', text:`Message WhatsApp (${type}) envoyé : "${msg.substring(0,40)}…"`, time: now() });
-  showToast(state.isOnline ? '✅ Message envoyé' : '📥 En attente de connexion', 'ok');
+  const payload = {
+    type,
+    message:  prefix + msg,
+    mission:  'Sénégal Documentary V3',
+    ts:       new Date().toISOString(),
+    sender:   'Mission Control COO'
+  };
+
+  sendWebhook(url, payload, eventId);
+  addNotification({ type: type === 'emergency' ? 'critical' : 'info',
+    text: `📣 WhatsApp (${type}) : "${msg.substring(0, 50)}${msg.length > 50 ? '…' : ''}"`,
+    time: now() });
+  showToast(state.isOnline ? '✅ Message envoyé vers WhatsApp' : '📥 Hors-ligne — envoi dès reconnexion', 'ok');
+  addActivity('📱', `Diffusion WhatsApp ${type} : "${msg.substring(0, 40)}…"`, now());
   document.getElementById('wa-broadcast-msg').value = '';
   setTimeout(() => enableBtn(btn), 3000);
 }
