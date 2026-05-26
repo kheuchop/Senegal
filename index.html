@@ -4371,36 +4371,37 @@ async function init() {
   // Agents lazy : initialisés à la première ouverture de leur onglet
   const _agentInited = {};
   const _lazyAgents = {
-    cm:    initCMAgent,
-    a5:    initAgent5,
-    a6:    initAgent6,
-    a7:    initAgent7,
-    a8:    initAgent8,
-    a9:    initAgent9,
-    a10:   initAgent10,
-    a11:   initAgent11,
-    a12:   initAgent12,
-    a13:   initAgent13,
-    a14:   initAgent14,
-    a15:   initAgent15,
-    a16:   initAgent16,
+    1:  () => {}, // Vault - pas d'init nécessaire
+    2:  initCMAgent,
+    4:  initAgent5,
+    5:  initAgent6,
+    6:  initAgent7,
+    7:  initAgent8,
+    8:  initAgent9,
+    9:  initAgent10,
+    10: initAgent11,
+    11: initAgent12,
+    12: initAgent13,
+    13: initAgent14,
+    14: initAgent15,
+    15: initAgent16,
   };
 
-  // Patch showTab pour init lazy
-  const _origShowTab = window.showTab;
-  window.showTab = function(tabId) {
-    if (_origShowTab) _origShowTab(tabId);
-    if (_lazyAgents[tabId] && !_agentInited[tabId]) {
+  // Patch switchTab pour lazy init
+  const _origSwitchTab = window.switchTab;
+  window.switchTab = function(idx) {
+    if (_origSwitchTab) _origSwitchTab(idx);
+    if (_lazyAgents[idx] && !_agentInited[idx]) {
       try {
-        _lazyAgents[tabId]();
-        _agentInited[tabId] = true;
+        _lazyAgents[idx]();
+        _agentInited[idx] = true;
       } catch(e) {
-        console.error(`[LazyInit] agent ${tabId}:`, e);
+        console.error(`[LazyInit] agent idx=${idx}:`, e);
       }
     }
   };
-  // Init immédiate de l'onglet actif par défaut (COO)
-  initCMAgent(); _agentInited['cm'] = true;
+  // Init immédiate de l'onglet 0 (COO) et CM
+  initCMAgent(); _agentInited[2] = true;
 
   updateFinancialUI();
   updateOnlineStatus();
@@ -5099,6 +5100,8 @@ function initAgent8() {
 }
 
 
+/* ============================================================
+   AGENT 9 — COMMERCIAL SPONSORING
    ============================================================ */
 const a9State = { sponsors: [], dossierOutput: null };
 
@@ -6783,16 +6786,21 @@ async function handleLogin() {
     if (error) throw error;
 
     document.getElementById('auth-wall').classList.add('hidden');
-    // _onSessionReady est appelé automatiquement via onAuthStateChange
     showToast('Accès autorisé. Bienvenue Commandant.', 'success');
 
   } catch (err) {
-    errorEl.innerText = err.message?.includes('Invalid') || err.message?.includes('credentials')
-      ? 'ACCÈS REFUSÉ : Empreinte non reconnue.'
-      : `ERREUR : ${err.message}`;
+    const msg = err?.message || String(err) || 'Erreur inconnue';
+    if (msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('credentials')) {
+      errorEl.innerText = 'ACCÈS REFUSÉ : Empreinte non reconnue.';
+    } else if (msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network')) {
+      errorEl.innerText = 'ERREUR RÉSEAU : Impossible de joindre le serveur.';
+    } else {
+      errorEl.innerText = `ERREUR : ${msg}`;
+    }
     errorEl.style.display = 'block';
     btn.disabled = false;
     btn.innerText = "VALIDER L'EMPREINTE";
+    console.error('[AUTH] Login failed:', err);
   }
 }
 
