@@ -116,7 +116,7 @@ function a9SourcingLocal(statusEl, resultsEl) {
     }))
   };
 
-  statusEl.innerHTML = `<span style="color:var(--text-muted);font-size:0.5rem">Mode local — Ajoute ta clé Anthropic dans le Vault pour des suggestions IA personnalisées.</span>`;
+  statusEl.innerHTML = "";
   a9RenderSourcingResults(data, resultsEl, document.getElementById('a9-sourcing-status'));
 }
 
