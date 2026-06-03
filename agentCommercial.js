@@ -62,29 +62,23 @@ const A9_VIVIER = [
   { nom:'Association Sénégalais Espagne', type:'particulier', montant:1500000,  secteur:'diaspora',   contreparties:'6 ex. + remerciements + activation réseaux' },
 ];
 
-function a9GetAnthropicKey() {
-  const cloudKeys = state.vault?.cloud || [];
-  const entry = cloudKeys.find(k =>
-    k.name.toLowerCase().includes('anthropic') ||
-    k.name.toLowerCase().includes('claude')
-  );
-  return entry?.value || null;
+/* Normalise un nom sponsor pour déduplication robuste :
+   minuscules + suppression accents + suppression caractères non-alpha */
+function _a9Normalize(str) {
+  return (str || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '');
 }
 
 async function a9LaunchSourcing(btn) {
   disableBtn(btn);
-  const statusEl = document.getElementById('a9-sourcing-status');
+  const statusEl  = document.getElementById('a9-sourcing-status');
   const resultsEl = document.getElementById('a9-sourcing-results');
   resultsEl.style.display = 'none';
   resultsEl.innerHTML = '';
 
-  const apiKey = a9GetAnthropicKey();
-
-  if (apiKey) {
-    await a9SourcingAvecClaude(apiKey, statusEl, resultsEl);
-  } else {
-    a9SourcingLocal(statusEl, resultsEl);
-  }
+  await a9SourcingAvecClaude(statusEl, resultsEl);
 
   enableBtn(btn);
 }
@@ -98,7 +92,7 @@ function a9SourcingLocal(statusEl, resultsEl) {
 
   // Filtre dédupliqué
   const disponibles = A9_VIVIER.filter(p =>
-    !existants.some(e => e.includes(p.nom.toLowerCase().substring(0, 10)) || p.nom.toLowerCase().includes(e.substring(0, 10)))
+    !existants.some(e => _a9Normalize(e) === _a9Normalize(p.nom))
   );
 
   if (disponibles.length === 0) {
@@ -127,8 +121,8 @@ function a9SourcingLocal(statusEl, resultsEl) {
 }
 
 /* ---------- MODE A : Claude API ---------- */
-async function a9SourcingAvecClaude(apiKey, statusEl, resultsEl) {
-  const existants = a9State.sponsors.map(s => s.name);
+async function a9SourcingAvecClaude(statusEl, resultsEl) {
+  const existants    = a9State.sponsors.map(s => s.name);
   const budgetRestant = MISSION.budget - (state.spent || 0);
 
   statusEl.innerHTML = '<span style="color:var(--cyan)">🧠 Claude analyse le marché…</span>';
@@ -148,20 +142,21 @@ Réponds UNIQUEMENT en JSON valide sans markdown :
 {"analyse":"2 phrases","suggestions":[{"nom":"...","type":"prive|mtac|particulier","montant":5000000,"statut":"prospect","contreparties":"..."}]}`;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    // Appel via proxy Vercel — la clé Anthropic reste côté serveur
+    const response = await fetch('/api/claude', {
       method: 'POST',
-      headers: { 'Content-Type':'application/json', 'x-api-key':apiKey, 'anthropic-version':'2023-06-01' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:600, messages:[{ role:'user', content:prompt }] })
     });
 
-    if (!response.ok) throw new Error(`API ${response.status}`);
+    if (!response.ok) throw new Error(`Proxy ${response.status}`);
     const d = await response.json();
     const clean = (d.content?.[0]?.text || '').replace(/```json|```/g,'').trim();
     const parsed = JSON.parse(clean);
     a9RenderSourcingResults(parsed, resultsEl, statusEl);
 
   } catch (err) {
-    statusEl.innerHTML = `<span style="color:var(--amber)">⚠️ API Claude indisponible — bascule mode local.</span>`;
+    statusEl.innerHTML = `<span style="color:var(--amber)">⚠️ Service IA indisponible — bascule mode local.</span>`;
     a9SourcingLocal(statusEl, resultsEl);
   }
 }
@@ -216,7 +211,7 @@ function a9ValidateSourcing(btn) {
     const type = card.querySelector('.st')?.value;
     const montant = parseInt(card.querySelector('.sm')?.value) || 0;
     const contra = card.querySelector('.sc')?.value;
-    if (nom && !existants.includes(nom.toLowerCase())) {
+    if (nom && !existants.some(e => _a9Normalize(e) === _a9Normalize(nom))) {
       a9State.sponsors.unshift({ id:'sp_ia_'+Date.now()+'_'+(added++), name:nom, type, amount:montant, status:'prospect', contra, ts:Date.now() });
     }
   });
