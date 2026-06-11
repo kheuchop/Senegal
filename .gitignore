@@ -1,0 +1,12 @@
+# Exports de coffre-fort (contiennent des clés en clair)
+vault_export_*.json
+
+# Variables d'environnement locales
+.env
+.env.*
+.vercel
+
+# OS / éditeurs
+.DS_Store
+Thumbs.db
+*.log

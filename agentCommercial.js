@@ -124,27 +124,42 @@ Réponds UNIQUEMENT en JSON valide sans markdown :
     const d = await response.json();
     const clean = (d.content?.[0]?.text || '').replace(/```json|```/g,'').trim();
     const parsed = JSON.parse(clean);
+    if (!_a9ValidateSourcing(parsed)) throw new Error('Réponse IA malformée');
     a9RenderSourcingResults(parsed, resultsEl, statusEl);
   } catch (err) {
     statusEl.innerHTML = '<span style="color:var(--amber)">⚠️ Service IA indisponible — bascule mode local.</span>';
     a9SourcingLocal(statusEl, resultsEl);
   }
 }
+/* Valide la structure JSON renvoyée par Claude avant tout rendu */
+function _a9ValidateSourcing(data) {
+  if (!data || typeof data.analyse !== 'string' || !Array.isArray(data.suggestions)) return false;
+  return data.suggestions.every(s =>
+    s && typeof s.nom === 'string' &&
+    ['prive', 'mtac', 'particulier'].includes(s.type) &&
+    typeof s.montant === 'number' && isFinite(s.montant) &&
+    (s.contreparties == null || typeof s.contreparties === 'string')
+  );
+}
+
 function a9RenderSourcingResults(data, resultsEl, statusEl) {
+  // esc : utilise le helper global d'index.html, fallback défensif si absent
+  const esc = window.escapeHtml || (v => String(v ?? '').replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])));
   if (statusEl) statusEl.innerHTML = '';
   resultsEl.style.display = 'block';
   resultsEl.innerHTML = `
     <div style="margin-bottom:12px;padding:10px;background:var(--bg-card);border-radius:8px;font-size:0.75rem;color:var(--text-secondary)">
-      <span style="color:var(--text-muted)">(</span>${data.analyse}<span style="color:var(--text-muted)">)</span>
+      <span style="color:var(--text-muted)">(</span>${esc(data.analyse)}<span style="color:var(--text-muted)">)</span>
     </div>
     ${data.suggestions.map(s => `
       <div class="sponsor-card" style="margin-bottom:10px;padding:14px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <span style="font-weight:700;color:var(--cyan);font-size:0.85rem">${s.nom}</span>
+          <span style="font-weight:700;color:var(--cyan);font-size:0.85rem">${esc(s.nom)}</span>
           <span style="font-size:0.6rem;background:var(--bg-deep);padding:2px 6px;border-radius:4px;color:var(--text-muted)">${s.type === 'mtac' ? '🏛 MTAC' : s.type === 'particulier' ? '👤 Particulier' : '🏢 Privé'}</span>
         </div>
-        <div style="font-size:1.1rem;font-weight:800;color:var(--emerald);margin-bottom:4px">${s.montant.toLocaleString('fr-FR')} FCFA</div>
-        <div style="font-size:0.7rem;color:var(--text-muted)">${s.contreparties}</div>
+        <div style="font-size:1.1rem;font-weight:800;color:var(--emerald);margin-bottom:4px">${Number(s.montant).toLocaleString('fr-FR')} FCFA</div>
+        <div style="font-size:0.7rem;color:var(--text-muted)">${esc(s.contreparties)}</div>
       </div>
     `).join('')}
     <button class="btn btn-success btn-sm" style="width:100%;margin-top:8px" onclick="a9ValidateSourcing(this)">

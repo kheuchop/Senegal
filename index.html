@@ -11,7 +11,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,600;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
-<link id="leaflet-css" rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<link id="leaflet-css" rel="stylesheet" href="vendor/leaflet/leaflet.css">
+<link rel="manifest" href="manifest.json">
 <style>
 /* ============================================================
    CSS CUSTOM PROPERTIES
@@ -1993,7 +1994,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
               <button class="numpad-btn wide" onclick="vaultPinInput('0')">0</button>
               <button class="numpad-btn" onclick="vaultPinBackspace()">⌫</button>
             </div>
-            <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted);opacity:0.5;text-align:center">PIN par défaut : 1234 · Modifiable dans le coffre</div>
+            <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted);opacity:0.5;text-align:center">Code PIN requis · Modifiable dans le coffre</div>
           </div>
         </div>
 
@@ -3435,10 +3436,10 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 </div><!-- /app -->
 
 <!-- Leaflet JS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="" id="leaflet-script"></script>
+<script src="vendor/leaflet/leaflet.js" id="leaflet-script"></script>
 
 <!-- Supabase JS — doit être chargé APRÈS le DOM et AVANT supabase-sync -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="vendor/supabase.min.js"></script>
 <!-- Supabase Sync — dépend de supabase.min.js, doit précéder le script principal -->
 <script src="supabase-sync-1.js"></script>
 
@@ -3524,6 +3525,27 @@ const state = {
 };
 
 /* ============================================================
+   SÉCURITÉ — Échappement HTML (anti-XSS stocké)
+   Toute donnée d'origine utilisateur ou LLM injectée via innerHTML
+   DOIT passer par escapeHtml(). escapeAttr() pour les attributs.
+   ============================================================ */
+function escapeHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+function escapeAttr(str) {
+  // Pour valeurs insérées dans un attribut JS (onclick='...'), neutralise
+  // apostrophes, backslashes et balises.
+  return escapeHtml(String(str ?? '').replace(/\\/g, '\\\\'));
+}
+window.escapeHtml = escapeHtml;
+window.escapeAttr = escapeAttr;
+
+/* ============================================================
    INDEXEDDB — Isolated readwrite transactions
    ============================================================ */
 let db = null;
@@ -3569,6 +3591,7 @@ function saveStateToDB() {
       transactions: state.transactions,
       catSpend:     state.catSpend,
       vault:        state.vault,
+      vaultPin:     state.vaultPin,
       daysDone:     state.daysDone,
       sitesDone:    state.sitesDone,
       printRate:    state.printRate
@@ -3589,6 +3612,7 @@ async function loadStateFromDB() {
     if (d.transactions) state.transactions = d.transactions;
     if (d.catSpend) state.catSpend = d.catSpend;
     if (d.vault) state.vault = { ...state.vault, ...d.vault };
+    if (d.vaultPin && /^\d{4}$/.test(d.vaultPin)) state.vaultPin = d.vaultPin;
     if (d.daysDone !== undefined) state.daysDone = d.daysDone;
     if (d.sitesDone !== undefined) state.sitesDone = d.sitesDone;
     if (d.printRate !== undefined) state.printRate = d.printRate;
@@ -4037,6 +4061,13 @@ function checkPin() {
     document.getElementById('vault-content-area').classList.add('unlocked');
     renderVaultKeys();
     showToast('🔓 Coffre déverrouillé', 'ok');
+    // Force le changement du PIN par défaut au premier usage
+    if (state.vaultPin === '1234') {
+      setTimeout(() => {
+        showToast('⚠️ Changez le PIN par défaut (1234)', 'warn');
+        changePIN();
+      }, 400);
+    }
   } else {
     const errEl = document.getElementById('vault-error');
     if (errEl) { errEl.style.display = 'block'; setTimeout(() => { errEl.style.display='none'; }, 2000); }
@@ -4061,16 +4092,36 @@ function renderVaultKeys() {
     keys.forEach((k, idx) => {
       const div = document.createElement('div');
       div.className = 'key-entry';
-      div.innerHTML = `<div class="key-name">${k.name}</div><div class="key-val-row"><div class="key-val masked" id="kv-${cat}-${idx}">••••••••••••••••</div><div class="key-actions"><button class="key-action-btn" onclick="toggleKeyVisibility('${cat}',${idx},'${k.value.replace(/'/g,"\\'")}')">👁</button><button class="key-action-btn" onclick="copyKey('${k.value.replace(/'/g,"\\'")}')">📋</button><button class="key-action-btn" onclick="deleteKey('${cat}',${idx})">🗑</button></div></div>`;
+      div.innerHTML = `<div class="key-name">${escapeHtml(k.name)}</div><div class="key-val-row"><div class="key-val masked" id="kv-${cat}-${idx}">••••••••••••••••</div><div class="key-actions"><button class="key-action-btn" data-act="reveal" data-cat="${escapeHtml(cat)}" data-idx="${idx}">👁</button><button class="key-action-btn" data-act="copy" data-cat="${escapeHtml(cat)}" data-idx="${idx}">📋</button><button class="key-action-btn" data-act="del" data-cat="${escapeHtml(cat)}" data-idx="${idx}">🗑</button></div></div>`;
       container.appendChild(div);
     });
+    // Délégation : un seul écouteur par conteneur, valeurs lues depuis state
+    if (!container._vaultBound) {
+      container.addEventListener('click', _handleVaultKeyAction);
+      container._vaultBound = true;
+    }
   });
 }
-function toggleKeyVisibility(cat, idx, val) {
+function _handleVaultKeyAction(e) {
+  const btn = e.target.closest('button[data-act]');
+  if (!btn) return;
+  const act = btn.dataset.act;
+  const cat = btn.dataset.cat;
+  const idx = Number(btn.dataset.idx);
+  const entry = state.vault?.[cat]?.[idx];
+  if (!entry) return;
+  if (act === 'reveal') toggleKeyVisibility(cat, idx);
+  else if (act === 'copy') copyKey(entry.value);
+  else if (act === 'del') deleteKey(cat, idx);
+}
+function toggleKeyVisibility(cat, idx) {
   const el = document.getElementById(`kv-${cat}-${idx}`);
   if (!el) return;
   el.classList.toggle('masked');
-  el.textContent = el.classList.contains('masked') ? '••••••••••••••••' : val;
+  // La valeur est lue depuis state au moment du clic, jamais stockée dans le DOM
+  el.textContent = el.classList.contains('masked')
+    ? '••••••••••••••••'
+    : (state.vault?.[cat]?.[idx]?.value ?? '');
 }
 function copyKey(val) { navigator.clipboard?.writeText(val).then(() => showToast('Clé copiée', 'ok')).catch(() => showToast('Copie non supportée', 'warn')); }
 function deleteKey(cat, idx) {
@@ -4110,8 +4161,15 @@ function exportVault() {
 }
 function changePIN() {
   const newPin = prompt('Nouveau PIN (4 chiffres) :');
-  if (newPin && /^\d{4}$/.test(newPin)) { state.vaultPin = newPin; showToast('🔑 PIN mis à jour', 'ok'); }
-  else if (newPin) { showToast('PIN invalide — 4 chiffres requis', 'warn'); }
+  if (newPin && /^\d{4}$/.test(newPin) && newPin !== '1234') {
+    state.vaultPin = newPin;
+    saveStateToDB();
+    showToast('🔑 PIN mis à jour', 'ok');
+  } else if (newPin === '1234') {
+    showToast('Choisissez un PIN différent de 1234', 'warn');
+  } else if (newPin) {
+    showToast('PIN invalide — 4 chiffres requis', 'warn');
+  }
 }
 
 /* ============================================================
@@ -5234,7 +5292,7 @@ function a9RenderSponsors() {
     div.className = `a9-sponsor-item sp-${s.status}`;
     const typeLabel = { mtac:'🏛️ MTAC', prive:'🤝 Privé', particulier:'👤 Particulier', inkind:'📦 Nature' };
     const amtCls = `amt-${s.status}`;
-    div.innerHTML = `<div class="a9-sp-info"><div class="a9-sp-name">${s.name}</div><div class="a9-sp-meta">${typeLabel[s.type] || s.type} · ${s.status.toUpperCase()}${s.contra ? ' · ' + s.contra.substring(0,40) : ''}</div></div><div class="a9-sp-amount ${amtCls}">${s.amount > 0 ? Math.round(s.amount).toLocaleString('fr-FR') : 'Apport nature'}<div style="font-size:0.45rem;color:var(--text-muted)">FCFA</div></div>`;
+    div.innerHTML = `<div class="a9-sp-info"><div class="a9-sp-name">${escapeHtml(s.name)}</div><div class="a9-sp-meta">${escapeHtml(typeLabel[s.type] || s.type)} · ${escapeHtml(String(s.status).toUpperCase())}${s.contra ? ' · ' + escapeHtml(String(s.contra).substring(0,40)) : ''}</div></div><div class="a9-sp-amount ${amtCls}">${s.amount > 0 ? Math.round(s.amount).toLocaleString('fr-FR') : 'Apport nature'}<div style="font-size:0.45rem;color:var(--text-muted)">FCFA</div></div>`;
     list.appendChild(div);
   });
   a9RenderPipeline();
@@ -5249,7 +5307,7 @@ function a9RenderPipeline() {
     if (filtered.length === 0) { col.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.45rem;color:var(--text-muted);text-align:center;padding:8px">—</div>'; return; }
     filtered.forEach(s => {
       const div = document.createElement('div'); div.className = 'a9-pipe-card';
-      div.innerHTML = `<div class="a9-pc-name">${s.name}</div><div class="a9-pc-amt">${s.amount > 0 ? (s.amount/1000000).toFixed(1) + 'M' : 'Nature'}</div>`;
+      div.innerHTML = `<div class="a9-pc-name">${escapeHtml(s.name)}</div><div class="a9-pc-amt">${s.amount > 0 ? (s.amount/1000000).toFixed(1) + 'M' : 'Nature'}</div>`;
       col.appendChild(div);
     });
   });
@@ -6886,5 +6944,15 @@ async function checkAuthSession() {
 document.addEventListener('DOMContentLoaded', init);
 </script>
 <script src="agentCommercial.js"></script>
+<script>
+/* Service Worker — mode hors-ligne terrain */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => console.log('[SW] Enregistré — scope:', reg.scope))
+      .catch(err => console.warn('[SW] Échec enregistrement:', err));
+  });
+}
+</script>
 </body>
 </html>
