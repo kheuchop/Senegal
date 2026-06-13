@@ -5,6 +5,8 @@
  * Mode B : Base locale 37 prospects sénégalais scorés
  */
 
+let _a9LastSourcingData = null; // remplace le stockage sur nœud DOM (évite fuites mémoire)
+
 const A9_VIVIER = [
   // ENTREPRISES SÉNÉGAL — GRANDS COMPTES
   { nom:'Sonatel / Orange Sénégal', type:'prive', montant:12000000, contreparties:'Logo couverture + 50 ex. dédicacés + événement lancement' },
@@ -166,13 +168,13 @@ function a9RenderSourcingResults(data, resultsEl, statusEl) {
       ✅ AJOUTER AU PIPELINE
     </button>
   `;
-  resultsEl._data = data;
+  _a9LastSourcingData = data;
 }
 
 function a9ValidateSourcing(btn) {
   disableBtn(btn);
   const resultsEl = document.getElementById('a9-sourcing-results');
-  const data = resultsEl._data;
+  const data = _a9LastSourcingData;
   if (!data) return;
   const existants = a9State.sponsors.map(s => s.name.toLowerCase());
   let added = 0;

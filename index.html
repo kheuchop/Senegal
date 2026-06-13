@@ -1940,10 +1940,10 @@ textarea.input-field { resize: vertical; min-height: 80px; }
             <textarea class="input-field" id="wa-broadcast-msg" placeholder="Saisir le message à diffuser à l'équipe…" autocomplete="off" spellcheck="false" style="min-height:70px"></textarea>
           </div>
           <div class="wa-btn-row">
-            <button class="btn btn-primary" onclick="triggerWhatsAppBroadcast('team')">
+            <button class="btn btn-primary" onclick="triggerWhatsAppBroadcast(event,'team')">
               <div class="spinner"></div><span class="btn-text">📣 Équipe</span>
             </button>
-            <button class="btn btn-danger" onclick="triggerWhatsAppBroadcast('emergency')">
+            <button class="btn btn-danger" onclick="triggerWhatsAppBroadcast(event,'emergency')">
               <div class="spinner"></div><span class="btn-text">🚨 Urgence</span>
             </button>
           </div>
@@ -2231,7 +2231,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
             <label class="input-label">Description</label>
             <input type="text" class="input-field" id="exp-desc" placeholder="Détail de la dépense…" autocomplete="off">
           </div>
-          <button class="btn btn-primary btn-full" onclick="addExpense()">
+          <button class="btn btn-primary btn-full" onclick="addExpense(event)">
             <div class="spinner"></div><span class="btn-text">➕ Enregistrer</span>
           </button>
         </div>
@@ -3594,7 +3594,8 @@ function saveStateToDB() {
       vaultPin:     state.vaultPin,
       daysDone:     state.daysDone,
       sitesDone:    state.sitesDone,
-      printRate:    state.printRate
+      printRate:    state.printRate,
+      a9Sponsors:   a9State.sponsors
     }
   }).catch(e => console.error('[DB] saveState échoué:', e));
 
@@ -3616,6 +3617,7 @@ async function loadStateFromDB() {
     if (d.daysDone !== undefined) state.daysDone = d.daysDone;
     if (d.sitesDone !== undefined) state.sitesDone = d.sitesDone;
     if (d.printRate !== undefined) state.printRate = d.printRate;
+    if (Array.isArray(d.a9Sponsors)) a9State.sponsors = d.a9Sponsors;
   }
 }
 
@@ -3729,8 +3731,8 @@ function updateWAQueueUI() {
   if (label) label.textContent = state.webhookQueue.length > 0 ? `${state.webhookQueue.length} message(s) en attente · Sync dès reconnexion` : 'File vide — 0 message en attente';
 }
 
-function triggerWhatsAppBroadcast(type) {
-  const btn = event.currentTarget;
+function triggerWhatsAppBroadcast(evt, type) {
+  const btn = evt.currentTarget;
   const msg = document.getElementById('wa-broadcast-msg').value.trim();
 
   if (!msg) { showToast('Saisir un message avant d\'envoyer', 'warn'); return; }
@@ -4002,7 +4004,6 @@ function renderNotifications() {
   });
 }
 function addActivity(icon, title, time) {
-  state.notifications.length === 0 && null;
   const feed = document.getElementById('activity-feed');
   if (!feed) return;
   const div = document.createElement('div');
@@ -4278,8 +4279,8 @@ const CAT_COLORS = { transport:'#4facfe', hebergement:'#00e676', equipement:'#7c
 const CAT_LABELS = { transport:'Transport', hebergement:'Hébergement', equipement:'Équipement', api:'API Cloud', impression:'Impression', communication:'Communication', divers:'Divers' };
 const CAT_BUDGET = { transport:15000000, hebergement:12000000, equipement:20000000, api:5000000, impression:25000000, communication:10000000, divers:13000000 };
 
-function addExpense() {
-  const btn = event.currentTarget; disableBtn(btn);
+function addExpense(evt) {
+  const btn = evt.currentTarget; disableBtn(btn);
   const cat  = document.getElementById('exp-category').value;
   const amt  = Math.round(parseFloat(document.getElementById('exp-amount').value) || 0);
   const desc = document.getElementById('exp-desc').value.trim() || CAT_LABELS[cat];
@@ -4587,7 +4588,6 @@ function a5BuildPlan() {
       });
     }
   });
-  while (day < 66) { day++; plan.push({ day, site: null, status: 'pending', note: '', shots: 0 }); }
   a5State.planData = plan;
 }
 
@@ -5423,7 +5423,7 @@ function a9ExportDossier() {
 }
 
 function initAgent9() {
-  // Sponsors suggérés — prospects réels à contacter pour la mission 2027
+  if (a9State.sponsors.length > 0) { a9RenderSponsors(); a9ComputeTotals(); return; }
   a9State.sponsors = [
     { id:'sp_s01', name:'Orange Sénégal',           type:'prive',       amount:8000000,  status:'prospect', contra:'Logo couverture + 30 ex. numérotés + posts réseaux', ts: Date.now() },
     { id:'sp_s02', name:'Fondation Orange Afrique',  type:'prive',       amount:5000000,  status:'prospect', contra:'Mention mécène + 20 ex. numérotés + exposition', ts: Date.now() },
@@ -5869,6 +5869,8 @@ function a12SavePoint(evt) {
   setTimeout(() => enableBtn(btn), 500);
 }
 
+const BOOK_PRICE_FCFA = 35000; // Prix unitaire livre d'art collector (FCFA)
+
 function a12RecordSale(evt) {
   const btn = evt.currentTarget; disableBtn(btn);
   const pvId = document.getElementById('a12-sale-point')?.value;
@@ -5877,7 +5879,7 @@ function a12RecordSale(evt) {
   if (!pv || qty <= 0) { showToast('Point de vente et quantité requis', 'warn'); enableBtn(btn); return; }
   if (pv.vendu + qty > pv.alloc) { showToast(`Stock insuffisant — ${pv.alloc - pv.vendu} ex. restants`, 'warn'); enableBtn(btn); return; }
   pv.vendu += qty;
-  const revenue = qty * 35000;
+  const revenue = qty * BOOK_PRICE_FCFA;
   addActivity('🛒', `Vente enregistrée : ${qty} ex. — ${pv.name} — ${fmtFCFA(revenue)}`, now());
   addNotification({ type: 'ok', text: `💰 Vente : ${qty} exemplaire(s) — ${pv.name}`, time: now() });
   a12RenderPoints();
@@ -5899,87 +5901,189 @@ const a13State = {
   currentURL: ''
 };
 
-/* --- QR Code Engine (pure JS, no external lib) --- */
-function a13QREncode(text) {
-  const size = 21;
-  const modules = Array.from({ length: size }, () => new Array(size).fill(null));
-
-  function setBlock(r, c, v) { if (r >= 0 && r < size && c >= 0 && c < size) modules[r][c] = v; }
-
-  // Finder patterns
-  function finder(row, col) {
-    for (let r = -1; r <= 7; r++) for (let c = -1; c <= 7; c++) {
-      if (r < 0 || r > 6 || c < 0 || c > 6) setBlock(row + r, col + c, false);
-      else if (r === 0 || r === 6 || c === 0 || c === 6) setBlock(row + r, col + c, true);
-      else if (r >= 2 && r <= 4 && c >= 2 && c <= 4) setBlock(row + r, col + c, true);
-      else setBlock(row + r, col + c, false);
+/* --- QR Code Engine (byte mode, ECC-L, versions 1-10, Reed-Solomon) --- */
+(function () {
+  const EXP = new Uint8Array(512), LOG = new Uint8Array(256);
+  (function initGF() {
+    let x = 1;
+    for (let i = 0; i < 255; i++) {
+      EXP[i] = EXP[i + 255] = x;
+      LOG[x] = i;
+      x = x < 128 ? x * 2 : (x * 2) ^ 0x11D;
     }
+  })();
+  const gmul = (a, b) => a && b ? EXP[LOG[a] + LOG[b]] : 0;
+
+  function rsEcc(data, n) {
+    let g = [1];
+    for (let i = 0; i < n; i++) {
+      const ng = new Array(g.length + 1).fill(0);
+      for (let j = 0; j < g.length; j++) { ng[j] ^= g[j]; ng[j + 1] ^= gmul(g[j], EXP[i]); }
+      g = ng;
+    }
+    const buf = [...data, ...new Array(n).fill(0)];
+    for (let i = 0; i < data.length; i++)
+      if (buf[i]) for (let j = 0; j < g.length; j++) buf[i + j] ^= gmul(g[j], buf[i]);
+    return buf.slice(data.length);
   }
-  finder(0, 0); finder(0, size - 7); finder(size - 7, 0);
 
-  // Timing
-  for (let i = 8; i < size - 8; i++) {
-    setBlock(6, i, i % 2 === 0); setBlock(i, 6, i % 2 === 0);
+  // [dataCap, ecCap, alignmentCenters hors 6]
+  const VER = [null,
+    [19,  7,  []], [34,  10, [18]],    [55,  15, [22]],
+    [80,  20, [26]], [108, 26, [30]],  [136, 34, [34]],
+    [156, 40, [22,38]], [194, 48, [24,42]], [232, 60, [26,46]],
+    [274, 72, [28,50]],
+  ];
+
+  function fmtBits(mask) {
+    const d = (0b01 << 3) | mask;
+    let rem = d << 10;
+    for (let i = 4; i >= 0; i--) if (rem & (1 << (i + 10))) rem ^= 0x537 << i;
+    return ((d << 10) | (rem & 0x3FF)) ^ 0x5412;
   }
 
-  // Dark module
-  setBlock(size - 8, 8, true);
+  const MASKS = [
+    (r,c)=>(r+c)%2===0, (r)=>r%2===0, (r,c)=>c%3===0, (r,c)=>(r+c)%3===0,
+    (r,c)=>(Math.floor(r/2)+Math.floor(c/3))%2===0,
+    (r,c)=>(r*c)%2+(r*c)%3===0,
+    (r,c)=>((r*c)%2+(r*c)%3)%2===0,
+    (r,c)=>((r+c)%2+(r*c)%3)%2===0,
+  ];
 
-  // Encode text bytes
-  const bytes = [];
-  for (let i = 0; i < Math.min(text.length, 50); i++) bytes.push(text.charCodeAt(i) & 0xFF);
-
-  // Fill data modules with encoded content (simplified)
-  let byteIdx = 0, bitIdx = 7;
-  const reserved = (r, c) => modules[r][c] !== null;
-  for (let col = size - 1; col > 0; col -= 2) {
-    if (col === 6) col--;
-    for (let rowIter = 0; rowIter < size; rowIter++) {
-      const row = ((col - 1) % 4 < 2) ? rowIter : size - 1 - rowIter;
-      for (let d = 0; d < 2; d++) {
-        const c = col - d;
-        if (!reserved(row, c)) {
-          const bit = byteIdx < bytes.length ? ((bytes[byteIdx] >> bitIdx) & 1) === 1 : false;
-          modules[row][c] = bit ^ ((row + c) % 2 === 0);
-          bitIdx--;
-          if (bitIdx < 0) { bitIdx = 7; byteIdx++; }
-        }
+  function calcPenalty(M, sz) {
+    let p = 0;
+    for (let r = 0; r < sz; r++) for (let isRow = 0; isRow < 2; isRow++) {
+      let run = 1;
+      for (let i = 1; i < sz; i++) {
+        const same = isRow ? M[r][i]===M[r][i-1] : M[i][r]===M[i-1][r];
+        if (same) { run++; if (run===5) p+=3; else if (run>5) p++; } else run=1;
       }
     }
+    for (let r=0;r<sz-1;r++) for (let c=0;c<sz-1;c++)
+      if (M[r][c]===M[r+1][c]&&M[r][c]===M[r][c+1]&&M[r][c]===M[r+1][c+1]) p+=3;
+    let dark=0; M.forEach(row=>row.forEach(v=>{if(v===1)dark++;}));
+    p += Math.floor(Math.abs(dark*20/(sz*sz)-10))*10;
+    return p;
   }
 
-  return modules;
-}
+  function writeFormat(M, sz, mask) {
+    const bits = fmtBits(mask);
+    const P1=[[8,0],[8,1],[8,2],[8,3],[8,4],[8,5],[8,7],[8,8],[7,8],[5,8],[4,8],[3,8],[2,8],[1,8],[0,8]];
+    const P2=[[sz-1,8],[sz-2,8],[sz-3,8],[sz-4,8],[sz-5,8],[sz-6,8],[sz-7,8],[8,sz-8],[8,sz-7],[8,sz-6],[8,sz-5],[8,sz-4],[8,sz-3],[8,sz-2],[8,sz-1]];
+    for (let i=0;i<15;i++) { M[P1[i][0]][P1[i][1]]=(bits>>i)&1; M[P2[i][0]][P2[i][1]]=(bits>>i)&1; }
+  }
+
+  window.a13QREncode = function(text) {
+    const bytes = typeof TextEncoder!=='undefined'
+      ? new TextEncoder().encode(text)
+      : Uint8Array.from([...text].map(c=>c.charCodeAt(0)&0xFF));
+    const n = bytes.length;
+
+    let version=1;
+    while (version<=10 && VER[version][0]<n+2) version++;
+    version = Math.min(version,10);
+    const [dataCap,ecCap,alignExtra] = VER[version];
+    const SZ = version*4+17;
+
+    // Flux binaire — mode Byte : 0100 + longueur 8 bits + données
+    const bits=[0,1,0,0];
+    for (let i=7;i>=0;i--) bits.push((n>>i)&1);
+    for (const b of bytes) for (let i=7;i>=0;i--) bits.push((b>>i)&1);
+    while (bits.length%8!==0&&bits.length<dataCap*8) bits.push(0);
+    let tog=false;
+    while (bits.length<dataCap*8) { const p=tog?0x11:0xEC; for(let i=7;i>=0;i--)bits.push((p>>i)&1); tog=!tog; }
+
+    const dw=[];
+    for (let i=0;i<dataCap*8;i+=8){let b=0;for(let j=0;j<8;j++)b=(b<<1)|(bits[i+j]||0);dw.push(b);}
+
+    const msg=[...dw,...rsEcc(dw,ecCap)];
+
+    // Matrice : -1=non affecté, 0=clair, 1=sombre
+    const M=Array.from({length:SZ},()=>new Int8Array(SZ).fill(-1));
+    const F=Array.from({length:SZ},()=>new Uint8Array(SZ));
+    const mark=(r,c,v)=>{if(r>=0&&c>=0&&r<SZ&&c<SZ){M[r][c]=v;F[r][c]=1;}};
+
+    // Finder patterns + séparateurs (bordure externe = clair)
+    const finder=(r0,c0)=>{
+      for(let dr=-1;dr<=7;dr++)for(let dc=-1;dc<=7;dc++){
+        const ins=dr>=0&&dr<=6&&dc>=0&&dc<=6;
+        const edge=dr===0||dr===6||dc===0||dc===6;
+        const ctr=dr>=2&&dr<=4&&dc>=2&&dc<=4;
+        mark(r0+dr,c0+dc,(ins&&(edge||ctr))?1:0);
+      }
+    };
+    finder(0,0); finder(0,SZ-7); finder(SZ-7,0);
+
+    // Timing
+    for(let i=8;i<SZ-8;i++){mark(6,i,i%2?0:1);mark(i,6,i%2?0:1);}
+
+    // Dark module
+    mark(SZ-8,8,1);
+
+    // Alignment patterns
+    const aPos=[6,...alignExtra];
+    for(let i=0;i<aPos.length;i++)for(let j=0;j<aPos.length;j++){
+      const r=aPos[i],c=aPos[j]; if(F[r][c])continue;
+      for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++){
+        mark(r+dr,c+dc,(Math.abs(dr)===2||Math.abs(dc)===2||(dr===0&&dc===0))?1:0);
+      }
+    }
+
+    // Réservation format info (évite col/row 6 = timing)
+    for(let i=0;i<=8;i++){if(i!==6)mark(8,i,0);if(i!==6)mark(i,8,0);}
+    for(let i=SZ-7;i<SZ;i++) mark(i,8,0);
+    for(let i=SZ-8;i<SZ;i++) mark(8,i,0);
+    mark(SZ-8,8,1); // dark module restauré
+
+    // Placement données (zigzag droite→gauche)
+    let bi=0,bj=7,upward=true;
+    const nextBit=()=>{if(bi>=msg.length)return 0;const b=(msg[bi]>>bj)&1;if(--bj<0){bj=7;bi++;}return b;};
+    for(let col=SZ-1;col>=1;col-=2){
+      if(col===6)col--;
+      for(let ri=0;ri<SZ;ri++){
+        const r=upward?SZ-1-ri:ri;
+        for(let d=0;d<=1;d++){const c=col-d;if(!F[r][c])M[r][c]=nextBit();}
+      }
+      upward=!upward;
+    }
+
+    // Sélection du meilleur masque (évalue les 8 patterns)
+    let bestMask=0,bestScore=Infinity;
+    for(let mask=0;mask<8;mask++){
+      const T=M.map(row=>Int8Array.from(row));
+      for(let r=0;r<SZ;r++)for(let c=0;c<SZ;c++)if(!F[r][c]&&MASKS[mask](r,c))T[r][c]^=1;
+      writeFormat(T,SZ,mask);
+      const score=calcPenalty(T,SZ);
+      if(score<bestScore){bestScore=score;bestMask=mask;}
+    }
+
+    // Application du meilleur masque
+    for(let r=0;r<SZ;r++)for(let c=0;c<SZ;c++)if(!F[r][c]&&MASKS[bestMask](r,c))M[r][c]^=1;
+    writeFormat(M,SZ,bestMask);
+
+    // Conversion en tableau booléen 2D
+    return Array.from(M,row=>Array.from(row,v=>v===1));
+  };
+})();
 
 function a13DrawQR(canvas, modules, style) {
   const ctx = canvas.getContext('2d');
-  const size = modules.length;
-  const cellSize = Math.floor(canvas.width / (size + 4));
-  const offsetX = Math.floor((canvas.width - cellSize * size) / 2);
-  const offsetY = Math.floor((canvas.height - cellSize * size) / 2);
-  const styles = {
-    cyber: { bg: '#030509', dark: '#00f2fe', light: '#060910', glow: 'rgba(0,242,254,0.4)' },
-    gold:  { bg: '#0a0800', dark: '#c4872a', light: '#0a0800', glow: 'rgba(196,135,42,0.4)' },
-    dark:  { bg: '#000000', dark: '#e0e0e0', light: '#111111', glow: 'rgba(200,200,200,0.2)' }
+  const sz = modules.length;
+  const cell = Math.floor(canvas.width / (sz + 4));
+  const ox = Math.floor((canvas.width  - cell * sz) / 2);
+  const oy = Math.floor((canvas.height - cell * sz) / 2);
+  const S = {
+    cyber: { bg:'#030509', dark:'#00f2fe', light:'#060910' },
+    gold:  { bg:'#0a0800', dark:'#c4872a', light:'#0a0800' },
+    dark:  { bg:'#000000', dark:'#e0e0e0', light:'#111111' }
   };
-  const s = styles[style] || styles.cyber;
+  const s = S[style] || S.cyber;
   ctx.fillStyle = s.bg;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  if (s.glow !== 'none') { ctx.shadowColor = s.glow; ctx.shadowBlur = 8; }
-  for (let r = 0; r < size; r++) {
-    for (let c = 0; c < size; c++) {
-      const v = modules[r][c];
-      ctx.fillStyle = v ? s.dark : s.light;
-      const x = offsetX + c * cellSize;
-      const y = offsetY + r * cellSize;
-      if (v) {
-        ctx.beginPath();
-        ctx.roundRect(x + 0.5, y + 0.5, cellSize - 1, cellSize - 1, style === 'cyber' ? 1.5 : 0);
-        ctx.fill();
-      }
-    }
+  for (let r = 0; r < sz; r++) for (let c = 0; c < sz; c++) {
+    ctx.fillStyle = modules[r][c] ? s.dark : s.light;
+    ctx.fillRect(ox + c * cell, oy + r * cell, cell, cell);
   }
-  ctx.shadowBlur = 0;
 }
 
 function a13GenerateQR(evt) {
@@ -6187,7 +6291,7 @@ function a14RenderHero() {
   hero.innerHTML = `<div class="a14-weather-icon">${d.icon}</div>
     <div class="a14-weather-info">
       <div class="a14-temp">${d.temp}°C</div>
-      <div class="a14-condition">${d.condition || d.cond} — ${d.city}</div>
+      <div class="a14-condition">${d.cond} — ${d.city}</div>
       <div class="a14-details">💧 Humidité : ${d.hum}% · 💨 Vent : ${d.vent} km/h · 👁 Visibilité : ${d.vis} km · ☀️ UV : ${d.uv}</div>
       <div class="a14-photo-window ${pwCls[d.photo]}">${pwLabel[d.photo]}</div>
     </div>`;
@@ -6531,7 +6635,7 @@ function initAgent16() {
 const a17State = {
   watcherInterval: null,
   driftObserverInterval: null,
-  missionStartTs: Date.now() - (state.daysDone * 86400000),
+  missionStartTs: null, // initialisé dans initAgent17() après loadStateFromDB
   planBActive: false,
   log: [],
   risks: [
@@ -6680,40 +6784,13 @@ function a17StartWatcher() {
   if (dot) dot.classList.add('active');
   if (label) { label.textContent = 'Watcher actif — surveillance queue financière'; label.style.color = 'var(--emerald)'; }
 
-  a17State.watcherInterval = setInterval(async () => {
+  a17State.watcherInterval = setInterval(() => {
     if (state.transactionQueue.length === 0) return;
-    const tx = state.transactionQueue[0];
-    if (!tx || typeof tx.amount !== 'number') { state.transactionQueue.shift(); return; }
-    // Déduction sur le state global
-    state.spent = Math.round(state.spent + tx.amount);
-    if (state.catSpend[tx.cat] !== undefined) {
-      state.catSpend[tx.cat] = Math.round(state.catSpend[tx.cat] + tx.amount);
-    } else {
-      state.catSpend.divers = Math.round((state.catSpend.divers || 0) + tx.amount);
-    }
-    state.transactions.unshift({ ...tx, balanceAfter: Math.round(state.budget - state.spent) });
-    // Update Agent 4 DOM directement via ses identifiants existants
-    const remaining = Math.round(state.budget - state.spent);
-    const remMF = (remaining / 1000000).toFixed(1);
-    const pctSpent = Math.round(state.spent / state.budget * 100);
-    const setDom = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
-    setDom('budget-remaining-val', remMF + 'M');
-    setDom('budget-remaining-header', remMF + 'M FCFA');
-    setDom('total-spent-val', fmtFCFA(state.spent));
-    setDom('pct-spent-val', pctSpent + '%');
-    setDom('tx-count-val', state.transactions.length);
-    const gaugeFill = document.getElementById('gauge-fill-path');
-    if (gaugeFill) gaugeFill.style.strokeDashoffset = String(Math.round(282.7 * (1 - pctSpent / 100)));
-    const budgetFillBar = document.getElementById('budget-fill-bar');
-    if (budgetFillBar) budgetFillBar.style.width = (100 - pctSpent) + '%';
-    // Persist to IndexedDB
-    await dbWrite('transactions', { ...tx, id: tx.id || Date.now() });
-    saveStateToDB();
-    // Dequeue
-    state.transactionQueue.shift();
-    a17AddLog(`Watcher : TX dépilée [${tx.type}] ${fmtFCFA(tx.amount)} — Budget restant : ${remMF}M`);
+    if (state.processingQueue) return; // processTransactionQueue déjà actif — évite la double déduction
+    const pending = state.transactionQueue.length;
+    a17AddLog(`Watcher : ${pending} TX en attente — délégation au processeur financier`);
+    processTransactionQueue();
     a17UpdateQueueDisplay();
-    updateCOORing();
   }, 2000);
 
   // Drift observer — check every 30s
@@ -6779,6 +6856,9 @@ function a17AddLog(text) {
 }
 
 function initAgent17() {
+  if (!a17State.missionStartTs) {
+    a17State.missionStartTs = Date.now() - (state.daysDone * 86400000);
+  }
   a17RenderRisks();
   a17UpdateDriftUI();
   a17UpdateQueueDisplay();
