@@ -3607,6 +3607,7 @@ function saveStateToDB() {
       a16DaysLeft:    a16State.daysLeft,
       a16Backers:     a16State.backers,
       a16Paliers:     a16State.paliers,
+      approvals:      state.approvals,
     }
   }).catch(e => console.error('[DB] saveState échoué:', e));
 
@@ -3640,6 +3641,7 @@ async function loadStateFromDB() {
     if (d.a16DaysLeft  !== undefined)  a16State.daysLeft      = d.a16DaysLeft;
     if (Array.isArray(d.a16Backers))   a16State.backers       = d.a16Backers;
     if (Array.isArray(d.a16Paliers))   a16State.paliers       = d.a16Paliers;
+    if (Array.isArray(d.approvals))    state.approvals        = d.approvals;
   }
 }
 
@@ -4035,7 +4037,7 @@ function addActivity(icon, title, time) {
   if (feed.children.length > 8) feed.removeChild(feed.lastChild);
 }
 function initSuperviseur() {
-  state.approvals = [...INITIAL_APPROVALS];
+  if (state.approvals.length === 0) state.approvals = [...INITIAL_APPROVALS];
   state.notifications = [...INITIAL_NOTIFICATIONS];
   renderApprovals();
   renderNotifications();
