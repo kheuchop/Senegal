@@ -7083,7 +7083,11 @@ function a16CopyMsg() {
 }
 
 function initAgent16() {
-  a16RenderPaliers(); a16UpdateJauge();
+  const goalInp = document.getElementById('a16-goal-input');
+  if (goalInp) goalInp.value = a16State.goal;
+  const daysInp = document.getElementById('a16-days-input');
+  if (daysInp) daysInp.value = a16State.daysLeft;
+  a16RenderPaliers(); a16UpdateJauge(); a16RenderBackers();
 }
 
 /* ============================================================
