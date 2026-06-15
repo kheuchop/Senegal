@@ -3839,7 +3839,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
            ===================================================== -->
       <div class="agent-panel" id="agent-distribution">
         <div class="card">
-          <div class="card-title">Points de Vente Prestige</div>
+          <div class="card-title">Points de Vente</div>
           <div id="a12-points-list"><div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);text-align:center;padding:16px">Aucun point de vente enregistré</div></div>
           <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="a12OpenAddPoint()">+ Ajouter Point de Vente</button>
         </div>
@@ -3847,44 +3847,105 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <div class="card-title">Nouveau Point de Vente</div>
           <div class="input-group"><label class="input-label">Nom</label><input type="text" class="input-field" id="a12-pv-name" placeholder="ex: Librairie Aux Quatre Vents" autocomplete="off"></div>
           <div class="input-group"><label class="input-label">Ville / Zone</label><input type="text" class="input-field" id="a12-pv-ville" placeholder="ex: Dakar — Plateau" autocomplete="off"></div>
-          <div class="input-group"><label class="input-label">Exemplaires alloués</label><input type="number" class="input-field" id="a12-pv-stock" placeholder="0" min="0" autocomplete="off"></div>
           <div class="input-group"><label class="input-label">Type</label>
             <select class="input-field" id="a12-pv-type">
               <option value="librairie">📚 Librairie</option>
               <option value="boutique">🛍️ Boutique prestige</option>
               <option value="musee">🏛️ Musée / Institution</option>
               <option value="hotel">🏨 Hôtel 5★</option>
+              <option value="ambassade">🏛️ Ambassade / Centre culturel</option>
+              <option value="galerie">🖼️ Galerie d'art</option>
               <option value="online">💻 En ligne</option>
             </select>
           </div>
+          <div class="input-group"><label class="input-label">Remise accordée (%)</label><input type="number" class="input-field" id="a12-pv-remise" placeholder="0" min="0" max="50" autocomplete="off"></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="input-group" style="margin:0"><label class="input-label">Ex. Standard alloués</label><input type="number" class="input-field" id="a12-pv-std" placeholder="0" min="0" autocomplete="off"></div>
+            <div class="input-group" style="margin:0"><label class="input-label">Ex. Luxe alloués</label><input type="number" class="input-field" id="a12-pv-luxe" placeholder="0" min="0" autocomplete="off"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
             <button class="btn btn-success" onclick="a12SavePoint(event)"><div class="spinner"></div><span class="btn-text">💾 Enregistrer</span></button>
             <button class="btn btn-ghost" onclick="a12CancelPoint()">Annuler</button>
           </div>
         </div>
         <div class="card">
-          <div class="card-title">Simulateur Stock Global — 500 ex.</div>
-          <div class="a12-stock-summary">
-            <div class="a12-stock-kpi"><span class="a12-kv">500</span><span class="a12-kl">Édition</span></div>
-            <div class="a12-stock-kpi"><span class="a12-kv" id="a12-kv-alloues">0</span><span class="a12-kl">Alloués</span></div>
-            <div class="a12-stock-kpi"><span class="a12-kv" id="a12-kv-vendus">0</span><span class="a12-kl">Vendus</span></div>
-            <div class="a12-stock-kpi"><span class="a12-kv" id="a12-kv-dispo" style="color:var(--emerald)">500</span><span class="a12-kl">Disponibles</span></div>
+          <div class="card-title">Stock Standard — 2 000 ex. · 50 000 FCFA</div>
+          <div class="a12-stock-summary" style="grid-template-columns:repeat(3,1fr)">
+            <div class="a12-stock-kpi"><span class="a12-kv" id="a12-kv-al-std">0</span><span class="a12-kl">Alloués</span></div>
+            <div class="a12-stock-kpi"><span class="a12-kv" id="a12-kv-v-std">0</span><span class="a12-kl">Vendus</span></div>
+            <div class="a12-stock-kpi"><span class="a12-kv" id="a12-kv-d-std" style="color:var(--emerald)">2000</span><span class="a12-kl">Disponibles</span></div>
           </div>
-          <div class="a12-stock-bar-track" style="margin:12px 0">
-            <div class="a12-stock-bar-alloc" id="a12-bar-alloc" style="width:0%"></div>
-            <div class="a12-stock-bar-sold" id="a12-bar-sold" style="width:0%"></div>
+          <div class="a12-stock-bar-track" style="margin:8px 0 14px">
+            <div class="a12-stock-bar-alloc" id="a12-bar-al-std" style="width:0%"></div>
+            <div class="a12-stock-bar-sold" id="a12-bar-v-std" style="width:0%"></div>
+          </div>
+          <div class="card-title" style="margin-top:4px">Stock Luxe Numéroté — 500 ex. · 85 000 FCFA</div>
+          <div class="a12-stock-summary" style="grid-template-columns:repeat(3,1fr)">
+            <div class="a12-stock-kpi"><span class="a12-kv" id="a12-kv-al-luxe">0</span><span class="a12-kl">Alloués</span></div>
+            <div class="a12-stock-kpi"><span class="a12-kv" id="a12-kv-v-luxe">0</span><span class="a12-kl">Vendus</span></div>
+            <div class="a12-stock-kpi"><span class="a12-kv" id="a12-kv-d-luxe" style="color:var(--emerald)">500</span><span class="a12-kl">Disponibles</span></div>
+          </div>
+          <div class="a12-stock-bar-track" style="margin:8px 0 14px">
+            <div class="a12-stock-bar-alloc" id="a12-bar-al-luxe" style="width:0%;background:linear-gradient(90deg,#c4872a,#e0a84a)"></div>
+            <div class="a12-stock-bar-sold" id="a12-bar-v-luxe" style="width:0%;background:linear-gradient(90deg,#d4a853,#f0c06a)"></div>
           </div>
           <div class="input-group"><label class="input-label">Enregistrer une vente</label>
-            <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end">
+            <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:end">
               <select class="input-field" id="a12-sale-point"></select>
-              <input type="number" class="input-field" id="a12-sale-qty" placeholder="Qté" min="1" style="width:70px" autocomplete="off">
+              <select class="input-field" id="a12-sale-edition" style="width:90px">
+                <option value="std">Standard</option>
+                <option value="luxe">Luxe</option>
+              </select>
+              <input type="number" class="input-field" id="a12-sale-qty" placeholder="Qté" min="1" style="width:60px" autocomplete="off">
             </div>
           </div>
           <button class="btn btn-success btn-full" onclick="a12RecordSale(event)"><div class="spinner"></div><span class="btn-text">🛒 Valider Vente</span></button>
         </div>
+        <div class="card">
+          <div class="card-title">Tableau de Bord Financier</div>
+          <div id="a12-finance-board"><div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted);text-align:center;padding:12px">Aucune donnée</div></div>
+        </div>
         <div class="card" id="a12-alert-card" style="display:none">
           <div class="card-title" style="color:var(--red)">⚠️ Alertes Stock Critique</div>
           <div id="a12-alert-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Stratégie Distribution — Claude</div>
+          <div class="input-group"><label class="input-label">Budget de lancement (FCFA)</label><input type="text" class="input-field" id="a12-strat-budget" placeholder="ex: 500 000" autocomplete="off"></div>
+          <div class="input-group"><label class="input-label">Zones cibles</label>
+            <div id="a12-strat-zones" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
+              <label style="display:flex;align-items:center;gap:5px;font-size:0.6rem"><input type="checkbox" value="Dakar" checked> Dakar</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:0.6rem"><input type="checkbox" value="Saint-Louis"> Saint-Louis</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:0.6rem"><input type="checkbox" value="Ziguinchor"> Ziguinchor</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:0.6rem"><input type="checkbox" value="Diaspora"> Diaspora FR/EU</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:0.6rem"><input type="checkbox" value="International"> Marché international</label>
+            </div>
+          </div>
+          <div class="input-group"><label class="input-label">Priorité</label>
+            <select class="input-field" id="a12-strat-priorite">
+              <option value="equilibre">Équilibrée (volume + prestige)</option>
+              <option value="rapide">Rapide (maximiser volume Standard)</option>
+              <option value="premium">Premium (maximiser Luxe + marges)</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="a12GenStrategie(event)"><div class="spinner"></div><span class="btn-text">✦ Analyser avec Claude</span></button>
+          <div id="a12-strat-result" style="margin-top:10px"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Bon de Commande Institutionnel — Claude</div>
+          <div class="input-group"><label class="input-label">Institution</label><input type="text" class="input-field" id="a12-bc-institution" placeholder="ex: Musée des Civilisations Noires" autocomplete="off"></div>
+          <div class="input-group"><label class="input-label">Contact</label><input type="text" class="input-field" id="a12-bc-contact" placeholder="Nom, poste" autocomplete="off"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="input-group" style="margin:0"><label class="input-label">Ville</label><input type="text" class="input-field" id="a12-bc-ville" placeholder="Dakar" autocomplete="off"></div>
+            <div class="input-group" style="margin:0"><label class="input-label">Pays</label><input type="text" class="input-field" id="a12-bc-pays" placeholder="Sénégal" autocomplete="off"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px">
+            <div class="input-group" style="margin:0"><label class="input-label">Qté Standard</label><input type="number" class="input-field" id="a12-bc-std" placeholder="0" min="0" autocomplete="off"></div>
+            <div class="input-group" style="margin:0"><label class="input-label">Qté Luxe</label><input type="number" class="input-field" id="a12-bc-luxe" placeholder="0" min="0" autocomplete="off"></div>
+            <div class="input-group" style="margin:0"><label class="input-label">Remise %</label><input type="number" class="input-field" id="a12-bc-remise" placeholder="0" min="0" max="50" autocomplete="off"></div>
+          </div>
+          <button class="btn btn-primary btn-full" style="margin-top:10px" onclick="a12GenBonCommande(event)"><div class="spinner"></div><span class="btn-text">📄 Générer le bon de commande</span></button>
+          <div id="a12-bc-result" style="margin-top:10px"></div>
         </div>
       </div>
 
@@ -3909,6 +3970,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
               <option value="cyber">⬡ Cyber Néon (cyan)</option>
               <option value="gold">✦ Or Teranga</option>
               <option value="dark">◼ Dark Premium</option>
+              <option value="luxe">✦ Édition Luxe (or premium)</option>
             </select>
           </div>
           <button class="btn btn-primary btn-full" onclick="a13GenerateQR(event)"><div class="spinner"></div><span class="btn-text">⬡ Générer QR Code</span></button>
@@ -3940,6 +4002,67 @@ textarea.input-field { resize: vertical; min-height: 80px; }
         <div class="card">
           <div class="card-title">Bibliothèque QR</div>
           <div id="a13-qr-library"><div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);text-align:center;padding:16px">Aucun QR généré</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Certificat d'Authenticité — Édition Luxe</div>
+          <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted);margin-bottom:10px;line-height:1.6">Génère un certificat numéroté (001–500) téléchargeable en PNG — inclut QR d'authentification.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="input-group" style="margin:0"><label class="input-label">N° exemplaire (1–500)</label><input type="number" class="input-field" id="a13-cert-num" placeholder="ex: 042" min="1" max="500" autocomplete="off"></div>
+            <div class="input-group" style="margin:0"><label class="input-label">Propriétaire (optionnel)</label><input type="text" class="input-field" id="a13-cert-owner" placeholder="Nom complet" autocomplete="off"></div>
+          </div>
+          <button class="btn btn-primary btn-full" style="margin-top:10px" onclick="a13GenCertificat(event)"><div class="spinner"></div><span class="btn-text">✦ Générer le certificat</span></button>
+          <div id="a13-cert-output" style="display:none;margin-top:12px">
+            <canvas id="a13-cert-canvas" width="360" height="280" style="width:100%;border-radius:6px;display:block"></canvas>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+              <button class="btn btn-ghost btn-sm" onclick="a13DownloadCertificat()">💾 Télécharger PNG</button>
+              <button class="btn btn-primary btn-sm" onclick="a13PrintCertificat()">🖨️ Imprimer</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Page de Vente — Claude</div>
+          <div class="input-group"><label class="input-label">Canal de diffusion</label>
+            <select class="input-field" id="a13-pv-canal">
+              <option value="newsletter">📧 Newsletter email</option>
+              <option value="instagram">📸 Post Instagram / Facebook</option>
+              <option value="presse">📰 Communiqué de presse</option>
+              <option value="email_institution">🏛️ Email institutionnel</option>
+              <option value="whatsapp">💬 Message diaspora (WhatsApp/Telegram)</option>
+            </select>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="input-group" style="margin:0"><label class="input-label">Édition</label>
+              <select class="input-field" id="a13-pv-edition">
+                <option value="both">Les deux</option>
+                <option value="std">Standard uniquement</option>
+                <option value="luxe">Luxe uniquement</option>
+              </select>
+            </div>
+            <div class="input-group" style="margin:0"><label class="input-label">Langue</label>
+              <select class="input-field" id="a13-pv-langue">
+                <option value="Français">Français</option>
+                <option value="English">English</option>
+                <option value="عربية">عربية</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-full" style="margin-top:10px" onclick="a13GenPageVente(event)"><div class="spinner"></div><span class="btn-text">✍️ Rédiger avec Claude</span></button>
+          <div id="a13-pv-result" style="margin-top:10px"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Séquence Pré-Lancement — Claude</div>
+          <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted);margin-bottom:10px;line-height:1.6">4 emails (J-30, J-15, J-7, Jour J) adaptés à tes audiences.</div>
+          <div class="input-group"><label class="input-label">Date de lancement</label><input type="date" class="input-field" id="a13-seq-date" autocomplete="off"></div>
+          <div class="input-group"><label class="input-label">Audiences cibles</label>
+            <div id="a13-seq-audiences" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
+              <label style="display:flex;align-items:center;gap:5px;font-size:0.6rem"><input type="checkbox" value="amateurs photo" checked> Amateurs photo</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:0.6rem"><input type="checkbox" value="diaspora sénégalaise" checked> Diaspora sénégalaise</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:0.6rem"><input type="checkbox" value="institutions culturelles"> Institutions culturelles</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:0.6rem"><input type="checkbox" value="collectionneurs luxe"> Collectionneurs luxe</label>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="a13GenSequenceLancement(event)"><div class="spinner"></div><span class="btn-text">📬 Générer la séquence</span></button>
+          <div id="a13-seq-result" style="margin-top:10px"></div>
         </div>
       </div>
 
@@ -4475,7 +4598,7 @@ async function loadStateFromDB() {
     if (Array.isArray(d.a10Journal))   a10State.journal       = d.a10Journal;
     if (Array.isArray(d.a11Equipment)) a11State.equipment     = d.a11Equipment;
     if (Array.isArray(d.a11Backups))   a11State.backups       = d.a11Backups;
-    if (Array.isArray(d.a12Points))    a12State.points        = d.a12Points;
+    if (Array.isArray(d.a12Points))    a12State.points        = d.a12Points.map(p => ({ ...p, allocStd:p.allocStd??p.alloc??0, allocLuxe:p.allocLuxe??0, venduStd:p.venduStd??p.vendu??0, venduLuxe:p.venduLuxe??0, remise:p.remise??0 }));
     if (typeof d.a14ApiKey === 'string') a14State.apiKey      = d.a14ApiKey;
     if (Array.isArray(d.a15Devis))     a15State.devis         = d.a15Devis;
     if (Array.isArray(d.a13QrLibrary)) a13State.qrLibrary     = d.a13QrLibrary;
@@ -8397,41 +8520,71 @@ async function a11GenChecklistDepart(btn) {
    AGENT 12 — DISTRIBUTION & VENTES
    ============================================================ */
 const a12State = {
-  totalEdition: 500,
+  totalStd: 2000,
+  totalLuxe: 500,
   points: [],
-  seuil: 5
+  seuil: 10
 };
+const A12_PRICE_STD  = 50000;
+const A12_PRICE_LUXE = 85000;
+const A12_IDENTITY = `Tu es expert en distribution de livres d'art et d'édition au Sénégal et à l'international. Tu connais les circuits culturels (librairies, musées, hôtels de luxe, ambassades, centres culturels, galeries d'art), les pratiques de remises professionnelles, et les spécificités du marché sénégalais et de la diaspora. Le livre SÉNÉGAL V3 est une mission documentaire photographique trilingue (FR/EN/AR), 224 pages, édité à 2 500 exemplaires : 2 000 éditions Standard (50 000 FCFA) et 500 éditions Luxe numérotées (85 000 FCFA).`;
 
-function a12TotalAlloues() { return a12State.points.reduce((s, p) => s + p.alloc, 0); }
-function a12TotalVendus() { return a12State.points.reduce((s, p) => s + p.vendu, 0); }
-function a12TotalDispo() { return a12State.totalEdition - a12TotalAlloues(); }
+async function a12CallClaude(sys, txt, tok) {
+  try {
+    const r = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:tok||800, system:sys, messages:[{role:'user',content:txt}] }) });
+    const d = await r.json();
+    return d.content?.[0]?.text || '';
+  } catch(e) { return ''; }
+}
+async function a12CallClaudeJSON(sys, txt, tok) {
+  const raw = await a12CallClaude(sys, txt, tok);
+  try { return JSON.parse(raw); } catch(e) {
+    const m = raw.match(/\{[\s\S]*\}/);
+    try { return JSON.parse(m?.[0] || '{}'); } catch(e2) { return {}; }
+  }
+}
+
+function a12TotalAllouesStd()  { return a12State.points.reduce((s,p) => s + (p.allocStd||0), 0); }
+function a12TotalAllouesLuxe() { return a12State.points.reduce((s,p) => s + (p.allocLuxe||0), 0); }
+function a12TotalVendusStd()   { return a12State.points.reduce((s,p) => s + (p.venduStd||0), 0); }
+function a12TotalVendusLuxe()  { return a12State.points.reduce((s,p) => s + (p.venduLuxe||0), 0); }
+function a12DispoStd()  { return a12State.totalStd  - a12TotalAllouesStd(); }
+function a12DispoLuxe() { return a12State.totalLuxe - a12TotalAllouesLuxe(); }
 
 function a12RenderPoints() {
   const list = document.getElementById('a12-points-list');
   if (!list) return;
-  if (a12State.points.length === 0) { list.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);text-align:center;padding:16px">Aucun point de vente enregistré</div>'; return; }
-  const typeIcon = { librairie:'📚', boutique:'🛍️', musee:'🏛️', hotel:'🏨', online:'💻' };
+  if (a12State.points.length === 0) {
+    list.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);text-align:center;padding:16px">Aucun point de vente enregistré</div>';
+    a12UpdateStockUI(); a12RenderFinances(); return;
+  }
+  const typeIcon = { librairie:'📚', boutique:'🛍️', musee:'🏛️', hotel:'🏨', ambassade:'🏛️', galerie:'🖼️', online:'💻' };
   list.innerHTML = '';
   const alerts = [];
   a12State.points.forEach(p => {
-    const reste = p.alloc - p.vendu;
-    const isLow = reste <= a12State.seuil;
-    if (isLow) alerts.push(p);
-    const div = document.createElement('div'); div.className = `a12-point-item${isLow ? ' stock-low' : ''}`;
-    div.innerHTML = `<div style="font-size:20px;flex-shrink:0">${typeIcon[p.type] || '📦'}</div>
+    const resteStd  = (p.allocStd||0)  - (p.venduStd||0);
+    const resteLuxe = (p.allocLuxe||0) - (p.venduLuxe||0);
+    const lowStd  = p.allocStd  > 0 && resteStd  <= a12State.seuil;
+    const lowLuxe = p.allocLuxe > 0 && resteLuxe <= a12State.seuil;
+    if (lowStd || lowLuxe) alerts.push({ ...p, lowStd, lowLuxe, resteStd, resteLuxe });
+    const remiseBadge = p.remise > 0 ? `<span class="pill pill-amber" style="font-size:0.42rem;margin-left:4px">-${p.remise}%</span>` : '';
+    const div = document.createElement('div');
+    div.className = `a12-point-item${(lowStd||lowLuxe) ? ' stock-low' : ''}`;
+    div.innerHTML = `<div style="font-size:18px;flex-shrink:0">${typeIcon[p.type] || '📦'}</div>
       <div class="a12-point-info">
-        <div class="a12-point-name">${p.name}</div>
-        <div class="a12-point-meta">${p.ville} · ${p.vendu}/${p.alloc} vendus${isLow ? ' — ⚠️ STOCK FAIBLE' : ''}</div>
+        <div class="a12-point-name">${p.name}${remiseBadge}</div>
+        <div class="a12-point-meta">${p.ville}${p.allocStd>0 ? ` · STD ${p.venduStd||0}/${p.allocStd}` : ''}${p.allocLuxe>0 ? ` · LUXE ${p.venduLuxe||0}/${p.allocLuxe}` : ''}${(lowStd||lowLuxe) ? ' — ⚠️' : ''}</div>
       </div>
-      <div class="a12-point-stock">
-        <div class="a12-ps-val">${reste}</div>
-        <div class="a12-ps-label">restants</div>
+      <div style="text-align:right;flex-shrink:0">
+        ${p.allocStd>0  ? `<div class="a12-ps-val" style="font-size:0.75rem">${resteStd}<span style="font-size:0.4rem;color:var(--text-muted);margin-left:2px">STD</span></div>` : ''}
+        ${p.allocLuxe>0 ? `<div class="a12-ps-val" style="font-size:0.75rem;color:#c4872a">${resteLuxe}<span style="font-size:0.4rem;color:var(--text-muted);margin-left:2px">LUXE</span></div>` : ''}
       </div>`;
     list.appendChild(div);
   });
   a12RenderAlerts(alerts);
   a12UpdateStockUI();
   a12PopulateSaleSelect();
+  a12RenderFinances();
 }
 
 function a12RenderAlerts(alerts) {
@@ -8443,79 +8596,172 @@ function a12RenderAlerts(alerts) {
   list.innerHTML = '';
   alerts.forEach(a => {
     const div = document.createElement('div'); div.className = 'a12-alert-item';
-    div.innerHTML = `<strong>${a.name}</strong> — ${a.alloc - a.vendu} ex. restants sur ${a.alloc} alloués. Réapprovisionnement requis.`;
+    const details = [];
+    if (a.lowStd)  details.push(`Standard : ${a.resteStd} ex.`);
+    if (a.lowLuxe) details.push(`Luxe : ${a.resteLuxe} ex.`);
+    div.innerHTML = `<strong>${a.name}</strong> — ${details.join(' / ')} restants. Réapprovisionnement requis.`;
     list.appendChild(div);
   });
 }
 
 function a12UpdateStockUI() {
-  const alloues = a12TotalAlloues();
-  const vendus = a12TotalVendus();
-  const dispo = a12TotalDispo();
-  const pctAlloc = Math.round(alloues / a12State.totalEdition * 100);
-  const pctVendu = Math.round(vendus / a12State.totalEdition * 100);
+  const alStd  = a12TotalAllouesStd(),  alLuxe = a12TotalAllouesLuxe();
+  const vStd   = a12TotalVendusStd(),   vLuxe  = a12TotalVendusLuxe();
+  const dStd   = a12DispoStd(),         dLuxe  = a12DispoLuxe();
   const setEl = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
-  setEl('a12-kv-alloues', alloues);
-  setEl('a12-kv-vendus', vendus);
-  setEl('a12-kv-dispo', dispo);
-  const barAlloc = document.getElementById('a12-bar-alloc');
-  const barSold = document.getElementById('a12-bar-sold');
-  if (barAlloc) barAlloc.style.width = pctAlloc + '%';
-  if (barSold) { barSold.style.width = pctVendu + '%'; barSold.style.left = '0%'; }
+  setEl('a12-kv-al-std', alStd);  setEl('a12-kv-v-std', vStd);  setEl('a12-kv-d-std', dStd);
+  setEl('a12-kv-al-luxe',alLuxe); setEl('a12-kv-v-luxe',vLuxe); setEl('a12-kv-d-luxe',dLuxe);
+  const setW = (id, pct) => { const e = document.getElementById(id); if (e) e.style.width = Math.min(pct,100) + '%'; };
+  setW('a12-bar-al-std',  Math.round(alStd  / a12State.totalStd  * 100));
+  setW('a12-bar-v-std',   Math.round(vStd   / a12State.totalStd  * 100));
+  setW('a12-bar-al-luxe', Math.round(alLuxe / a12State.totalLuxe * 100));
+  setW('a12-bar-v-luxe',  Math.round(vLuxe  / a12State.totalLuxe * 100));
+}
+
+function a12RenderFinances() {
+  const board = document.getElementById('a12-finance-board');
+  if (!board) return;
+  let caRealise = 0, caPotentielAlloue = 0;
+  a12State.points.forEach(p => {
+    const r = 1 - (p.remise||0)/100;
+    caRealise         += (p.venduStd||0)  * A12_PRICE_STD  * r + (p.venduLuxe||0) * A12_PRICE_LUXE * r;
+    caPotentielAlloue += ((p.allocStd||0)  - (p.venduStd||0))  * A12_PRICE_STD  * r
+                       + ((p.allocLuxe||0) - (p.venduLuxe||0)) * A12_PRICE_LUXE * r;
+  });
+  const caTotal     = a12State.totalStd * A12_PRICE_STD + a12State.totalLuxe * A12_PRICE_LUXE;
+  const caNonAlloue = a12DispoStd() * A12_PRICE_STD + a12DispoLuxe() * A12_PRICE_LUXE;
+  board.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+      <div class="a12-stock-kpi"><span class="a12-kv" style="background:var(--grad-emerald);-webkit-background-clip:text;-webkit-text-fill-color:transparent">${fmtFCFA(caRealise)}</span><span class="a12-kl">CA Réalisé</span></div>
+      <div class="a12-stock-kpi"><span class="a12-kv">${fmtFCFA(caPotentielAlloue)}</span><span class="a12-kl">Potentiel Alloué</span></div>
+      <div class="a12-stock-kpi"><span class="a12-kv" style="color:var(--text-muted)">${fmtFCFA(caNonAlloue)}</span><span class="a12-kl">Hors Circuit</span></div>
+      <div class="a12-stock-kpi"><span class="a12-kv" style="background:var(--grad-cyan);-webkit-background-clip:text;-webkit-text-fill-color:transparent">${fmtFCFA(caTotal)}</span><span class="a12-kl">Édition Complète</span></div>
+    </div>
+    <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);line-height:1.7">
+      2 000 Standard × 50 000 F = ${fmtFCFA(a12State.totalStd*A12_PRICE_STD)}<br>
+      500 Luxe × 85 000 F = ${fmtFCFA(a12State.totalLuxe*A12_PRICE_LUXE)}<br>
+      Remises appliquées par canal de distribution
+    </div>`;
 }
 
 function a12PopulateSaleSelect() {
   const sel = document.getElementById('a12-sale-point');
   if (!sel) return;
   sel.innerHTML = '';
-  a12State.points.forEach(p => { const o = document.createElement('option'); o.value = p.id; o.textContent = p.name; sel.appendChild(o); });
+  a12State.points.forEach(p => {
+    const o = document.createElement('option'); o.value = p.id;
+    o.textContent = p.name + (p.remise > 0 ? ` (-${p.remise}%)` : '');
+    sel.appendChild(o);
+  });
 }
 
 function a12OpenAddPoint() { const c = document.getElementById('a12-add-point-card'); if (c) c.style.display = 'block'; }
-function a12CancelPoint() { const c = document.getElementById('a12-add-point-card'); if (c) c.style.display = 'none'; }
+function a12CancelPoint()  { const c = document.getElementById('a12-add-point-card'); if (c) c.style.display = 'none'; }
 
 function a12SavePoint(evt) {
   const btn = evt.currentTarget; disableBtn(btn);
-  const name = document.getElementById('a12-pv-name')?.value.trim();
-  const ville = document.getElementById('a12-pv-ville')?.value.trim();
-  const alloc = parseInt(document.getElementById('a12-pv-stock')?.value) || 0;
-  const type = document.getElementById('a12-pv-type')?.value;
+  const name      = document.getElementById('a12-pv-name')?.value.trim();
+  const ville     = document.getElementById('a12-pv-ville')?.value.trim();
+  const type      = document.getElementById('a12-pv-type')?.value;
+  const remise    = parseInt(document.getElementById('a12-pv-remise')?.value) || 0;
+  const allocStd  = parseInt(document.getElementById('a12-pv-std')?.value)    || 0;
+  const allocLuxe = parseInt(document.getElementById('a12-pv-luxe')?.value)   || 0;
   if (!name) { showToast('Nom requis', 'warn'); enableBtn(btn); return; }
-  if (a12TotalAlloues() + alloc > a12State.totalEdition) { showToast(`Stock insuffisant — Max ${a12TotalDispo()} ex. disponibles`, 'warn'); enableBtn(btn); return; }
-  a12State.points.push({ id: 'pv_' + Date.now(), name, ville: ville || '—', type, alloc, vendu: 0 });
-  a12RenderPoints();
-  a12CancelPoint();
-  saveStateToDB();
-  document.getElementById('a12-pv-name').value = '';
-  document.getElementById('a12-pv-ville').value = '';
-  document.getElementById('a12-pv-stock').value = '';
-  addActivity('📚', `Point de vente ajouté : ${name} (${alloc} ex.)`, now());
-  showToast(`✅ ${name} enregistré — ${alloc} ex. alloués`, 'ok');
+  if (allocStd  > a12DispoStd())  { showToast(`Standard : max ${a12DispoStd()} ex. disponibles`, 'warn');  enableBtn(btn); return; }
+  if (allocLuxe > a12DispoLuxe()) { showToast(`Luxe : max ${a12DispoLuxe()} ex. disponibles`, 'warn'); enableBtn(btn); return; }
+  a12State.points.push({ id:'pv_'+Date.now(), name, ville:ville||'—', type, remise, allocStd, allocLuxe, venduStd:0, venduLuxe:0 });
+  a12RenderPoints(); a12CancelPoint(); saveStateToDB();
+  ['a12-pv-name','a12-pv-ville','a12-pv-std','a12-pv-luxe','a12-pv-remise'].forEach(id => { const e=document.getElementById(id); if(e)e.value=''; });
+  addActivity('📚', `Point de vente ajouté : ${name} (${allocStd} STD + ${allocLuxe} LUXE)`, now());
+  showToast(`✅ ${name} — ${allocStd} STD + ${allocLuxe} LUXE`, 'ok');
   setTimeout(() => enableBtn(btn), 500);
 }
 
-const BOOK_PRICE_FCFA = 35000; // Prix unitaire livre d'art collector (FCFA)
-
 function a12RecordSale(evt) {
   const btn = evt.currentTarget; disableBtn(btn);
-  const pvId = document.getElementById('a12-sale-point')?.value;
-  const qty = parseInt(document.getElementById('a12-sale-qty')?.value) || 0;
+  const pvId    = document.getElementById('a12-sale-point')?.value;
+  const edition = document.getElementById('a12-sale-edition')?.value;
+  const qty     = parseInt(document.getElementById('a12-sale-qty')?.value) || 0;
   const pv = a12State.points.find(p => p.id === pvId);
   if (!pv || qty <= 0) { showToast('Point de vente et quantité requis', 'warn'); enableBtn(btn); return; }
-  if (pv.vendu + qty > pv.alloc) { showToast(`Stock insuffisant — ${pv.alloc - pv.vendu} ex. restants`, 'warn'); enableBtn(btn); return; }
-  pv.vendu += qty;
-  const revenue = qty * BOOK_PRICE_FCFA;
-  addActivity('🛒', `Vente enregistrée : ${qty} ex. — ${pv.name} — ${fmtFCFA(revenue)}`, now());
-  addNotification({ type: 'ok', text: `💰 Vente : ${qty} exemplaire(s) — ${pv.name}`, time: now() });
-  a12RenderPoints();
-  saveStateToDB();
+  const isLuxe = edition === 'luxe';
+  const price  = isLuxe ? A12_PRICE_LUXE : A12_PRICE_STD;
+  const r      = 1 - (pv.remise||0)/100;
+  if (isLuxe) {
+    if ((pv.venduLuxe||0) + qty > (pv.allocLuxe||0)) { showToast(`Luxe : ${(pv.allocLuxe||0)-(pv.venduLuxe||0)} ex. restants`, 'warn'); enableBtn(btn); return; }
+    pv.venduLuxe = (pv.venduLuxe||0) + qty;
+  } else {
+    if ((pv.venduStd||0) + qty > (pv.allocStd||0)) { showToast(`Standard : ${(pv.allocStd||0)-(pv.venduStd||0)} ex. restants`, 'warn'); enableBtn(btn); return; }
+    pv.venduStd = (pv.venduStd||0) + qty;
+  }
+  const revenue = qty * price * r;
+  addActivity('🛒', `Vente ${isLuxe?'LUXE':'STD'} : ${qty} ex. — ${pv.name} — ${fmtFCFA(revenue)}`, now());
+  addNotification({ type:'ok', text:`💰 Vente ${isLuxe?'LUXE':'STD'} : ${qty} ex. — ${pv.name}`, time:now() });
+  a12RenderPoints(); saveStateToDB();
   document.getElementById('a12-sale-qty').value = '';
-  showToast(`🛒 ${qty} ex. vendus — ${fmtFCFA(revenue)} enregistrés`, 'ok');
+  showToast(`🛒 ${qty} ex. ${isLuxe?'LUXE':'STD'} — ${fmtFCFA(revenue)}`, 'ok');
   setTimeout(() => enableBtn(btn), 500);
+}
+
+async function a12GenStrategie(evt) {
+  const btn = evt.currentTarget; disableBtn(btn);
+  const budget   = document.getElementById('a12-strat-budget')?.value.trim();
+  const zones    = [...document.querySelectorAll('#a12-strat-zones input:checked')].map(i=>i.value);
+  const priorite = document.getElementById('a12-strat-priorite')?.value;
+  const out = document.getElementById('a12-strat-result');
+  if (out) out.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted)">Analyse en cours…</div>';
+  const canaux = a12State.points.map(p=>`${p.name} (${p.ville}, ${p.type}, remise ${p.remise}%, ${p.allocStd} STD + ${p.allocLuxe} LUXE)`).join('; ') || 'aucun canal configuré';
+  const prompt = `Budget de lancement: ${budget||'non précisé'} FCFA. Zones: ${zones.join(', ')||'non précisé'}. Priorité: ${priorite}. Canaux actuels: ${canaux}. Standard disponible: ${a12DispoStd()} ex. Luxe disponible: ${a12DispoLuxe()} ex.`;
+  const sys = A12_IDENTITY + `\nRéponds en JSON : {"recommandations":[{"canal":"...","type_edition":"STD|LUXE|LES DEUX","quantite_std":0,"quantite_luxe":0,"priorite":"haute|moyenne|faible","justification":"...","remise_suggeree":0}],"message_cle":"...","ca_projete":0,"alerte":""}`;
+  const data = await a12CallClaudeJSON(sys, prompt, 1200);
+  if (!out) { enableBtn(btn); return; }
+  if (!data.recommandations) { out.innerHTML = '<div style="color:var(--red);font-size:0.6rem">Erreur — vérifiez la clé API Claude</div>'; enableBtn(btn); return; }
+  const prioColor = { haute:'var(--red)', moyenne:'var(--amber)', faible:'var(--emerald)' };
+  let html = '';
+  if (data.message_cle) html += `<div style="background:rgba(0,242,254,0.06);border:1px solid rgba(0,242,254,0.2);border-radius:6px;padding:10px;margin-bottom:10px;font-size:0.62rem;line-height:1.6">${data.message_cle}</div>`;
+  (data.recommandations||[]).forEach(rec => {
+    html += `<div style="border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:0.65rem;font-weight:600">${rec.canal}</span>
+        <span class="pill" style="font-size:0.42rem;background:${prioColor[rec.priorite]||'var(--text-muted)'};color:#000;padding:2px 6px">${(rec.priorite||'').toUpperCase()}</span>
+      </div>
+      <div style="font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted);margin-bottom:4px">${rec.type_edition}${rec.quantite_std>0?` · ${rec.quantite_std} STD`:''}${rec.quantite_luxe>0?` · ${rec.quantite_luxe} LUXE`:''}${rec.remise_suggeree>0?` · remise ${rec.remise_suggeree}%`:''}</div>
+      <div style="font-size:0.6rem;color:var(--text-2);line-height:1.5">${rec.justification}</div>
+    </div>`;
+  });
+  if (data.ca_projete) html += `<div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--cyan);margin-top:6px">CA projeté : ${fmtFCFA(data.ca_projete)}</div>`;
+  if (data.alerte) html += `<div style="font-size:0.55rem;color:var(--amber);margin-top:4px">⚠️ ${data.alerte}</div>`;
+  out.innerHTML = html;
+  enableBtn(btn);
+}
+
+async function a12GenBonCommande(evt) {
+  const btn = evt.currentTarget; disableBtn(btn);
+  const institution = document.getElementById('a12-bc-institution')?.value.trim();
+  const contact     = document.getElementById('a12-bc-contact')?.value.trim();
+  const ville       = document.getElementById('a12-bc-ville')?.value.trim();
+  const pays        = document.getElementById('a12-bc-pays')?.value.trim();
+  const qtyStd      = parseInt(document.getElementById('a12-bc-std')?.value)    || 0;
+  const qtyLuxe     = parseInt(document.getElementById('a12-bc-luxe')?.value)   || 0;
+  const remise      = parseInt(document.getElementById('a12-bc-remise')?.value) || 0;
+  const out = document.getElementById('a12-bc-result');
+  if (!institution || (qtyStd + qtyLuxe) === 0) { showToast('Institution et quantité requis', 'warn'); enableBtn(btn); return; }
+  if (out) out.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted)">Rédaction en cours…</div>';
+  const totalFCFA = qtyStd * A12_PRICE_STD * (1-remise/100) + qtyLuxe * A12_PRICE_LUXE * (1-remise/100);
+  const prompt = `Génère un bon de commande professionnel bilingue FR/EN pour : Institution: ${institution}. Contact: ${contact||'N/A'}. Ville: ${ville||'N/A'}, Pays: ${pays||'Sénégal'}. Commande:${qtyStd>0?` ${qtyStd} ex. Standard à ${A12_PRICE_STD} FCFA`:''}${qtyLuxe>0?` ${qtyLuxe} ex. Luxe à ${A12_PRICE_LUXE} FCFA`:''}. Remise: ${remise}%. Total: ${fmtFCFA(totalFCFA)}. Inclure : références SÉNÉGAL V3, conditions livraison Sénégal/international, délai règlement 30 jours. Ton professionnel adapté à une institution culturelle.`;
+  const text = await a12CallClaude(A12_IDENTITY + '\nRédige le bon de commande complet et formaté, prêt à copier/imprimer.', prompt, 1200);
+  if (!out) { enableBtn(btn); return; }
+  if (!text) { out.innerHTML = '<div style="color:var(--red);font-size:0.6rem">Erreur — vérifiez la clé API Claude</div>'; enableBtn(btn); return; }
+  const encText = encodeURIComponent(text);
+  out.innerHTML = `<pre style="font-family:var(--font-mono);font-size:0.55rem;line-height:1.7;white-space:pre-wrap;color:var(--text-1);background:var(--bg-input);padding:12px;border-radius:6px">${text.replace(/</g,'&lt;')}</pre>
+    <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="navigator.clipboard?.writeText(decodeURIComponent('${encText}')).then(()=>showToast('📋 Copié','ok'))">📋 Copier le bon de commande</button>`;
+  addActivity('📄', `Bon de commande généré : ${institution}`, now());
+  enableBtn(btn);
 }
 
 function initAgent12() {
   a12RenderPoints();
+  a12RenderFinances();
 }
 
 /* ============================================================
@@ -8701,7 +8947,8 @@ function a13DrawQR(canvas, modules, style) {
   const S = {
     cyber: { bg:'#030509', dark:'#00f2fe', light:'#060910' },
     gold:  { bg:'#0a0800', dark:'#c4872a', light:'#0a0800' },
-    dark:  { bg:'#000000', dark:'#e0e0e0', light:'#111111' }
+    dark:  { bg:'#000000', dark:'#e0e0e0', light:'#111111' },
+    luxe:  { bg:'#050300', dark:'#e0b050', light:'#050300' }
   };
   const s = S[style] || S.cyber;
   ctx.fillStyle = s.bg;
@@ -8858,6 +9105,132 @@ function a13UpdateResilienceUI(active, badges) {
   if (tb && badges.length > 0) {
     tb.innerHTML = badges.map(b => `<span class="pill ${b.ok ? 'pill-green' : 'pill-amber'}" style="font-size:0.45rem">${b.ok ? '✓' : '✗'} ${b.label}</span>`).join('');
   }
+}
+
+async function a13CallClaude(sys, txt, tok) {
+  try {
+    const r = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:tok||800, system:sys, messages:[{role:'user',content:txt}] }) });
+    const d = await r.json();
+    return d.content?.[0]?.text || '';
+  } catch(e) { return ''; }
+}
+async function a13CallClaudeJSON(sys, txt, tok) {
+  const raw = await a13CallClaude(sys, txt, tok);
+  try { return JSON.parse(raw); } catch(e) {
+    const m = raw.match(/\{[\s\S]*\}/);
+    try { return JSON.parse(m?.[0] || '{}'); } catch(e2) { return {}; }
+  }
+}
+
+function a13GenCertificat(evt) {
+  const btn = evt.currentTarget; disableBtn(btn);
+  const num   = parseInt(document.getElementById('a13-cert-num')?.value)  || 0;
+  const owner = document.getElementById('a13-cert-owner')?.value.trim();
+  if (num < 1 || num > 500) { showToast('Numéro entre 1 et 500', 'warn'); enableBtn(btn); return; }
+  const canvas = document.getElementById('a13-cert-canvas');
+  if (!canvas) { enableBtn(btn); return; }
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.fillStyle = '#050408'; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle = '#c4872a'; ctx.lineWidth = 2; ctx.strokeRect(12,12,W-24,H-24);
+  ctx.strokeStyle = 'rgba(196,135,42,0.3)'; ctx.lineWidth = 1; ctx.strokeRect(18,18,W-36,H-36);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#c4872a'; ctx.font = 'bold 11px serif'; ctx.fillText("CERTIFICAT D'AUTHENTICITÉ", W/2, 46);
+  ctx.fillStyle = 'rgba(196,135,42,0.4)'; ctx.fillRect(50,52,W-100,1);
+  ctx.fillStyle = '#c0b090'; ctx.font = '8px serif'; ctx.fillText('MISSION DOCUMENTAIRE PHOTOGRAPHIQUE', W/2, 66);
+  ctx.fillStyle = '#00f2fe'; ctx.font = 'bold 14px serif'; ctx.fillText('SÉNÉGAL V3', W/2, 82);
+  ctx.fillStyle = '#c4872a'; ctx.font = '8px serif'; ctx.fillText('ÉDITION LUXE NUMÉROTÉE · 500 EXEMPLAIRES', W/2, 97);
+  ctx.fillStyle = 'rgba(196,135,42,0.3)'; ctx.fillRect(50,104,W-100,1);
+  ctx.fillStyle = '#00f2fe'; ctx.font = 'bold 24px monospace'; ctx.fillText(`N° ${String(num).padStart(3,'0')} / 500`, W/2, 136);
+  let qrY = 155;
+  if (owner) {
+    ctx.fillStyle = 'rgba(196,135,42,0.4)'; ctx.fillRect(50,143,W-100,1);
+    ctx.fillStyle = '#9a8870'; ctx.font = '7px serif'; ctx.fillText('Propriétaire enregistré', W/2, 155);
+    ctx.fillStyle = '#e8e0d0'; ctx.font = 'italic 11px serif'; ctx.fillText(owner, W/2, 170);
+    qrY = 183;
+  }
+  const authUrl = `https://www.senegalthr.com/auth/${String(num).padStart(3,'0')}`;
+  try {
+    const qrC = document.createElement('canvas'); qrC.width = 56; qrC.height = 56;
+    a13DrawQR(qrC, a13QREncode(authUrl), 'luxe');
+    ctx.drawImage(qrC, W/2-28, qrY);
+  } catch(e) {}
+  ctx.fillStyle = 'rgba(196,135,42,0.35)'; ctx.font = '6px monospace'; ctx.fillText(authUrl, W/2, qrY+66);
+  ctx.fillStyle = 'rgba(196,135,42,0.4)'; ctx.fillRect(50,H-38,W-100,1);
+  ctx.fillStyle = '#8a7860'; ctx.font = '7px serif'; ctx.fillText('© Tous droits réservés — senegalthr.com', W/2, H-22);
+  document.getElementById('a13-cert-output').style.display = 'block';
+  addActivity('✦', `Certificat généré : exemplaire N° ${String(num).padStart(3,'0')}`, now());
+  enableBtn(btn);
+}
+
+function a13DownloadCertificat() {
+  const canvas = document.getElementById('a13-cert-canvas');
+  if (!canvas) return;
+  const num = document.getElementById('a13-cert-num')?.value || 'xxx';
+  const a = document.createElement('a'); a.href = canvas.toDataURL('image/png');
+  a.download = `certificat-senegal-v3-${String(num).padStart(3,'0')}.png`; a.click();
+  showToast('💾 Certificat téléchargé', 'ok');
+}
+
+function a13PrintCertificat() {
+  const canvas = document.getElementById('a13-cert-canvas');
+  if (!canvas) return;
+  const win = window.open('', '_blank');
+  win.document.write(`<html><body style="margin:0;background:#000"><img src="${canvas.toDataURL('image/png')}" style="max-width:100%"></body></html>`);
+  win.document.close(); win.print();
+}
+
+async function a13GenPageVente(evt) {
+  const btn = evt.currentTarget; disableBtn(btn);
+  const canal   = document.getElementById('a13-pv-canal')?.value;
+  const edition = document.getElementById('a13-pv-edition')?.value;
+  const langue  = document.getElementById('a13-pv-langue')?.value;
+  const out = document.getElementById('a13-pv-result');
+  if (out) out.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted)">Rédaction en cours…</div>';
+  const canalLabel = { newsletter:'newsletter email', instagram:'post Instagram/Facebook', presse:'communiqué de presse', email_institution:'email institutionnel', whatsapp:'message diaspora WhatsApp/Telegram' };
+  const edLabel = edition==='luxe' ? 'Édition Luxe numérotée 500 ex. — 85 000 FCFA / ~130€' : edition==='std' ? 'Édition Standard 2000 ex. — 50 000 FCFA / ~76€' : 'Standard 50 000 F et Luxe numéroté 85 000 F (2 500 ex. total)';
+  const prompt = `Écris un texte de vente pour ${canalLabel[canal]||canal} en ${langue}. Produit : livre d'art documentaire photographique SÉNÉGAL V3. ${edLabel}. 224 pages trilingue FR/EN/AR. Terrain dans toutes les régions du Sénégal. Texte percutant, humain, authentique. Ton parfaitement adapté au canal.`;
+  const text = await a13CallClaude('Tu es expert en marketing culturel et communication éditoriale pour livres d\'art.', prompt, 900);
+  if (!out) { enableBtn(btn); return; }
+  if (!text) { out.innerHTML = '<div style="color:var(--red);font-size:0.6rem">Erreur — vérifiez la clé API Claude</div>'; enableBtn(btn); return; }
+  const encText = encodeURIComponent(text);
+  out.innerHTML = `<div style="background:var(--bg-input);border-radius:6px;padding:12px;font-size:0.62rem;line-height:1.7;color:var(--text-1);white-space:pre-wrap">${text.replace(/</g,'&lt;')}</div>
+    <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="navigator.clipboard?.writeText(decodeURIComponent('${encText}')).then(()=>showToast('📋 Copié','ok'))">📋 Copier</button>`;
+  enableBtn(btn);
+}
+
+async function a13GenSequenceLancement(evt) {
+  const btn = evt.currentTarget; disableBtn(btn);
+  const dateLancement = document.getElementById('a13-seq-date')?.value;
+  const audiences = [...document.querySelectorAll('#a13-seq-audiences input:checked')].map(i=>i.value);
+  const out = document.getElementById('a13-seq-result');
+  if (!dateLancement) { showToast('Date de lancement requise', 'warn'); enableBtn(btn); return; }
+  if (out) out.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted)">Génération de la séquence en cours…</div>';
+  const dl = new Date(dateLancement);
+  const fmt = d => d.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+  const dates = { j30:fmt(new Date(dl-30*86400000)), j15:fmt(new Date(dl-15*86400000)), j7:fmt(new Date(dl-7*86400000)), j0:fmt(dl) };
+  const prompt = `Séquence 4 emails pré-lancement pour le livre SÉNÉGAL V3 (224 pages, trilingue FR/EN/AR, 2 000 Standard à 50 000 FCFA et 500 Luxe numérotés à 85 000 FCFA). Audiences : ${audiences.join(', ')||'général'}. Dates : J-30 (${dates.j30}), J-15 (${dates.j15}), J-7 (${dates.j7}), Jour J (${dates.j0}). Chaque email : objet + corps. Arc narratif : mystère → révélation → urgence → lancement.`;
+  const sys = 'Tu es expert en email marketing culturel et lancement de livres d\'art. Réponds en JSON : {"emails":[{"etape":"J-30","date":"...","objet":"...","corps":"..."}]}';
+  const data = await a13CallClaudeJSON(sys, prompt, 1800);
+  if (!out) { enableBtn(btn); return; }
+  if (!data.emails?.length) { out.innerHTML = '<div style="color:var(--red);font-size:0.6rem">Erreur — vérifiez la clé API Claude</div>'; enableBtn(btn); return; }
+  let html = '';
+  data.emails.forEach((em, i) => {
+    const bodyEnc = encodeURIComponent('Objet : ' + em.objet + '\n\n' + (em.corps||''));
+    html += `<div style="border:1px solid var(--border);border-radius:6px;margin-bottom:8px;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg-card-2);cursor:pointer" onclick="const d=this.nextElementSibling;d.style.display=d.style.display==='none'?'block':'none'">
+        <span style="font-size:0.65rem;font-weight:600">${em.etape||''} — ${em.date||''}</span>
+        <span style="font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted)">▼</span>
+      </div>
+      <div style="padding:12px;display:${i===0?'block':'none'}">
+        <div style="font-size:0.6rem;font-weight:600;margin-bottom:6px;color:var(--cyan)">Objet : ${em.objet||''}</div>
+        <div style="font-size:0.6rem;line-height:1.7;white-space:pre-wrap;color:var(--text-1)">${(em.corps||'').replace(/</g,'&lt;')}</div>
+        <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="navigator.clipboard?.writeText(decodeURIComponent('${bodyEnc}')).then(()=>showToast('📋 Email copié','ok'))">📋 Copier cet email</button>
+      </div>
+    </div>`;
+  });
+  out.innerHTML = html;
+  enableBtn(btn);
 }
 
 function initAgent13() {
