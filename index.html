@@ -756,6 +756,20 @@ textarea.input-field { resize: vertical; min-height: 80px; }
   font-size: 0.65rem; color: var(--text-secondary);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+#agent-cm .cm-upload-zone {
+  border: 1.5px dashed var(--border); border-radius: var(--r-sm);
+  padding: 14px; text-align: center; cursor: pointer;
+  transition: border-color var(--t), background var(--t);
+  min-height: 72px; display: flex; align-items: center; justify-content: center;
+  background: var(--bg-card-2);
+}
+#agent-cm .cm-upload-zone:hover { border-color: var(--cyan); background: rgba(0,240,255,0.04); }
+#agent-cm .cm-upload-zone img { width:100%; border-radius:var(--r-sm); max-height:180px; object-fit:cover; }
+#agent-cm .cm-ia-badge {
+  display:inline-block; font-family:var(--font-mono); font-size:0.45rem;
+  color:var(--amber); background:rgba(255,171,64,0.12); border:1px solid rgba(255,171,64,0.3);
+  border-radius:var(--r-sm); padding:2px 6px; margin-bottom:6px;
+}
 
 /* ============================================================
    AGENT 4: CONTRÔLE FINANCIER — #agent-financier
@@ -2237,9 +2251,30 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           </div>
         </div>
 
+        <!-- Vision IA — Analyse Photo Terrain -->
+        <div class="card">
+          <div class="card-title">🤖 IA — Générer depuis une Photo <span class="pill pill-amber" style="margin-left:auto;font-size:0.45rem">Claude Vision</span></div>
+          <div class="cm-upload-zone" id="cm-upload-zone" onclick="document.getElementById('cm-photo-input').click()">
+            <input type="file" id="cm-photo-input" accept="image/*" style="display:none" onchange="cmPhotoSelected(this)">
+            <div id="cm-upload-prompt">
+              <div style="font-size:1.4rem">📷</div>
+              <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted);margin-top:4px">Appuyer pour choisir une photo terrain</div>
+              <div style="font-family:var(--font-mono);font-size:0.45rem;color:var(--text-muted);margin-top:2px">JPG · PNG · HEIC — max 5 Mo</div>
+            </div>
+            <img id="cm-photo-preview" style="display:none">
+          </div>
+          <div class="gen-controls" style="margin-top:8px">
+            <button class="btn btn-primary" style="flex:1" id="cm-vision-btn" onclick="cmGenerateFromPhoto(this)" disabled>
+              <div class="spinner"></div><span class="btn-text">✨ Analyser &amp; Générer</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" id="cm-clear-photo" onclick="cmClearPhoto()" style="display:none">✕ Retirer</button>
+          </div>
+          <div id="cm-vision-status" style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);text-align:center;margin-top:4px;min-height:14px"></div>
+        </div>
+
         <!-- Content Generator -->
         <div class="card">
-          <div class="card-title">Générateur de Contenu</div>
+          <div class="card-title">Générateur Local <span style="font-family:var(--font-mono);font-size:0.45rem;color:var(--text-muted);margin-left:4px">(sans photo)</span></div>
           <div class="input-group">
             <label class="input-label">Site / Lieu</label>
             <select class="input-field" id="cm-site-select">
@@ -4503,6 +4538,161 @@ function renderCMHistory() {
     };
     list.appendChild(div);
   });
+}
+
+/* ============================================================
+   CM VISION IA — Analyse photo terrain via Claude
+   ============================================================ */
+let cmPhotoBase64 = null;
+let cmPhotoMime   = null;
+
+function cmPhotoSelected(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { showToast('Photo trop lourde — max 5 Mo', 'warn'); return; }
+  cmPhotoMime = file.type || 'image/jpeg';
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    cmPhotoBase64 = e.target.result.split(',')[1];
+    const preview = document.getElementById('cm-photo-preview');
+    const prompt  = document.getElementById('cm-upload-prompt');
+    preview.src   = e.target.result;
+    preview.style.display   = 'block';
+    prompt.style.display    = 'none';
+    document.getElementById('cm-vision-btn').disabled = false;
+    document.getElementById('cm-clear-photo').style.display = 'inline-flex';
+    document.getElementById('cm-vision-status').textContent = `📎 ${file.name} (${(file.size/1024).toFixed(0)} Ko)`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function cmClearPhoto() {
+  cmPhotoBase64 = null;
+  cmPhotoMime   = null;
+  document.getElementById('cm-photo-input').value = '';
+  document.getElementById('cm-photo-preview').style.display = 'none';
+  document.getElementById('cm-upload-prompt').style.display = 'flex';
+  document.getElementById('cm-vision-btn').disabled = true;
+  document.getElementById('cm-clear-photo').style.display = 'none';
+  document.getElementById('cm-vision-status').textContent = '';
+}
+
+async function cmGenerateFromPhoto(btn) {
+  if (!cmPhotoBase64) return;
+  disableBtn(btn);
+
+  const siteId   = document.getElementById('cm-site-select').value;
+  const tone     = document.getElementById('cm-tone-select').value;
+  const siteObj  = SITES.find(s => s.id == siteId) || OFFSHORE.find(s => s.id == siteId);
+  const siteName = siteObj ? siteObj.name : 'Sénégal';
+  const siteZone = siteObj ? `Zone ${siteObj.zone}` : '';
+  const plat     = state.currentPlatform;
+
+  const toneLabels = { inspiring:'inspirant et poétique', informative:'informatif et documentaire', exciting:'dynamique et engageant', cultural:'culturel et éducatif', promotional:'promotionnel et viral' };
+
+  const statusEl  = document.getElementById('cm-vision-status');
+  const previewEl = document.getElementById('content-preview');
+  statusEl.textContent = '🔍 Claude analyse la photo…';
+  previewEl.className  = 'preview-box loading';
+  previewEl.innerHTML  = '<div class="preview-empty">Claude Vision analyse votre photo terrain…</div>';
+
+  const systemPrompt = `Tu es le Community Manager d'une mission documentaire photographique au Sénégal (livre collector 32 sites, 100 M FCFA de production, sortie 2027). Tu génères du contenu authentique basé sur les photos réelles du terrain.`;
+
+  const userPrompt = `Site : "${siteName}" ${siteZone}. Tonalité : ${toneLabels[tone] || 'inspirant'}.
+
+Analyse attentivement cette photo de terrain et génère du contenu social media ORIGINAL basé sur ce que tu vois réellement (lumière, ambiance, sujets, couleurs, contexte).
+
+Réponds UNIQUEMENT avec ce JSON valide, sans markdown ni backticks :
+{
+  "description": "Description précise de la photo (2 phrases)",
+  "tiktok": {
+    "hook": "Accroche première ligne (max 80 car.)",
+    "text": "Corps du post (4-5 lignes, avec emojis)",
+    "hashtags": "8 hashtags pertinents"
+  },
+  "youtube": {
+    "title": "Titre SEO optimisé (max 70 car.)",
+    "description": "Description chaîne (6-8 lignes avec emojis et contexte mission)"
+  },
+  "linkedin": {
+    "text": "Post professionnel impactant (7-9 lignes, ton expert)"
+  },
+  "instagram": {
+    "caption": "Légende engageante (5-7 lignes avec emojis)",
+    "hashtags": "12 hashtags mix FR/EN"
+  }
+}`;
+
+  try {
+    const res = await fetch('/api/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1400,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: cmPhotoMime, data: cmPhotoBase64 } },
+            { type: 'text', text: userPrompt }
+          ]
+        }],
+        system: systemPrompt
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error?.message || data.hint || `HTTP ${res.status}`);
+
+    const raw = data.content?.[0]?.text || '';
+    let content;
+    try { content = JSON.parse(raw); }
+    catch { const m = raw.match(/\{[\s\S]*\}/); content = m ? JSON.parse(m[0]) : null; }
+    if (!content) throw new Error('Réponse Claude non parseable — réessayez');
+
+    const platColors = { tiktok:'#ee1d52', youtube:'#ff0000', linkedin:'#4fc3f7', instagram:'#e1306c' };
+    let displayText = '', displayTitle = '', displayHash = '';
+
+    if (plat === 'tiktok') {
+      displayTitle = '';
+      displayText  = `${content.tiktok.hook}\n\n${content.tiktok.text}`;
+      displayHash  = content.tiktok.hashtags;
+    } else if (plat === 'youtube') {
+      displayTitle = content.youtube.title;
+      displayText  = content.youtube.description;
+    } else if (plat === 'linkedin') {
+      displayText  = content.linkedin.text;
+    } else {
+      displayText  = content.instagram.caption;
+      displayHash  = content.instagram.hashtags;
+    }
+
+    previewEl.className = 'preview-box';
+    previewEl.innerHTML = `
+      <div class="preview-platform-badge" style="color:${platColors[plat]}">🤖 Claude Vision · ${plat.toUpperCase()} · ${siteName}</div>
+      <div class="cm-ia-badge">📸 ${content.description}</div>
+      ${displayTitle ? `<strong style="display:block;margin-bottom:8px;font-size:0.72rem">${displayTitle}</strong>` : ''}
+      <div class="preview-text">${displayText}</div>
+      ${displayHash ? `<div class="preview-hashtags">${displayHash}</div>` : ''}
+      <div class="preview-meta">Généré par Claude Haiku · Basé sur analyse visuelle réelle</div>`;
+
+    document.getElementById('copy-btn').style.display = 'inline-flex';
+    statusEl.textContent = '✅ Contenu généré avec succès';
+
+    const full = { text: displayText, title: displayTitle, hashtags: displayHash, meta: `IA · ${content.description}` };
+    state.cmHistory.unshift({ plat, siteName, preview: displayText.substring(0,60), full, ts: Date.now(), ia: true });
+    if (state.cmHistory.length > 10) state.cmHistory.pop();
+    renderCMHistory();
+    saveStateToDB();
+    addActivity('🤖', `Vision IA — ${plat.toUpperCase()} · ${siteName}`, 'À l\'instant');
+
+  } catch (err) {
+    statusEl.textContent = `❌ ${err.message}`;
+    previewEl.className = 'preview-box';
+    previewEl.innerHTML = `<div class="preview-empty" style="color:var(--red)">Erreur : ${err.message}</div>`;
+    showToast(`Erreur Claude : ${err.message}`, 'error');
+  }
+  enableBtn(btn);
 }
 
 /* ============================================================
