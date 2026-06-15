@@ -1513,6 +1513,22 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 #agent-redacteur .a7-reg-item{margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)}
 #agent-redacteur .a7-reg-item:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
 #agent-redacteur .a7-reg-label{font-family:var(--font-mono);font-size:0.44rem;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px}
+/* A7 — Tableau de bord rédactionnel */
+#agent-redacteur .a7-needs-list{display:flex;flex-direction:column;gap:4px;max-height:320px;overflow-y:auto}
+#agent-redacteur .a7-need-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;background:var(--bg-card-2);border:1px solid var(--border);cursor:pointer;transition:all .15s}
+#agent-redacteur .a7-need-item:hover{border-color:rgba(0,242,254,.4);background:rgba(0,242,254,.05)}
+#agent-redacteur .a7-need-item.a7-need-done{opacity:.55;border-color:rgba(16,185,129,.25)}
+#agent-redacteur .a7-need-num{font-family:var(--font-mono);font-size:0.45rem;color:var(--text-muted);min-width:22px}
+#agent-redacteur .a7-need-type{font-family:var(--font-mono);font-size:0.48rem;font-weight:600;min-width:80px}
+#agent-redacteur .a7-need-site{font-size:0.6rem;color:var(--text-secondary);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#agent-redacteur .a7-need-badge{font-size:0.42rem;font-family:var(--font-mono);padding:2px 6px;border-radius:3px}
+#agent-redacteur .a7-need-badge.empty{background:rgba(239,68,68,.12);color:var(--red)}
+#agent-redacteur .a7-need-badge.done{background:rgba(16,185,129,.12);color:var(--emerald)}
+#agent-redacteur .a7-needs-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+#agent-redacteur .a7-nf-btn{font-size:0.48rem;padding:4px 8px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;transition:all .15s}
+#agent-redacteur .a7-nf-btn.active{border-color:rgba(0,242,254,.4);color:var(--cyan);background:rgba(0,242,254,.07)}
+#agent-redacteur .a7-target-banner{padding:8px 10px;background:rgba(0,242,254,.07);border:1px solid rgba(0,242,254,.3);border-radius:6px;font-size:11px;color:var(--cyan);display:flex;align-items:center;gap:8px;margin-bottom:10px}
+#agent-redacteur .a7-target-clear{margin-left:auto;font-size:11px;cursor:pointer;color:var(--text-muted)}
 /* A8 — nouvelles cartes */
 #agent-correcteur .a8-coher-inputs{display:flex;flex-direction:column;gap:8px}
 #agent-correcteur .a8-coher-num{font-family:var(--font-mono);font-size:0.44rem;color:var(--cyan);margin-bottom:3px}
@@ -2897,8 +2913,8 @@ textarea.input-field { resize: vertical; min-height: 80px; }
             <label class="input-label">Langue(s) du livre</label>
             <select class="input-field" id="a6-maq-lang">
               <option value="fr">Français uniquement</option>
-              <option value="fr_en" selected>Bilingue Français + Anglais</option>
-              <option value="fr_en_ar">Trilingue FR + EN + AR</option>
+              <option value="fr_en">Bilingue Français + Anglais</option>
+              <option value="fr_en_ar" selected>Trilingue FR + EN + AR</option>
               <option value="en">English only</option>
             </select>
           </div>
@@ -3066,6 +3082,22 @@ textarea.input-field { resize: vertical; min-height: 80px; }
         <div class="card" id="a7-library-card" style="display:none">
           <div class="card-title">Bibliothèque de Textes</div>
           <div id="a7-library-list"></div>
+        </div>
+
+        <!-- A7: Tableau de bord rédactionnel du livre -->
+        <div class="card" id="a7-book-needs-card">
+          <div class="card-title">📋 Pages du Livre à Rédiger
+            <span class="pill pill-cyan" id="a7-needs-counter" style="margin-left:auto;font-size:0.45rem">0 pages</span>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:8px">Toutes les pages rédactionnelles de la maquette. Clique sur une page pour générer et insérer le texte directement.</div>
+          <div class="a7-needs-filters">
+            <button class="a7-nf-btn active" onclick="a7FilterNeeds('all',this)">Toutes</button>
+            <button class="a7-nf-btn" onclick="a7FilterNeeds('empty',this)">À rédiger</button>
+            <button class="a7-nf-btn" onclick="a7FilterNeeds('done',this)">Rédigées</button>
+          </div>
+          <div class="a7-needs-list" id="a7-needs-list">
+            <div style="font-size:12px;color:var(--text-muted);text-align:center;padding:20px">Générer la maquette du livre dans l'onglet DA pour voir les pages ici.</div>
+          </div>
         </div>
 
         <!-- A7: Générateur de page livre -->
@@ -5919,10 +5951,12 @@ function a6GetBriefText() {
 
 const A6_DA_IDENTITY = `Agis en tant que Directeur Artistique de renommée internationale, expert en infographie et en édition de "beaux-livres" (photographie haut de gamme, culture, art). Tu possèdes le niveau d'exigence des plus grandes maisons d'édition de luxe, combiné à l'œil photographique de National Geographic.
 
-Tu supervises la direction visuelle, graphique et éditoriale du projet : « Sénégal, Terre d'Histoire et de Rencontres ». Ouvrage de prestige, fruit d'une mission de documentation sur 32 sites au Sénégal, 59 jours de terrain.
+Tu supervises la direction visuelle, graphique et éditoriale du projet : « Sénégal, Terre d'Histoire et de Rencontres ». Ouvrage de prestige, fruit d'une mission de documentation sur 32 sites au Sénégal, 59 jours de terrain. Format : 210×280mm, 224 pages, 500 exemplaires numérotés.
+
+CONTRAINTE FONDAMENTALE — TRILINGUE : Le livre est intégralement trilingue Français / English / عربية (arabe). TOUTES les légendes, captions, textes de pages, introductions, ouvertures de chapitres, 4e de couverture et notes de terrain doivent être produits dans les TROIS langues simultanément, avec le même soin et la même qualité littéraire dans chaque langue. L'arabe est en direction droite-gauche, registre soutenu.
 
 Tes responsabilités :
-- Direction Éditoriale : grilles de mise en page sophistiquées, maîtrise de l'espace blanc (negative space), associations typographiques élégantes haut de gamme.
+- Direction Éditoriale : grilles de mise en page sophistiquées, maîtrise de l'espace blanc (negative space), associations typographiques élégantes haut de gamme. Intégration du trilinguisme dans la mise en page (blocs FR / EN / AR clairement identifiés).
 - Ingénierie Visuelle : formulation de prompts Midjourney/Veo ultra-premium, 8K, esthétique éditoriale, lumière et profondeur de champ parfaites.
 - Storytelling & Rythme : séquençage du livre, rythme visuel entre paysages grandioses, portraits intimes et détails architecturaux.
 - Excellence Technique : finitions d'impression (grammage, gaufrage, dorure à chaud, vernis sélectif, reliure), vocabulaire précis (CMJN, fond perdu, crénage, colorimétrie).
@@ -6370,8 +6404,9 @@ const A6_TYPE_ICON = {
   equipe:'👥',        biographie:'👤',     credits_photo:'📷',   colophon:'⚙️',
   quatrieme:'🖼'
 };
-const A6_ST_CLASS   = { vide:'st-vide', photo:'st-photo', caption:'st-caption', complet:'st-complet' };
-const A6_ST_LABEL   = { vide:'VIDE', photo:'PHOTO', caption:'CAPTION', complet:'COMPLET' };
+const A6_ST_CLASS   = { vide:'st-vide', photo:'st-photo', caption:'st-caption', texte:'st-caption', complet:'st-complet' };
+const A6_ST_LABEL   = { vide:'VIDE', photo:'PHOTO', caption:'CAPTION', texte:'TEXTE', complet:'COMPLET' };
+const A6_TEXT_TYPES = new Set(['avantpropos','introduction','editorial','mot_auteur','chapitre','chapitre_desc','contexte','legendes','makingof','remerciements','quatrieme']);
 
 function a6RenderBook() {
   const strip  = document.getElementById('a6-book-strip');
@@ -6397,21 +6432,34 @@ function a6RenderBook() {
     const sCls = A6_ST_CLASS[p.status] || 'st-vide';
     const sLab = A6_ST_LABEL[p.status] || 'VIDE';
     const bCls = p.status === 'complet' ? 'bp-complet' : p.thumbnail ? 'bp-photo' : '';
-    const isPhoto = ['pleine_page','double_page','double_suite','portfolio','contexte','legendes'].includes(p.type);
+    const isPhoto   = ['pleine_page','double_page','double_suite','portfolio'].includes(p.type);
+    const isCaption = ['legendes','contexte'].includes(p.type); // caption from DA
+    const isText    = A6_TEXT_TYPES.has(p.type);
     const thumbHtml = p.thumbnail
       ? `<img class="a6-bp-thumb" src="${p.thumbnail}" loading="lazy">`
       : `<div class="a6-bp-ico">${ico}</div>`;
     const pid = escapeAttr(p.id);
-    // Body
-    const photoHtml    = p.thumbnail  ? `<img class="a6-bkb-photo" src="${p.thumbnail}" loading="lazy">` : '';
-    const captionBtnHtml = isPhoto && !p.caption_fr
+    const a7Type = { legendes:'legende', contexte:'note_da', avantpropos:'avantpropos', introduction:'introduction', editorial:'introduction', chapitre:'chapitre', chapitre_desc:'lien', makingof:'narration', remerciements:'lien', quatrieme:'quatrieme', mot_auteur:'mot_auteur' }[p.type] || 'lien';
+    // Photo + caption section
+    const photoHtml      = p.thumbnail ? `<img class="a6-bkb-photo" src="${p.thumbnail}" loading="lazy">` : '';
+    const captionBtnHtml = (isPhoto||isCaption) && !p.caption_fr
       ? `<button class="btn btn-primary btn-sm" style="width:100%;margin-bottom:8px" onclick="a6GenPageCaption('${pid}',this)"><div class="spinner"></div><span class="btn-text">✍️ Générer captions FR+EN+AR</span></button>`
-      : isPhoto && p.caption_fr
+      : (isPhoto||isCaption) && p.caption_fr
       ? `<button class="btn btn-ghost btn-sm" style="width:100%;margin-bottom:8px" onclick="a6GenPageCaption('${pid}',this)"><div class="spinner"></div><span class="btn-text">🔄 Régénérer captions</span></button>`
       : '';
     const capFr = p.caption_fr ? `<div class="a6-bkb-lang">🇫🇷 FRANÇAIS</div><div class="a6-bkb-cap">${escapeHtml(p.caption_fr)}</div>` : '';
     const capEn = p.caption_en ? `<div class="a6-bkb-lang">🇬🇧 ENGLISH</div><div class="a6-bkb-cap">${escapeHtml(p.caption_en)}</div>` : '';
     const capAr = p.caption_ar ? `<div class="a6-bkb-lang">🇸🇦 عربية</div><div class="a6-bkb-cap a6-bkb-cap-ar">${escapeHtml(p.caption_ar)}</div>` : '';
+    // Editorial text section (A7)
+    const textFr = p.textFr ? `<div class="a6-bkb-lang">🇫🇷 FRANÇAIS</div><div class="a6-bkb-cap">${escapeHtml(p.textFr)}</div>` : '';
+    const textEn = p.textEn ? `<div class="a6-bkb-lang">🇬🇧 ENGLISH</div><div class="a6-bkb-cap">${escapeHtml(p.textEn)}</div>` : '';
+    const textAr = p.textAr ? `<div class="a6-bkb-lang">🇸🇦 عربية</div><div class="a6-bkb-cap a6-bkb-cap-ar">${escapeHtml(p.textAr)}</div>` : '';
+    const editTextHtml = isText ? (p.textFr
+      ? `<div style="margin-bottom:8px;font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">TEXTE RÉDACTIONNEL (A7)</div>${textFr}${textEn}${textAr}
+         <button class="btn btn-ghost btn-sm" style="margin-bottom:8px;font-size:11px" onclick="a7SelectBookPage('${pid}','${a7Type}',${JSON.stringify(escapeHtml(p.siteName||p.chapter||''))})">✏️ Modifier dans A7</button>`
+      : `<div style="margin-bottom:8px;padding:8px;background:rgba(245,158,11,.08);border:1px dashed rgba(245,158,11,.3);border-radius:6px;font-size:11px;color:var(--amber)">⚠ Texte rédactionnel manquant</div>
+         <button class="btn btn-primary btn-sm" style="width:100%;margin-bottom:8px" onclick="a7SelectBookPage('${pid}','${a7Type}',${JSON.stringify(escapeHtml(p.siteName||p.chapter||''))})"><div class="spinner"></div><span class="btn-text">✍️ Rédiger dans A7</span></button>`)
+    : '';
     const qrImgHtml = p.qrUrl
       ? `<img class="a6-bkb-qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=56x56&data=${encodeURIComponent(p.qrUrl)}" loading="lazy" alt="QR">`
       : `<div class="a6-bkb-qr-ph">🔲</div>`;
@@ -6430,6 +6478,7 @@ function a6RenderBook() {
         ${photoHtml}
         ${captionBtnHtml}
         ${capFr}${capEn}${capAr}
+        ${editTextHtml}
         <div class="a6-bkb-qr">
           ${qrImgHtml}
           <div style="flex:1">
@@ -6441,6 +6490,8 @@ function a6RenderBook() {
       </div>
     </div>`;
   }).join('');
+  // Sync A7 book needs dashboard
+  if (typeof a7RenderBookNeeds === 'function') a7RenderBookNeeds();
 }
 
 function a6ToggleBookPage(id) {
@@ -6777,6 +6828,94 @@ function a7ExportDocx() {
   showToast('📄 Fichier texte exporté', 'ok');
 }
 
+/* ── A7 : Tableau de bord rédactionnel ── */
+a7State.targetPageId  = null;
+a7State.needsFilter   = 'all';
+
+const A7_NEEDS_LABEL = {
+  avantpropos:'Avant-propos', introduction:'Introduction', editorial:'Éditorial',
+  mot_auteur:'Mot auteur', chapitre:'Chapitre', chapitre_desc:'Liaison',
+  contexte:'Notes terrain', legendes:'Légende', makingof:'Making-of',
+  remerciements:'Remerciements', quatrieme:'4e couverture'
+};
+
+function a7RenderBookNeeds() {
+  const list    = document.getElementById('a7-needs-list');
+  const counter = document.getElementById('a7-needs-counter');
+  if (!list) return;
+  if (!a6State.bookPages || a6State.bookPages.length === 0) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:20px">Générer la maquette du livre dans l\'onglet DA pour voir les pages ici.</div>';
+    if (counter) counter.textContent = '0 pages';
+    return;
+  }
+  const textPages = a6State.bookPages.filter(p => A6_TEXT_TYPES.has(p.type));
+  const empty     = textPages.filter(p => !p.textFr);
+  if (counter) counter.textContent = `${empty.length}/${textPages.length} restantes`;
+  const filtered = a7State.needsFilter === 'empty' ? empty
+    : a7State.needsFilter === 'done'  ? textPages.filter(p => p.textFr)
+    : textPages;
+  if (filtered.length === 0) {
+    list.innerHTML = `<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:16px">${a7State.needsFilter === 'done' ? 'Aucune page rédigée encore.' : '✅ Toutes les pages rédactionnelles sont rédigées !'}</div>`;
+    return;
+  }
+  const a7TypeMap = { legendes:'legende', contexte:'note_da', avantpropos:'avantpropos', introduction:'introduction', editorial:'introduction', chapitre:'chapitre', chapitre_desc:'lien', makingof:'narration', remerciements:'lien', quatrieme:'quatrieme', mot_auteur:'mot_auteur' };
+  list.innerHTML = filtered.map(p => {
+    const done  = !!p.textFr;
+    const label = A7_NEEDS_LABEL[p.type] || p.type;
+    const col   = A6_TYPE_COLOR[p.type] || 'var(--text-muted)';
+    const site  = p.siteName || p.chapter || '';
+    const a7t   = a7TypeMap[p.type] || 'lien';
+    const active = a7State.targetPageId === p.id ? ' style="border-color:rgba(0,242,254,.6);background:rgba(0,242,254,.1)"' : '';
+    return `<div class="a7-need-item${done?' a7-need-done':''}"${active} onclick="a7SelectBookPage('${p.id}','${a7t}',${JSON.stringify(site)})">
+      <span class="a7-need-num">${String(p.num).padStart(2,'0')}</span>
+      <span class="a7-need-type" style="color:${col}">${label}</span>
+      <span class="a7-need-site">${site}</span>
+      <span class="a7-need-badge ${done?'done':'empty'}">${done?'✓ RÉDIGÉ':'À RÉDIGER'}</span>
+    </div>`;
+  }).join('');
+}
+
+function a7FilterNeeds(filter, btn) {
+  a7State.needsFilter = filter;
+  document.querySelectorAll('.a7-nf-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  a7RenderBookNeeds();
+}
+
+function a7SelectBookPage(pageId, type, siteName) {
+  a7State.targetPageId = pageId;
+  const page = a6State.bookPages?.find(p => p.id === pageId);
+  if (!page) return;
+  // Pre-fill generator
+  const selType = document.getElementById('a7-gen-type');
+  const selSite = document.getElementById('a7-gen-site');
+  if (selType) selType.value = type;
+  if (selSite && siteName) {
+    const opt = [...selSite.options].find(o => o.value === siteName || o.textContent.startsWith(siteName));
+    if (opt) selSite.value = opt.value;
+  }
+  // Show target banner
+  let banner = document.getElementById('a7-target-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'a7-target-banner';
+    banner.className = 'a7-target-banner';
+    const genCard = document.querySelector('#agent-redacteur .card:has(#a7-gen-type)') || document.getElementById('a7-gen-result')?.closest('.card');
+    if (genCard) genCard.prepend(banner);
+  }
+  const label = A7_NEEDS_LABEL[page.type] || page.type;
+  banner.innerHTML = `📌 Cible : <b>p.${String(page.num).padStart(2,'0')} · ${label}${siteName ? ' — ' + siteName : ''}</b> <span class="a7-target-clear" onclick="a7ClearTarget()">✕ Annuler</span>`;
+  a7RenderBookNeeds();
+  // Scroll to generator
+  document.getElementById('a7-gen-type')?.closest('.card')?.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function a7ClearTarget() {
+  a7State.targetPageId = null;
+  document.getElementById('a7-target-banner')?.remove();
+  a7RenderBookNeeds();
+}
+
 /* ── A7 : Générateur de page livre ── */
 async function a7GenPageText(btn) {
   disableBtn(btn);
@@ -6799,8 +6938,26 @@ async function a7GenPageText(btn) {
     a7RenderOutput();
     if (div) {
       const note = data.note_da ? `<div style="margin-top:8px;padding:8px 10px;background:rgba(245,158,11,.12);border-radius:6px;font-size:12px;color:var(--amber)">🎨 DA : ${data.note_da}</div>` : '';
+      // Si une page cible est sélectionnée dans le tableau de bord → push direct
+      if (a7State.targetPageId && a6State.bookPages?.length) {
+        const targetPage = a6State.bookPages.find(p => p.id === a7State.targetPageId);
+        if (targetPage) {
+          targetPage.textFr = data.fr || '';
+          targetPage.textEn = data.en || '';
+          targetPage.textAr = data.ar || '';
+          targetPage.status = targetPage.thumbnail ? 'complet' : 'texte';
+          if (a6State.bookPages.length > 0) a6RenderBook();
+          saveStateToDB();
+          a7RenderBookNeeds();
+          const pLabel = A7_NEEDS_LABEL[targetPage.type] || targetPage.type;
+          div.innerHTML = `<div style="color:var(--emerald);font-size:12px">✅ Inséré directement dans la maquette : p.${String(targetPage.num).padStart(2,'0')} · ${pLabel}${note}</div>`;
+          a7ClearTarget();
+          addActivity('📚', `Texte inséré p.${targetPage.num} — ${pLabel}`, now());
+          return;
+        }
+      }
       const bookSel = a6State.bookPages?.length
-        ? `<div style="margin-top:8px"><button class="btn btn-secondary" style="font-size:11px;padding:4px 10px" onclick="a7SendToBook('${encodeURIComponent(JSON.stringify({fr:data.fr||'',en:data.en||'',ar:data.ar||''}))}','${type}')">📚 Envoyer vers une page du livre</button></div>` : '';
+        ? `<div style="margin-top:8px"><button class="btn btn-secondary" style="font-size:11px;padding:4px 10px" onclick="a7SendToBook('${encodeURIComponent(JSON.stringify({fr:data.fr||'',en:data.en||'',ar:data.ar||''}))}','${type}')">📚 Choisir une page du livre</button></div>` : '';
       div.innerHTML = `<div style="color:var(--emerald);font-size:12px">✓ Texte généré — voir le panneau de sortie ci-dessus${note}${bookSel}</div>`;
     }
     addActivity('📝', `Texte "${type}" généré${site?' — '+site:''}`, now());
@@ -6905,6 +7062,7 @@ function initAgent7() {
       sel.appendChild(opt);
     });
   }
+  a7RenderBookNeeds();
   if (a7State.library.length > 0) {
     const card = document.getElementById('a7-library-card');
     const list = document.getElementById('a7-library-list');
