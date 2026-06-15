@@ -1232,6 +1232,56 @@ textarea.input-field { resize: vertical; min-height: 80px; }
   font-size: 0.63rem; color: var(--text-secondary);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* A6 IA cards */
+#agent-direction-artistique .a6-upload-zone {
+  border: 1.5px dashed var(--border); border-radius: var(--r-sm);
+  padding: 12px; text-align: center; cursor: pointer;
+  transition: border-color var(--t), background var(--t);
+  min-height: 56px; display: flex; align-items: center; justify-content: center;
+  background: var(--bg-card-2); font-family: var(--font-mono); font-size: 0.52rem; color: var(--text-muted);
+}
+#agent-direction-artistique .a6-upload-zone:hover { border-color: var(--cyan); background: rgba(0,242,254,0.04); }
+#agent-direction-artistique .a6-upload-zone img { width:100%; border-radius:var(--r-sm); max-height:140px; object-fit:cover; }
+#agent-direction-artistique .a6-multi-thumbs {
+  display: flex; flex-wrap: wrap; gap: 6px; min-height: 56px;
+  border: 1.5px dashed var(--border); border-radius: var(--r-sm);
+  padding: 8px; background: var(--bg-card-2); align-items: center;
+}
+#agent-direction-artistique .a6-thumb-wrap { position: relative; }
+#agent-direction-artistique .a6-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: var(--r-sm); border: 1px solid var(--border); display: block; }
+#agent-direction-artistique .a6-thumb-rm {
+  position: absolute; top: -4px; right: -4px; width: 14px; height: 14px;
+  background: var(--red); color: #fff; border: none; border-radius: 50%;
+  font-size: 0.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1;
+}
+#agent-direction-artistique .a6-add-btn {
+  font-family: var(--font-mono); font-size: 0.5rem; color: var(--text-muted);
+  background: none; border: 1px dashed var(--border); border-radius: var(--r-sm);
+  cursor: pointer; padding: 6px 10px; transition: color var(--t), border-color var(--t);
+}
+#agent-direction-artistique .a6-add-btn:hover { color: var(--cyan); border-color: var(--cyan); }
+#agent-direction-artistique .a6-ia-result {
+  background: var(--bg-card-2); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 12px;
+  font-size: 0.65rem; line-height: 1.6; color: var(--text-primary);
+}
+#agent-direction-artistique .a6-ia-score {
+  font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; text-align: center; margin-bottom: 6px;
+}
+#agent-direction-artistique .a6-ia-label { font-family: var(--font-mono); font-size: 0.48rem; text-align: center; margin-bottom: 10px; letter-spacing: 0.08em; }
+#agent-direction-artistique .a6-crit-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border); font-size: 0.6rem; }
+#agent-direction-artistique .a6-crit-row:last-child { border-bottom: none; }
+#agent-direction-artistique .a6-crit-key { color: var(--text-muted); font-family: var(--font-mono); font-size: 0.5rem; }
+#agent-direction-artistique .a6-crit-val { color: var(--cyan); font-family: var(--font-mono); font-size: 0.5rem; }
+#agent-direction-artistique .a6-lr-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); }
+#agent-direction-artistique .a6-lr-row:last-child { border-bottom: none; }
+#agent-direction-artistique .a6-lr-key { font-family: var(--font-mono); font-size: 0.5rem; color: var(--text-muted); }
+#agent-direction-artistique .a6-lr-val { font-family: var(--font-mono); font-size: 0.58rem; font-weight: 700; color: var(--amber); }
+#agent-direction-artistique .a6-seq-item { padding: 6px 8px; border-radius: var(--r-sm); border-left: 2px solid var(--border); margin-bottom: 5px; font-size: 0.62rem; }
+#agent-direction-artistique .a6-seq-num { font-family: var(--font-mono); font-size: 0.48rem; color: var(--cyan); margin-bottom: 2px; }
+#agent-direction-artistique .a6-seq-site { font-weight: 600; color: var(--text-primary); }
+#agent-direction-artistique .a6-seq-chap { font-family: var(--font-mono); font-size: 0.48rem; color: var(--amber); margin-top: 2px; }
+#agent-direction-artistique .a6-seq-trans { font-size: 0.55rem; color: var(--text-muted); font-style: italic; margin-top: 2px; }
 
 /* ============================================================
    AGENT 7 — RÉDACTEUR-TRADUCTEUR — CSS Scopé #agent-redacteur
@@ -2682,6 +2732,89 @@ textarea.input-field { resize: vertical; min-height: 80px; }
         <div class="card" id="a6-archive-card" style="display:none">
           <div class="card-title">Briefs Archivés</div>
           <div id="a6-archive-list"></div>
+        </div>
+
+        <!-- A6-IA-1 : Conformité Brief -->
+        <div class="card">
+          <div class="card-title">🎯 Conformité Brief <span class="pill pill-amber" style="margin-left:auto;font-size:0.45rem">Claude Vision</span></div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:8px">Générez un brief ci-dessus, puis uploadez la photo prise sur site.</div>
+          <div class="a6-upload-zone" id="a6-cf-zone" onclick="document.getElementById('a6-cf-input').click()">
+            <input type="file" id="a6-cf-input" accept="image/*" style="display:none" onchange="a6CfSelected(this)">
+            <div id="a6-cf-prompt">📷 Charger la photo terrain</div>
+            <img id="a6-cf-img" style="display:none">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px">
+            <button class="btn btn-primary btn-sm" id="a6-cf-btn" onclick="a6CheckConformite(this)" disabled>
+              <div class="spinner"></div><span class="btn-text">🎯 Analyser conformité</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" id="a6-cf-clr" onclick="a6CfClear()" style="display:none">✕</button>
+          </div>
+          <div id="a6-cf-result" style="margin-top:8px"></div>
+        </div>
+
+        <!-- A6-IA-2 : Sélecteur de Photo -->
+        <div class="card">
+          <div class="card-title">🏆 Meilleure Photo du Site <span class="pill pill-amber" style="margin-left:auto;font-size:0.45rem">Claude Vision</span></div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:8px">2 à 5 photos du même site. Claude choisit la meilleure pour le livre.</div>
+          <div class="a6-multi-thumbs" id="a6-sel-thumbs">
+            <button class="a6-add-btn" onclick="document.getElementById('a6-sel-input').click()">+ Ajouter photos</button>
+            <input type="file" id="a6-sel-input" accept="image/*" multiple style="display:none" onchange="a6SelAdd(this)">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px">
+            <button class="btn btn-primary btn-sm" id="a6-sel-btn" onclick="a6SelectBest(this)" disabled>
+              <div class="spinner"></div><span class="btn-text">🏆 Claude choisit</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="a6SelClear()">✕ Effacer</button>
+          </div>
+          <div id="a6-sel-result" style="margin-top:8px"></div>
+        </div>
+
+        <!-- A6-IA-3 : Cohérence Inter-Sites -->
+        <div class="card">
+          <div class="card-title">🎨 Cohérence Visuelle Inter-Sites <span class="pill pill-amber" style="margin-left:auto;font-size:0.45rem">Claude Vision</span></div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:8px">2 à 4 photos de sites différents. Claude vérifie la cohérence pour le livre.</div>
+          <div class="a6-multi-thumbs" id="a6-coh-thumbs">
+            <button class="a6-add-btn" onclick="document.getElementById('a6-coh-input').click()">+ Ajouter photos</button>
+            <input type="file" id="a6-coh-input" accept="image/*" multiple style="display:none" onchange="a6CohAdd(this)">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px">
+            <button class="btn btn-primary btn-sm" id="a6-coh-btn" onclick="a6CheckCoherence(this)" disabled>
+              <div class="spinner"></div><span class="btn-text">🎨 Analyser cohérence</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="a6CohClear()">✕ Effacer</button>
+          </div>
+          <div id="a6-coh-result" style="margin-top:8px"></div>
+        </div>
+
+        <!-- A6-IA-4 : Paramètres Lightroom -->
+        <div class="card">
+          <div class="card-title">💡 Paramètres Lightroom <span class="pill pill-amber" style="margin-left:auto;font-size:0.45rem">Claude Vision</span></div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:8px">Photo optionnelle. Avec photo = résultat plus précis.</div>
+          <div class="a6-upload-zone" id="a6-lr-zone" onclick="document.getElementById('a6-lr-input').click()">
+            <input type="file" id="a6-lr-input" accept="image/*" style="display:none" onchange="a6LrSelected(this)">
+            <div id="a6-lr-prompt">📷 Photo optionnelle</div>
+            <img id="a6-lr-img" style="display:none">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px">
+            <button class="btn btn-primary btn-sm" onclick="a6GenLightroom(this)">
+              <div class="spinner"></div><span class="btn-text">💡 Générer params</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" id="a6-lr-clr" onclick="a6LrClear()" style="display:none">✕</button>
+          </div>
+          <div id="a6-lr-result" style="margin-top:8px"></div>
+        </div>
+
+        <!-- A6-IA-5 : Séquençage Narratif Livre -->
+        <div class="card">
+          <div class="card-title">📖 Séquençage Narratif du Livre <span class="pill pill-amber" style="margin-left:auto;font-size:0.45rem">Claude</span></div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:8px">Claude propose l'ordre des 32 sites pour que le livre ait une vraie narration.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="a6GenSequencing(this)">
+              <div class="spinner"></div><span class="btn-text">📖 Générer séquençage</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" id="a6-seq-copy" onclick="a6SeqCopy()" style="display:none">📋 Copier</button>
+          </div>
+          <div id="a6-seq-result" style="margin-top:8px"></div>
         </div>
 
       </div><!-- /agent-direction-artistique -->
@@ -5480,6 +5613,283 @@ function initAgent6() {
     if (card) card.style.display = 'block';
     if (list) { list.innerHTML = ''; a6State.briefs.slice(0, 6).forEach(b => { const div = document.createElement('div'); div.className = 'a6-archive-item'; div.innerHTML = `<div class="a6-arch-title">${b.site} · ${b.style}</div><div class="a6-arch-preview">${new Date(b.ts).toLocaleString('fr-FR')}</div>`; list.appendChild(div); }); }
   }
+}
+
+/* ============================================================
+   A6 — DIRECTION ARTISTIQUE — Fonctions IA
+   ============================================================ */
+
+// État photos IA
+let a6CfPhoto  = { b64: null, mime: null };
+let a6SelPhotos = []; // [{b64,mime,url,name}]
+let a6CohPhotos = []; // [{b64,mime,url,name}]
+let a6LrPhoto  = { b64: null, mime: null };
+let a6SeqText  = '';
+
+function a6ReadFile(file) {
+  return new Promise(resolve => {
+    const r = new FileReader();
+    r.onload = e => resolve({ b64: e.target.result.split(',')[1], mime: file.type || 'image/jpeg', url: e.target.result, name: file.name });
+    r.readAsDataURL(file);
+  });
+}
+
+function a6GetBriefText() {
+  const b  = a6State.currentBrief;
+  const sp = A6_STYLE_PARAMS[a6State.style] || A6_STYLE_PARAMS.natgeo;
+  if (!b) return `Style: ${sp.label}\nOptique: ${sp.lens}\nISO: ${sp.iso}\nLumière: ${sp.light}\nTechnique: ${sp.tech}\nPalette: Or Teranga #C4872A, Bleu Dakar #1A3A5C, Latérite #D4522A`;
+  return `Site: ${b.site}\nStyle: ${b.style}\nOptique: ${sp.lens}\nISO: ${sp.iso}\nLumière: ${sp.light}\nTechnique: ${sp.tech}\nPalette: Or Teranga #C4872A, Bleu Dakar #1A3A5C, Latérite #D4522A\nFormat cible: Double page 420x315mm 300 DPI`;
+}
+
+async function a6CallClaude(systemPrompt, contentArr, maxTok) {
+  const res = await fetch('/api/claude', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: maxTok || 800, system: systemPrompt, messages: [{ role: 'user', content: contentArr }] })
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error?.message || data.hint || `HTTP ${res.status}`);
+  const raw = data.content?.[0]?.text || '';
+  try { return JSON.parse(raw); }
+  catch { const m = raw.match(/\{[\s\S]*\}/); if (m) return JSON.parse(m[0]); throw new Error('Réponse non parseable'); }
+}
+
+/* --- Conformité Brief --- */
+function a6CfSelected(input) {
+  const file = input.files[0]; if (!file) return;
+  if (file.size > 5e6) { showToast('Max 5 Mo', 'warn'); return; }
+  a6ReadFile(file).then(f => {
+    a6CfPhoto = f;
+    document.getElementById('a6-cf-img').src = f.url;
+    document.getElementById('a6-cf-img').style.display = 'block';
+    document.getElementById('a6-cf-prompt').style.display = 'none';
+    document.getElementById('a6-cf-btn').disabled = false;
+    document.getElementById('a6-cf-clr').style.display = 'inline-flex';
+  });
+}
+function a6CfClear() {
+  a6CfPhoto = { b64: null, mime: null };
+  document.getElementById('a6-cf-input').value = '';
+  document.getElementById('a6-cf-img').style.display = 'none';
+  document.getElementById('a6-cf-prompt').style.display = 'block';
+  document.getElementById('a6-cf-btn').disabled = true;
+  document.getElementById('a6-cf-clr').style.display = 'none';
+  document.getElementById('a6-cf-result').innerHTML = '';
+}
+async function a6CheckConformite(btn) {
+  if (!a6CfPhoto.b64) return;
+  disableBtn(btn);
+  const resultEl = document.getElementById('a6-cf-result');
+  resultEl.innerHTML = '<div class="a6-ia-result" style="color:var(--text-muted)">Claude analyse…</div>';
+  try {
+    const data = await a6CallClaude(
+      'Tu es directeur artistique de la mission documentaire SÉNÉGAL V3. Tu évalues des photos de terrain avec précision.',
+      [
+        { type: 'image', source: { type: 'base64', media_type: a6CfPhoto.mime, data: a6CfPhoto.b64 } },
+        { type: 'text', text: `Brief technique de référence :\n${a6GetBriefText()}\n\nAnalyse cette photo et évalue sa conformité avec le brief. Réponds avec ce JSON valide :\n{"score":0-100,"verdict":"CONFORME"|"CORRECTIONS"|"NON CONFORME","points_forts":["..."],"corrections":["..."],"detail":{"cadrage":{"score":0-100,"note":"..."},"lumiere":{"score":0-100,"note":"..."},"palette":{"score":0-100,"note":"..."},"technique":{"score":0-100,"note":"..."},"intention":{"score":0-100,"note":"..."}}}` }
+      ], 700
+    );
+    const color = data.score >= 75 ? 'var(--emerald)' : data.score >= 50 ? 'var(--amber)' : 'var(--red)';
+    const crit = Object.entries(data.detail || {}).map(([k,v]) => `<div class="a6-crit-row"><span class="a6-crit-key">${k}</span><span class="a6-crit-val">${v.score}/100 — ${v.note}</span></div>`).join('');
+    const forts = (data.points_forts||[]).map(p => `<li>${p}</li>`).join('');
+    const corrs = (data.corrections||[]).map(p => `<li>${p}</li>`).join('');
+    resultEl.innerHTML = `<div class="a6-ia-result">
+      <div class="a6-ia-score" style="color:${color}">${data.score}/100</div>
+      <div class="a6-ia-label" style="color:${color}">${data.verdict}</div>
+      <div style="margin-bottom:8px">${crit}</div>
+      ${forts ? `<div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--emerald);margin-bottom:4px">POINTS FORTS</div><ul style="margin:0 0 8px 16px;font-size:0.6rem;color:var(--text-secondary)">${forts}</ul>` : ''}
+      ${corrs ? `<div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--amber);margin-bottom:4px">CORRECTIONS</div><ul style="margin:0 0 0 16px;font-size:0.6rem;color:var(--text-secondary)">${corrs}</ul>` : ''}
+    </div>`;
+    addActivity('🎯', `Conformité brief : ${data.score}/100 — ${data.verdict}`, now());
+  } catch(e) { resultEl.innerHTML = `<div class="a6-ia-result" style="color:var(--red)">${e.message}</div>`; }
+  enableBtn(btn);
+}
+
+/* --- Sélecteur Meilleure Photo --- */
+async function a6SelAdd(input) {
+  const files = Array.from(input.files).slice(0, 5 - a6SelPhotos.length);
+  if (a6SelPhotos.length >= 5) { showToast('Maximum 5 photos', 'warn'); return; }
+  const loaded = await Promise.all(files.map(a6ReadFile));
+  a6SelPhotos.push(...loaded);
+  a6SelRender();
+  input.value = '';
+}
+function a6SelRender() {
+  const thumbs = document.getElementById('a6-sel-thumbs');
+  thumbs.innerHTML = '';
+  a6SelPhotos.forEach((p, i) => {
+    const wrap = document.createElement('div'); wrap.className = 'a6-thumb-wrap';
+    wrap.innerHTML = `<img class="a6-thumb" src="${p.url}"><button class="a6-thumb-rm" onclick="a6SelRemove(${i})">×</button>`;
+    thumbs.appendChild(wrap);
+  });
+  const addBtn = document.createElement('button'); addBtn.className = 'a6-add-btn';
+  addBtn.textContent = a6SelPhotos.length > 0 ? `+ Ajouter (${a6SelPhotos.length}/5)` : '+ Ajouter photos';
+  addBtn.onclick = () => document.getElementById('a6-sel-input').click();
+  thumbs.appendChild(addBtn);
+  document.getElementById('a6-sel-btn').disabled = a6SelPhotos.length < 2;
+}
+function a6SelRemove(i) { a6SelPhotos.splice(i, 1); a6SelRender(); }
+function a6SelClear() { a6SelPhotos = []; a6SelRender(); document.getElementById('a6-sel-result').innerHTML = ''; }
+async function a6SelectBest(btn) {
+  if (a6SelPhotos.length < 2) return;
+  disableBtn(btn);
+  const resultEl = document.getElementById('a6-sel-result');
+  resultEl.innerHTML = '<div class="a6-ia-result" style="color:var(--text-muted)">Claude compare les photos…</div>';
+  try {
+    const imgBlocks = a6SelPhotos.map((p, i) => ({ type: 'image', source: { type: 'base64', media_type: p.mime, data: p.b64 } }));
+    const data = await a6CallClaude(
+      'Tu es directeur artistique de la mission documentaire SÉNÉGAL V3. Tu sélectionnes les meilleures photos pour un livre collector luxe.',
+      [
+        ...imgBlocks,
+        { type: 'text', text: `Ces ${a6SelPhotos.length} photos ont été prises sur le même site.\nBrief de référence :\n${a6GetBriefText()}\n\nAnalyse et choisis la meilleure pour le livre. JSON :\n{"choix":1,"raison":"raison principale concise","analyse":[{"photo":1,"score":0-100,"forces":"...","faiblesses":"..."}]}` }
+      ], 900
+    );
+    const winner = data.choix || 1;
+    const rows = (data.analyse || []).map(a => `<div class="a6-crit-row"><span class="a6-crit-key">Photo ${a.photo}${a.photo === winner ? ' 🏆' : ''}</span><span class="a6-crit-val">${a.score}/100</span></div><div style="font-size:0.55rem;color:var(--text-muted);padding:2px 0 6px 0">${a.forces}${a.faiblesses ? ` · ⚠ ${a.faiblesses}` : ''}</div>`).join('');
+    resultEl.innerHTML = `<div class="a6-ia-result">
+      <div class="a6-ia-score" style="color:var(--emerald)">Photo ${winner}</div>
+      <div class="a6-ia-label" style="color:var(--emerald)">SÉLECTION DIRECTEUR ARTISTIQUE</div>
+      <div style="font-size:0.6rem;color:var(--text-secondary);margin-bottom:10px">${data.raison}</div>
+      ${rows}
+    </div>`;
+    addActivity('🏆', `Meilleure photo sélectionnée : Photo ${winner} sur ${a6SelPhotos.length}`, now());
+  } catch(e) { resultEl.innerHTML = `<div class="a6-ia-result" style="color:var(--red)">${e.message}</div>`; }
+  enableBtn(btn);
+}
+
+/* --- Cohérence Inter-Sites --- */
+async function a6CohAdd(input) {
+  const files = Array.from(input.files).slice(0, 4 - a6CohPhotos.length);
+  if (a6CohPhotos.length >= 4) { showToast('Maximum 4 photos', 'warn'); return; }
+  const loaded = await Promise.all(files.map(a6ReadFile));
+  a6CohPhotos.push(...loaded);
+  a6CohRender();
+  input.value = '';
+}
+function a6CohRender() {
+  const thumbs = document.getElementById('a6-coh-thumbs');
+  thumbs.innerHTML = '';
+  a6CohPhotos.forEach((p, i) => {
+    const wrap = document.createElement('div'); wrap.className = 'a6-thumb-wrap';
+    wrap.innerHTML = `<img class="a6-thumb" src="${p.url}"><button class="a6-thumb-rm" onclick="a6CohRemove(${i})">×</button>`;
+    thumbs.appendChild(wrap);
+  });
+  const addBtn = document.createElement('button'); addBtn.className = 'a6-add-btn';
+  addBtn.textContent = a6CohPhotos.length > 0 ? `+ Ajouter (${a6CohPhotos.length}/4)` : '+ Ajouter photos';
+  addBtn.onclick = () => document.getElementById('a6-coh-input').click();
+  thumbs.appendChild(addBtn);
+  document.getElementById('a6-coh-btn').disabled = a6CohPhotos.length < 2;
+}
+function a6CohRemove(i) { a6CohPhotos.splice(i, 1); a6CohRender(); }
+function a6CohClear() { a6CohPhotos = []; a6CohRender(); document.getElementById('a6-coh-result').innerHTML = ''; }
+async function a6CheckCoherence(btn) {
+  if (a6CohPhotos.length < 2) return;
+  disableBtn(btn);
+  const resultEl = document.getElementById('a6-coh-result');
+  resultEl.innerHTML = '<div class="a6-ia-result" style="color:var(--text-muted)">Claude analyse la cohérence…</div>';
+  try {
+    const imgBlocks = a6CohPhotos.map(p => ({ type: 'image', source: { type: 'base64', media_type: p.mime, data: p.b64 } }));
+    const data = await a6CallClaude(
+      'Tu es directeur artistique de la mission documentaire SÉNÉGAL V3. Tu garantis la cohérence visuelle d\'un livre de luxe.',
+      [
+        ...imgBlocks,
+        { type: 'text', text: `Ces ${a6CohPhotos.length} photos viennent de sites différents et doivent former un livre cohérent.\nCharte mission : Or Teranga #c4872a, Bleu Dakar #1a3a5c, Latérite #d4522a, Forêt Casamance #2d6e3e.\nJSON :\n{"score_coherence":0-100,"verdict":"COHÉRENT"|"AJUSTEMENTS"|"INCOHÉRENT","palette_globale":"tendance observée","points_forts":["..."],"divergences":["Photo X : ..."],"recommandations":["..."]}` }
+      ], 700
+    );
+    const color = data.score_coherence >= 75 ? 'var(--emerald)' : data.score_coherence >= 50 ? 'var(--amber)' : 'var(--red)';
+    const forts = (data.points_forts||[]).map(p => `<li>${p}</li>`).join('');
+    const divs  = (data.divergences||[]).map(p => `<li>${p}</li>`).join('');
+    const recs  = (data.recommandations||[]).map(p => `<li>${p}</li>`).join('');
+    resultEl.innerHTML = `<div class="a6-ia-result">
+      <div class="a6-ia-score" style="color:${color}">${data.score_coherence}/100</div>
+      <div class="a6-ia-label" style="color:${color}">${data.verdict}</div>
+      <div style="font-size:0.6rem;color:var(--text-secondary);margin-bottom:8px">Palette globale : ${data.palette_globale}</div>
+      ${forts ? `<div style="font-family:var(--font-mono);font-size:0.45rem;color:var(--emerald);margin-bottom:3px">COHÉRENT</div><ul style="margin:0 0 8px 14px;font-size:0.58rem;color:var(--text-secondary)">${forts}</ul>` : ''}
+      ${divs  ? `<div style="font-family:var(--font-mono);font-size:0.45rem;color:var(--amber);margin-bottom:3px">DIVERGENCES</div><ul style="margin:0 0 8px 14px;font-size:0.58rem;color:var(--text-secondary)">${divs}</ul>` : ''}
+      ${recs  ? `<div style="font-family:var(--font-mono);font-size:0.45rem;color:var(--cyan);margin-bottom:3px">RECOMMANDATIONS</div><ul style="margin:0 0 0 14px;font-size:0.58rem;color:var(--text-secondary)">${recs}</ul>` : ''}
+    </div>`;
+    addActivity('🎨', `Cohérence visuelle : ${data.score_coherence}/100 — ${data.verdict}`, now());
+  } catch(e) { resultEl.innerHTML = `<div class="a6-ia-result" style="color:var(--red)">${e.message}</div>`; }
+  enableBtn(btn);
+}
+
+/* --- Paramètres Lightroom --- */
+function a6LrSelected(input) {
+  const file = input.files[0]; if (!file) return;
+  if (file.size > 5e6) { showToast('Max 5 Mo', 'warn'); return; }
+  a6ReadFile(file).then(f => {
+    a6LrPhoto = f;
+    document.getElementById('a6-lr-img').src = f.url;
+    document.getElementById('a6-lr-img').style.display = 'block';
+    document.getElementById('a6-lr-prompt').style.display = 'none';
+    document.getElementById('a6-lr-clr').style.display = 'inline-flex';
+  });
+}
+function a6LrClear() {
+  a6LrPhoto = { b64: null, mime: null };
+  document.getElementById('a6-lr-input').value = '';
+  document.getElementById('a6-lr-img').style.display = 'none';
+  document.getElementById('a6-lr-prompt').style.display = 'block';
+  document.getElementById('a6-lr-clr').style.display = 'none';
+}
+async function a6GenLightroom(btn) {
+  disableBtn(btn);
+  const resultEl = document.getElementById('a6-lr-result');
+  resultEl.innerHTML = '<div class="a6-ia-result" style="color:var(--text-muted)">Claude génère les paramètres…</div>';
+  const prompt = `Brief de référence :\n${a6GetBriefText()}\n\nGénère des paramètres Lightroom Classic précis pour l'esthétique National Geographic documentaire luxe.\nJSON :\n{"preset":"nom du style","basiques":{"temperature":"+X","teinte":"+X","exposition":"+X.X","hautes_lumieres":"-XX","ombres":"+XX","blancs":"+XX","noirs":"-XX","clarte":"+XX","vibrance":"+XX","saturation":"+X"},"hsl":{"note":"ajustement HSL clé"},"courbe":"description courbe tonale","justification":"pourquoi ces choix"}`;
+  try {
+    const contentArr = a6LrPhoto.b64
+      ? [{ type:'image', source:{ type:'base64', media_type: a6LrPhoto.mime, data: a6LrPhoto.b64 } }, { type:'text', text: prompt }]
+      : [{ type:'text', text: prompt }];
+    const data = await a6CallClaude('Tu es directeur artistique et retoucheur de la mission documentaire SÉNÉGAL V3. Tu calibres Lightroom pour un rendu luxe National Geographic.', contentArr, 600);
+    const params = Object.entries(data.basiques || {}).map(([k,v]) => `<div class="a6-lr-row"><span class="a6-lr-key">${k}</span><span class="a6-lr-val">${v}</span></div>`).join('');
+    resultEl.innerHTML = `<div class="a6-ia-result">
+      <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--cyan);margin-bottom:8px">PRESET : ${data.preset}</div>
+      <div style="font-family:var(--font-mono);font-size:0.45rem;color:var(--text-muted);margin-bottom:6px">PARAMÈTRES DE BASE</div>
+      ${params}
+      <div style="font-family:var(--font-mono);font-size:0.45rem;color:var(--text-muted);margin:8px 0 4px 0">HSL</div>
+      <div style="font-size:0.58rem;color:var(--text-secondary)">${data.hsl?.note || ''}</div>
+      <div style="font-family:var(--font-mono);font-size:0.45rem;color:var(--text-muted);margin:8px 0 4px 0">COURBE TONALE</div>
+      <div style="font-size:0.58rem;color:var(--text-secondary)">${data.courbe || ''}</div>
+      <div style="font-family:var(--font-mono);font-size:0.45rem;color:var(--text-muted);margin:8px 0 4px 0">JUSTIFICATION</div>
+      <div style="font-size:0.58rem;color:var(--text-secondary)">${data.justification || ''}</div>
+    </div>`;
+    addActivity('💡', `Params Lightroom générés : preset ${data.preset}`, now());
+  } catch(e) { resultEl.innerHTML = `<div class="a6-ia-result" style="color:var(--red)">${e.message}</div>`; }
+  enableBtn(btn);
+}
+
+/* --- Séquençage Narratif Livre --- */
+async function a6GenSequencing(btn) {
+  disableBtn(btn);
+  const resultEl = document.getElementById('a6-seq-result');
+  resultEl.innerHTML = '<div class="a6-ia-result" style="color:var(--text-muted)">Claude construit la narration du livre…</div>';
+  const sitesList = SITES.map(s => `#${s.id} [Zone ${s.zone}] ${s.name} — ${s.days}j, ${s.km}km`).join('\n');
+  const prompt = `Tu es le directeur artistique et narrateur de la mission documentaire SÉNÉGAL V3.\n\nVoici les 32 sites :\n${sitesList}\n\nPropose l'ordre optimal pour le livre collector. Critères : progression narrative (ouverture forte, montée, climax, épilogue), alternance géographique, variété urbain/nature/patrimoine, cohérence émotionnelle.\n\nJSON :\n{"arc":"titre narratif du livre","structure":[{"ordre":1,"site_id":1,"site_name":"...","chapitre":"...","role":"ouverture|développement|climax|épilogue","transition":"lien avec la page suivante"}],"note_da":"note du DA sur les choix"}`;
+  try {
+    const data = await a6CallClaude('Tu es directeur artistique senior, expert en narration visuelle et séquençage de livres de photographie documentaire.', [{ type:'text', text: prompt }], 2000);
+    const items = (data.structure || []).map(s => {
+      const roleColor = { 'ouverture':'var(--cyan)', 'développement':'var(--text-secondary)', 'climax':'var(--amber)', 'épilogue':'var(--emerald)' }[s.role] || 'var(--text-muted)';
+      return `<div class="a6-seq-item" style="border-left-color:${roleColor}">
+        <div class="a6-seq-num">${String(s.ordre).padStart(2,'0')} · <span style="color:${roleColor}">${(s.role||'').toUpperCase()}</span></div>
+        <div class="a6-seq-site">${s.site_name}</div>
+        <div class="a6-seq-chap">${s.chapitre}</div>
+        ${s.transition ? `<div class="a6-seq-trans">${s.transition}</div>` : ''}
+      </div>`;
+    }).join('');
+    a6SeqText = (data.structure||[]).map(s => `${s.ordre}. ${s.site_name} — ${s.chapitre} [${s.role}]`).join('\n');
+    resultEl.innerHTML = `<div class="a6-ia-result">
+      <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--amber);margin-bottom:10px">${data.arc}</div>
+      ${items}
+      ${data.note_da ? `<div style="font-family:var(--font-mono);font-size:0.45rem;color:var(--text-muted);margin-top:10px">NOTE DA</div><div style="font-size:0.58rem;color:var(--text-secondary);margin-top:4px;font-style:italic">${data.note_da}</div>` : ''}
+    </div>`;
+    document.getElementById('a6-seq-copy').style.display = 'inline-flex';
+    addActivity('📖', `Séquençage narratif généré : ${(data.structure||[]).length} sites ordonnés`, now());
+  } catch(e) { resultEl.innerHTML = `<div class="a6-ia-result" style="color:var(--red)">${e.message}</div>`; }
+  enableBtn(btn);
+}
+function a6SeqCopy() {
+  navigator.clipboard?.writeText(a6SeqText).then(() => showToast('📋 Séquençage copié', 'ok'));
 }
 
 /* ============================================================
