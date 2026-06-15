@@ -2194,18 +2194,19 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <div id="activity-feed"></div>
         </div>
 
-        <!-- WhatsApp Broadcast -->
+        <!-- Telegram Broadcast -->
         <div class="card">
-          <div class="card-title">Diffusion WhatsApp</div>
+          <div class="card-title">Diffusion Telegram</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">Envoie un message au groupe équipe via le bot Telegram. Configurer Token + Chat ID dans le Coffre-Fort.</div>
           <div class="input-group">
             <label class="input-label">Message d'alerte</label>
-            <textarea class="input-field" id="wa-broadcast-msg" placeholder="Saisir le message à diffuser à l'équipe…" autocomplete="off" spellcheck="false" style="min-height:70px"></textarea>
+            <textarea class="input-field" id="tg-broadcast-msg" placeholder="Saisir le message à diffuser à l'équipe…" autocomplete="off" spellcheck="false" style="min-height:70px"></textarea>
           </div>
           <div class="wa-btn-row">
-            <button class="btn btn-primary" onclick="triggerWhatsAppBroadcast(event,'team')">
+            <button class="btn btn-primary" onclick="triggerTelegramBroadcast(event,'team')">
               <div class="spinner"></div><span class="btn-text">📣 Équipe</span>
             </button>
-            <button class="btn btn-danger" onclick="triggerWhatsAppBroadcast(event,'emergency')">
+            <button class="btn btn-danger" onclick="triggerTelegramBroadcast(event,'emergency')">
               <div class="spinner"></div><span class="btn-text">🚨 Urgence</span>
             </button>
           </div>
@@ -2270,14 +2271,15 @@ textarea.input-field { resize: vertical; min-height: 80px; }
             </div>
           </div>
 
-          <!-- WhatsApp Keys -->
+          <!-- Telegram Keys -->
           <div class="card">
             <div class="key-category">
-              <svg width="12" height="12" fill="#25d366" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
-              WhatsApp Business API
+              <svg width="12" height="12" fill="#2CA5E0" viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.820 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+              Telegram Bot
             </div>
-            <div id="vault-keys-whatsapp"></div>
-            <button class="btn btn-ghost btn-sm btn-full" onclick="addKeyToCategory('whatsapp')" style="margin-top:6px">+ Ajouter clé</button>
+            <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px">Ajouter deux clés : <b>Bot Token</b> (de @BotFather) et <b>Chat ID</b> (id du groupe).</div>
+            <div id="vault-keys-telegram"></div>
+            <button class="btn btn-ghost btn-sm btn-full" onclick="addKeyToCategory('telegram')" style="margin-top:6px">+ Ajouter clé</button>
           </div>
 
           <!-- Maps / GPS Keys -->
@@ -3880,7 +3882,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <div class="card-title">Générateur Message Diaspora</div>
           <div class="input-group"><label class="input-label">Réseau cible</label>
             <select class="input-field" id="a16-msg-reseau">
-              <option value="whatsapp">WhatsApp</option>
+              <option value="telegram">Telegram</option>
               <option value="facebook">Facebook</option>
               <option value="twitter">X / Twitter</option>
               <option value="email">Email</option>
@@ -4114,7 +4116,7 @@ const state = {
   wakeLock: null,
   isOnline: navigator.onLine,
   webhookQueue: [],
-  vault: { whatsapp: [], maps: [], cloud: [], social: [] },
+  vault: { telegram: [], maps: [], cloud: [], social: [] },
   vaultUnlocked: false,
   vaultPin: '1234',
   pinBuffer: '',
@@ -4309,8 +4311,15 @@ window.addEventListener('offline', updateOnlineStatus);
 let webhookProcessing = false;
 let webhookFlags = {};
 
+function getTelegramConfig() {
+  const keys = state.vault.telegram || [];
+  const token  = (keys.find(k => k.name && k.name.toLowerCase().includes('token'))  || {}).value || null;
+  const chatId = (keys.find(k => k.name && (k.name.toLowerCase().includes('chat') || k.name.toLowerCase().includes('id'))) || {}).value || null;
+  return { token, chatId };
+}
+/* kept for Make.com webhook fallback — reads from telegram vault now */
 function getWebhookUrl() {
-  const keys = state.vault.whatsapp;
+  const keys = state.vault.telegram || [];
   const urlKey = keys.find(k => k.name && k.name.toLowerCase().includes('webhook'));
   return urlKey ? urlKey.value : null;
 }
@@ -4380,44 +4389,50 @@ function updateWAQueueUI() {
   if (label) label.textContent = state.webhookQueue.length > 0 ? `${state.webhookQueue.length} message(s) en attente · Sync dès reconnexion` : 'File vide — 0 message en attente';
 }
 
-function triggerWhatsAppBroadcast(evt, type) {
+async function triggerTelegramBroadcast(evt, type) {
   const btn = evt.currentTarget;
-  const msg = document.getElementById('wa-broadcast-msg').value.trim();
+  const msg = document.getElementById('tg-broadcast-msg')?.value.trim();
 
   if (!msg) { showToast('Saisir un message avant d\'envoyer', 'warn'); return; }
-  if (msg.length > 1000) { showToast('Message trop long (1000 caractères max)', 'warn'); return; }
+  if (msg.length > 4096) { showToast('Message trop long (4096 caractères max Telegram)', 'warn'); return; }
 
-  const url = getWebhookUrl();
-  if (!url) {
-    showToast('⚙️ Webhook WhatsApp non configuré — Coffre-fort → WhatsApp → ajouter URL Make.com', 'warn');
+  const { token, chatId } = getTelegramConfig();
+  if (!token || !chatId) {
+    showToast('⚙️ Telegram non configuré — Coffre-fort → Telegram → ajouter Bot Token + Chat ID', 'warn');
     return;
   }
 
   disableBtn(btn);
 
-  // Préfixe selon le type
   const prefix = type === 'emergency'
     ? '🚨 *URGENCE MISSION SÉNÉGAL*\n\n'
     : '📣 *MISSION SÉNÉGAL — Message Équipe*\n\n';
 
-  const eventId = 'wa_' + Date.now();
-  const payload = {
-    type,
-    message:  prefix + msg,
-    mission:  'Sénégal Documentary V3',
-    ts:       new Date().toISOString(),
-    sender:   'Mission Control COO'
-  };
+  const text = prefix + msg;
+  const tgUrl = `https://api.telegram.org/bot${token}/sendMessage`;
 
-  sendWebhook(url, payload, eventId);
-  addNotification({ type: type === 'emergency' ? 'critical' : 'info',
-    text: `📣 WhatsApp (${type}) : "${msg.substring(0, 50)}${msg.length > 50 ? '…' : ''}"`,
-    time: now() });
-  showToast(state.isOnline ? '✅ Message envoyé vers WhatsApp' : '📥 Hors-ligne — envoi dès reconnexion', 'ok');
-  addActivity('📱', `Diffusion WhatsApp ${type} : "${msg.substring(0, 40)}…"`, now());
-  document.getElementById('wa-broadcast-msg').value = '';
-  setTimeout(() => enableBtn(btn), 3000);
+  try {
+    const res = await fetch(tgUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown' })
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.description || `Telegram error ${res.status}`);
+    addNotification({ type: type === 'emergency' ? 'critical' : 'info',
+      text: `📣 Telegram (${type}) : "${msg.substring(0, 50)}${msg.length > 50 ? '…' : ''}"`,
+      time: now() });
+    showToast('✅ Message envoyé sur Telegram', 'ok');
+    addActivity('📱', `Diffusion Telegram ${type} : "${msg.substring(0, 40)}…"`, now());
+    document.getElementById('tg-broadcast-msg').value = '';
+  } catch(e) {
+    showToast(`❌ Telegram : ${e.message}`, 'error');
+    addActivity('⚠️', `Échec diffusion Telegram : ${e.message}`, now());
+  }
+  setTimeout(() => enableBtn(btn), 2000);
 }
+/* Legacy alias — may be referenced by Make.com queue items */
+function triggerWhatsAppBroadcast(evt, type) { triggerTelegramBroadcast(evt, type); }
 
 /* ============================================================
    HAVERSINE GPS — Throttled, Circular Buffer, Watchdog
@@ -4752,7 +4767,7 @@ function lockVault() {
   document.getElementById('vault-content-area').classList.remove('unlocked');
 }
 function renderVaultKeys() {
-  ['whatsapp','maps','cloud','social'].forEach(cat => {
+  ['telegram','maps','cloud','social'].forEach(cat => {
     const container = document.getElementById(`vault-keys-${cat}`);
     if (!container) return;
     container.innerHTML = '';
@@ -4973,7 +4988,7 @@ function cmShowActionBar(plat, content) {
 
 function getVaultValue(name) {
   if (!state.vaultUnlocked) return null;
-  for (const cat of ['social','whatsapp','cloud','maps']) {
+  for (const cat of ['social','telegram','cloud','maps']) {
     const found = (state.vault[cat] || []).find(e => e.name === name);
     if (found) return found.value || null;
   }
@@ -8727,7 +8742,7 @@ function a16GenMessage(evt) {
   const pct = Math.min(Math.round(a16State.raised / a16State.goal * 100), 100);
   setTimeout(() => {
     const msgs = {
-      whatsapp: `📚 SÉNÉGAL 32, Livre d'Art Collector\n\n${a16State.raised > 0 ? `Nous avons déjà levé ${fmtFCFA(a16State.raised)} (${pct}%) grâce à ${a16State.backers.length} contributeur(s) de la diaspora !` : 'Notre campagne de financement participatif est lancée !'}\n\n🎯 Objectif : ${fmtFCFA(a16State.goal)}\n📅 ${a16State.daysLeft} jours restants\n\n32 sites photographiés en 87 jours de mission à travers tout le Sénégal. 500 exemplaires numérotés. Un livre qui restera.\n\nSouten-nous dès 5 000 FCFA 👉 documentaire-senegal.sn\n\nPartagez à vos proches ! 🇸🇳`,
+      telegram: `📚 SÉNÉGAL 32, Livre d'Art Collector\n\n${a16State.raised > 0 ? `Nous avons déjà levé ${fmtFCFA(a16State.raised)} (${pct}%) grâce à ${a16State.backers.length} contributeur(s) de la diaspora !` : 'Notre campagne de financement participatif est lancée !'}\n\n🎯 Objectif : ${fmtFCFA(a16State.goal)}\n📅 ${a16State.daysLeft} jours restants\n\n32 sites photographiés en 87 jours de mission à travers tout le Sénégal. 500 exemplaires numérotés. Un livre qui restera.\n\nSouten-nous dès 5 000 FCFA 👉 documentaire-senegal.sn\n\nPartagez à vos proches ! 🇸🇳`,
       facebook: `🇸🇳 SÉNÉGAL 32. Le documentaire photographique de notre génération.\n\n${pct}% de l'objectif atteint. ${a16State.backers.length} contributeurs ont déjà rejoint l'aventure depuis ${[...new Set(a16State.backers.map(b => b.pays.split(',')[0].trim()))].join(', ') || 'la diaspora mondiale'}.\n\nChaque contribution, même symbolique, fait avancer ce projet : 32 sites, 5 400 km parcourus, 100 millions FCFA investis dans la valorisation de notre patrimoine.\n\n👉 documentaire-senegal.sn\n\n#Sénégal #Diaspora #Livre #Patrimoine #Crowdfunding`,
       twitter: `🇸🇳 SÉNÉGAL 32 | Livre d'art collector\n\n${pct}% atteint · ${a16State.backers.length} contributeurs · ${a16State.daysLeft}j restants\n\n32 sites · 5400km · 500 exemplaires numérotés\n\nSouten-nous 👉 documentaire-senegal.sn\n\n#Sénégal #Diaspora #Crowdfunding`,
       email: `Objet : SÉNÉGAL 32, soutenez le premier grand livre documentaire sur le Sénégal\n\nChère communauté,\n\nNous vous invitons à rejoindre les ${a16State.backers.length} contributeurs qui ont déjà soutenu la Mission Documentaire Sénégal V3.\n\n🎯 Objectif : ${fmtFCFA(a16State.goal)}\n📊 Progression : ${pct}% (${fmtFCFA(a16State.raised)} levés)\n📅 ${a16State.daysLeft} jours restants\n\nCe projet, c'est 32 sites photographiés en 87 jours, environ 5 400 km parcourus, et un budget de 100 000 000 FCFA entièrement dédié à la valorisation du patrimoine sénégalais.\n\nChaque contribution donne droit à un exemplaire numéroté de notre édition collector limitée à 500 exemplaires.\n\n👉 Contribuer sur : documentaire-senegal.sn\n\nMerci pour votre soutien,\nL'équipe Mission Documentaire Sénégal`
@@ -8735,7 +8750,7 @@ function a16GenMessage(evt) {
     const card = document.getElementById('a16-msg-card');
     const out = document.getElementById('a16-msg-output');
     if (card) card.style.display = 'block';
-    if (out) out.textContent = msgs[reseau] || msgs.whatsapp;
+    if (out) out.textContent = msgs[reseau] || msgs.telegram;
     enableBtn(btn);
   }, 600);
 }
