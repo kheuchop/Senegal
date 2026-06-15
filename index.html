@@ -1507,6 +1507,15 @@ textarea.input-field { resize: vertical; min-height: 80px; }
   font-family: var(--font-mono); font-size: 0.5rem; color: var(--cyan); margin-bottom: 2px;
 }
 #agent-correcteur .a8-hist-item .a8-hist-score { font-family: var(--font-display); font-size: 0.8rem; font-weight: 700; }
+/* A7 — nouvelles cartes */
+#agent-redacteur .a7-gen-out+.a7-gen-out{margin-top:10px}
+#agent-redacteur .a7-book-panel{margin-top:8px;padding:10px;background:var(--bg-card-2);border:1px solid var(--border);border-radius:var(--r-sm)}
+#agent-redacteur .a7-reg-item{margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+#agent-redacteur .a7-reg-item:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+#agent-redacteur .a7-reg-label{font-family:var(--font-mono);font-size:0.44rem;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px}
+/* A8 — nouvelles cartes */
+#agent-correcteur .a8-coher-inputs{display:flex;flex-direction:column;gap:8px}
+#agent-correcteur .a8-coher-num{font-family:var(--font-mono);font-size:0.44rem;color:var(--cyan);margin-bottom:3px}
 
 /* ============================================================
    AGENT 9 — COMMERCIAL SPONSORING — CSS Scopé #agent-commercial
@@ -3057,6 +3066,77 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <div id="a7-library-list"></div>
         </div>
 
+        <!-- A7: Générateur de page livre -->
+        <div class="card">
+          <div class="card-title">📝 Générateur de Page Livre <span class="pill pill-amber" style="margin-left:auto;font-size:0.45rem">Claude</span></div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:8px">Claude rédige le texte complet de n'importe quelle page du livre, dans la bonne longueur et au bon registre.</div>
+          <div class="input-group">
+            <label class="input-label">Type de page</label>
+            <select class="input-field" id="a7-gen-type">
+              <option value="avantpropos">Avant-propos (250-350 mots)</option>
+              <option value="introduction">Introduction générale (400-500 mots)</option>
+              <option value="mot_auteur">Mot de l'auteur (300-400 mots)</option>
+              <option value="chapitre">Ouverture de chapitre / Zone (100-140 mots)</option>
+              <option value="legende" selected>Légende photographique (30-50 mots)</option>
+              <option value="citation">Citation / Exergue (10-20 mots)</option>
+              <option value="lien">Transition entre chapitres (50-80 mots)</option>
+              <option value="note_da">Note éditoriale DA (100-150 mots)</option>
+              <option value="quatrieme">4ème de couverture (150-200 mots)</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Site concerné (optionnel)</label>
+            <select class="input-field" id="a7-gen-site">
+              <option value="">— Texte général mission —</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Notes complémentaires (optionnel)</label>
+            <textarea class="input-field" id="a7-gen-notes" placeholder="Anecdotes terrain, angle souhaité, éléments à inclure…" style="min-height:70px"></textarea>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="a7GenPageText(this)">
+            <div class="spinner"></div><span class="btn-text">📝 Générer le texte</span>
+          </button>
+          <div id="a7-gen-result" style="margin-top:10px"></div>
+        </div>
+
+        <!-- A7: Notes terrain → Prose -->
+        <div class="card">
+          <div class="card-title">🎒 Notes Terrain → Prose Publiable <span class="pill pill-amber" style="margin-left:auto;font-size:0.45rem">Claude</span></div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:8px">Tape tes notes brutes depuis le terrain. Claude les transforme en texte prêt pour le livre ou les réseaux.</div>
+          <div class="input-group">
+            <label class="input-label">Tes notes brutes</label>
+            <textarea class="input-field" id="a7-notes-input" placeholder="ex: lumière dingue à 6h, pêcheurs sur les pirogues, odeur de sel et de bois brûlé, vieux qui nous regardait sans bouger depuis 20 minutes…" style="min-height:100px"></textarea>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Registre de sortie</label>
+            <select class="input-field" id="a7-notes-register">
+              <option value="poetique">✨ Poétique Luxe — beau-livre</option>
+              <option value="journalistique">📰 Journalistique Terrain — reportage</option>
+              <option value="academique">🏛 Académique Patrimonial — référencé</option>
+              <option value="social">📱 Court Réseaux Sociaux — < 150 mots</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="a7GenFromNotes(this)">
+            <div class="spinner"></div><span class="btn-text">🎒 Transformer les notes</span>
+          </button>
+          <div id="a7-notes-result" style="margin-top:10px"></div>
+        </div>
+
+        <!-- A7: Reformulateur 4 registres -->
+        <div class="card">
+          <div class="card-title">🔀 Reformulateur 4 Registres <span class="pill pill-amber" style="margin-left:auto;font-size:0.45rem">Claude</span></div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:8px">Un texte, 4 versions. Poétique luxe · Journalistique terrain · Académique · Court réseaux sociaux.</div>
+          <div class="input-group">
+            <label class="input-label">Texte source</label>
+            <textarea class="input-field" id="a7-reform-input" placeholder="Coller le texte à décliner en 4 registres…" style="min-height:90px"></textarea>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="a7Reformuler(this)">
+            <div class="spinner"></div><span class="btn-text">🔀 Générer 4 registres</span>
+          </button>
+          <div id="a7-reform-result" style="margin-top:10px"></div>
+        </div>
+
         <!-- A7: Glossaire Wolof -->
         <div class="card">
           <div class="card-title">Glossaire Termes Clés — Wolof / FR / EN</div>
@@ -3113,9 +3193,14 @@ textarea.input-field { resize: vertical; min-height: 80px; }
             <span class="pill" id="a8-limit-pill" style="border-color:var(--border);color:var(--text-muted)">Limite : 25</span>
             <span class="a8-compliance-badge" id="a8-compliance-badge">—</span>
           </div>
-          <button class="btn btn-primary btn-full" style="margin-top:10px" onclick="a8Analyser()">
-            <div class="spinner"></div><span class="btn-text">🔍 Analyser & Valider</span>
-          </button>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+            <button class="btn btn-ghost btn-sm" onclick="a8Analyser()">
+              <div class="spinner"></div><span class="btn-text">🔍 Analyser (local)</span>
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="a8CorrectClaude(this)">
+              <div class="spinner"></div><span class="btn-text">✨ Claude Corrige</span>
+            </button>
+          </div>
         </div>
 
         <!-- A8: Rapport de conformité -->
@@ -3202,6 +3287,44 @@ textarea.input-field { resize: vertical; min-height: 80px; }
         <div class="card" id="a8-history-card" style="display:none">
           <div class="card-title">Historique Validations</div>
           <div id="a8-history-list"></div>
+        </div>
+
+        <!-- A8: Cohérence éditoriale -->
+        <div class="card">
+          <div class="card-title">🎨 Cohérence Éditoriale <span class="pill pill-amber" style="margin-left:auto;font-size:0.45rem">Claude</span></div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:8px">Colle 2 à 3 textes du livre. Claude vérifie s'ils ont le même registre, le même ton, la même voix. Il harmonise si besoin.</div>
+          <div class="a8-coher-inputs">
+            <div>
+              <div class="a8-coher-num">TEXTE 1</div>
+              <textarea class="input-field" id="a8-coher-1" placeholder="Premier texte (légende, narration, intro…)" style="min-height:80px"></textarea>
+            </div>
+            <div>
+              <div class="a8-coher-num">TEXTE 2</div>
+              <textarea class="input-field" id="a8-coher-2" placeholder="Deuxième texte…" style="min-height:80px"></textarea>
+            </div>
+            <div>
+              <div class="a8-coher-num">TEXTE 3 (optionnel)</div>
+              <textarea class="input-field" id="a8-coher-3" placeholder="Troisième texte (optionnel)…" style="min-height:80px"></textarea>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-full" style="margin-top:10px" onclick="a8CheckCoherence(this)">
+            <div class="spinner"></div><span class="btn-text">🎨 Analyser la cohérence</span>
+          </button>
+          <div id="a8-coher-result" style="margin-top:10px"></div>
+        </div>
+
+        <!-- A8: Détecteur de ton IA -->
+        <div class="card">
+          <div class="card-title">🤖 Détecteur de Ton IA <span class="pill pill-amber" style="margin-left:auto;font-size:0.45rem">Claude</span></div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:8px">Claude scanne le texte pour tout ce qui sonne robot : tirets longs, listes, connecteurs pompeux, manque de singularité. Il réécrit en voix humaine.</div>
+          <div class="input-group">
+            <label class="input-label">Texte à scanner</label>
+            <textarea class="input-field" id="a8-ai-input" placeholder="Coller le texte à analyser…" style="min-height:110px"></textarea>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="a8DetectAI(this)">
+            <div class="spinner"></div><span class="btn-text">🤖 Scanner le ton IA</span>
+          </button>
+          <div id="a8-ai-result" style="margin-top:10px"></div>
         </div>
 
       </div><!-- /agent-correcteur -->
@@ -6497,44 +6620,24 @@ async function a6GenEquipmentRecs(btn, mode) {
    ============================================================ */
 const a7State = { lang: 'fr', outputMode: 'fr', library: [], lastOutput: { fr:'', en:'', ar:'' } };
 
-const A7_FR_POETIQUE = {
-  caption: (site, type) => [
-    `${site.name} — où le temps suspend son souffle au seuil de l'éternité africaine.`,
-    `Sur ces rives de ${site.name}, la lumière raconte ce que les mots ne peuvent pas.`,
-    `${site.name}, Zone ${site.zone} — patrimoine vivant, mémoire tenace du peuple sénégalais.`
-  ],
-  intro: (site, type) => `Il est des lieux qui parlent avant même d'être regardés. ${site.name} est de ceux-là — un espace où l'histoire du Sénégal s'est cristallisée dans la pierre, la lumière et les visages. Notre équipe y a séjourné ${site.days} jour${site.days > 1 ? 's' : ''}, le temps de comprendre que certaines vérités ne se saisissent qu'au crépuscule, quand la Zone ${site.zone} bascule dans l'or et le silence.`,
-  narration: (site, type) => `Le soleil décline sur ${site.name} et transforme chaque surface en braise tranquille. À ${site.coords[0].toFixed(4)}° de latitude nord, ce lieu incarne l'âme d'un Sénégal pluriel et souverain. Les ${site.days} jours passés ici ont révélé une humanité que les kilomètres ne peuvent mesurer — une dignité qui transcende les classifications touristiques et appelle, simplement, au respect.`,
-  description: (site, type) => `${site.name} s'étend dans la Zone ${site.zone}, à environ ${site.km} kilomètres de Dakar. Ici, les coordonnées géographiques cèdent la place à une géographie intérieure — celle des regards, des gestes et des silences partagés entre notre équipe et ceux qui habitent ce territoire depuis des générations.`,
-  poeme: (site, type) => `${site.name}
+/* ── Identité rédacteur A7 ── */
+const A7_WRITER_IDENTITY = `Tu es rédacteur et traducteur en chef de la mission documentaire SÉNÉGAL V3 : « Sénégal, Terre d'Histoire et de Rencontres ». Tu rédiges pour un livre collector luxe 224 pages, format 210×280mm. Registre littéraire et journalistique haut de gamme : précis, sensible, ancré dans le réel, jamais générique. Même niveau d'exigence dans chaque langue.`;
 
-Lumière de latérite,
-poussière d'or dans l'air du soir —
-la Zone ${site.zone} respire
-d'un souffle ancien.
-
-Ici, le Sénégal
-se souvient de lui-même.`,
-  citation: (site, type) => `« ${site.name} — là où l'Afrique se regarde dans les yeux et n'a pas peur. »`
-};
-
-const A7_EN_TRANSLATIONS = {
-  caption: texts => `${texts[0].split('—')[0].trim()} — where time holds its breath at the threshold of African eternity.`,
-  intro: text => text
-    .replace("Il est des lieux qui parlent avant même d'être regardés.", "There are places that speak before they are even seen.")
-    .replace("où l'histoire du Sénégal", "where Senegal's history")
-    .replace("Notre équipe", "Our team")
-    .replace("jours", "days")
-    .replace("comprendre que certaines vérités", "understand that certain truths")
-    .replace("bascule dans l'or et le silence", "plunges into gold and silence"),
-  generic: text => `[EN] ${text.replace(/[àáâ]/g,'a').replace(/[éèêë]/g,'e').replace(/[îï]/g,'i').replace(/[ôö]/g,'o').replace(/[ùûü]/g,'u').replace(/ç/g,'c').replace(/œ/g,'oe')}`
-};
-
-const A7_AR_TRANSLATIONS = {
-  caption: siteName => `${siteName} — حيث يحبس الزمن أنفاسه على عتبة الأبدية الأفريقية.`,
-  intro: siteName => `ثمة أماكن تتكلم قبل أن تُرى. ${siteName} واحد من هذه الأماكن — فضاء تبلورت فيه روح السنغال في الحجارة والضوء والوجوه. أمضى فريقنا أياماً هنا، وأدرك أن بعض الحقائق لا تُدرك إلا عند الغروب، حين ينزلق المكان إلى الذهب والصمت.`,
-  generic: siteName => `${siteName} — إرث حي، وذاكرة عميقة للشعب السنغالي، حيث تلتقي الجغرافيا بالروح.`
-};
+async function a7CallClaude(systemPrompt, userText, maxTok) {
+  const res = await fetch('/api/claude', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens: maxTok||800, system: A7_WRITER_IDENTITY + '\n\n' + systemPrompt, messages:[{ role:'user', content:[{ type:'text', text:userText }] }] })
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error?.message || data.hint || `HTTP ${res.status}`);
+  return data.content?.[0]?.text || '';
+}
+async function a7CallClaudeJSON(sys, txt, tok) {
+  const raw = await a7CallClaude(sys, txt, tok);
+  try { return JSON.parse(raw); }
+  catch { const m = raw.match(/\{[\s\S]*\}/); if (m) return JSON.parse(m[0]); throw new Error('Réponse non parseable'); }
+}
 
 function a7SelectLang(lang, el) {
   a7State.lang = lang;
@@ -6547,58 +6650,56 @@ function a7SelectLang(lang, el) {
 function a7UpdateMeta() {
   const text = document.getElementById('a7-source-text')?.value || '';
   const words = text.trim() ? text.trim().split(/\s+/).length : 0;
-  const chars = text.length;
   const cc = document.getElementById('a7-char-count');
   const wc = document.getElementById('a7-word-count');
-  if (cc) cc.textContent = `${chars} car.`;
+  if (cc) cc.textContent = `${text.length} car.`;
   if (wc) wc.textContent = `${words} mots`;
 }
 
-function a7Poetiser() {
+async function a7Poetiser() {
   const btn = event.currentTarget; disableBtn(btn);
   const text = document.getElementById('a7-source-text')?.value.trim();
-  const type = document.getElementById('a7-content-type')?.value;
+  const type = document.getElementById('a7-content-type')?.value || 'caption';
   if (!text) { showToast('Saisir un texte source', 'warn'); enableBtn(btn); return; }
-  const activeSite = SITES.find(s => text.toLowerCase().includes(s.name.toLowerCase().substring(0,6))) || SITES[Math.floor(Math.random() * 10)];
-  setTimeout(() => {
-    const templates = A7_FR_POETIQUE[type] || A7_FR_POETIQUE.description;
-    const fr = typeof templates === 'function' ? (Array.isArray(templates(activeSite)) ? templates(activeSite)[0] : templates(activeSite)) : text;
-    const en = type === 'caption' ? A7_EN_TRANSLATIONS.caption([fr]) : A7_EN_TRANSLATIONS.generic(fr);
-    const ar = type === 'caption' ? A7_AR_TRANSLATIONS.caption(activeSite.name) : type === 'intro' ? A7_AR_TRANSLATIONS.intro(activeSite.name) : A7_AR_TRANSLATIONS.generic(activeSite.name);
-    a7State.lastOutput = { fr, en, ar };
+  const typeLabel = { caption:'légende photographique', intro:'introduction de chapitre', narration:'narration documentaire', description:'description de site', poeme:'poème', citation:'citation' }[type] || type;
+  try {
+    const data = await a7CallClaudeJSON('Retourne un JSON valide uniquement.',
+      `Texte source (${typeLabel}) :\n"${text}"\n\nPoétise et élève ce texte au registre d'un beau-livre photographique de luxe. Même longueur approximative. Génère les 3 versions.\nJSON : {"fr":"texte poétisé en français","en":"poeticized English version","ar":"النص المعاد صياغته بالعربية"}`, 700);
+    a7State.lastOutput = { fr: data.fr||text, en: data.en||'', ar: data.ar||'' };
     a7RenderOutput();
-    addActivity('✍️', `Texte poétisé (${type}) — site détecté : ${activeSite.name}`, now());
-    enableBtn(btn);
-  }, 1100);
+    addActivity('✨', `Texte poétisé par Claude (${typeLabel})`, now());
+  } catch(e) { showToast('Erreur : ' + e.message, 'error'); }
+  enableBtn(btn);
 }
 
-function a7Traduire() {
+async function a7Traduire() {
   const btn = event.currentTarget; disableBtn(btn);
   const text = document.getElementById('a7-source-text')?.value.trim();
   if (!text) { showToast('Saisir un texte source', 'warn'); enableBtn(btn); return; }
-  setTimeout(() => {
-    const fr = text;
-    const en = A7_EN_TRANSLATIONS.generic(text);
-    const ar = `${text.split(' ').slice(0, 3).join(' ')} — [النص العربي: هذا المكان، هذا التراث، هذه الذاكرة الحية التي يرويها لنا الضوء والحجارة والوجوه.]`;
-    a7State.lastOutput = { fr, en, ar };
+  try {
+    const data = await a7CallClaudeJSON('Retourne un JSON valide uniquement.',
+      `Traduis ce texte français en maintenant le registre littéraire luxe.\n"${text}"\nJSON : {"fr":"${text.replace(/"/g,"'").replace(/\n/g,' ')}","en":"English translation, same literary register","ar":"الترجمة العربية بنفس المستوى الأدبي"}`, 700);
+    a7State.lastOutput = { fr: data.fr||text, en: data.en||'', ar: data.ar||'' };
     a7RenderOutput();
-    addActivity('🌍', `Traduction trilingue générée`, now());
-    enableBtn(btn);
-  }, 900);
+    addActivity('🌍', `Traduction trilingue Claude`, now());
+  } catch(e) { showToast('Erreur : ' + e.message, 'error'); }
+  enableBtn(btn);
 }
 
-function a7Condenser() {
+async function a7Condenser() {
   const btn = event.currentTarget; disableBtn(btn);
   const text = document.getElementById('a7-source-text')?.value.trim();
+  const ctx  = document.getElementById('a7-content-type')?.value || 'caption';
+  const target = { caption:25, intro:120, narration:150, description:80, poeme:50, citation:12 }[ctx] || 30;
   if (!text) { showToast('Saisir un texte source', 'warn'); enableBtn(btn); return; }
-  setTimeout(() => {
-    const words = text.trim().split(/\s+/);
-    const condensed = words.length > 25 ? words.slice(0, 22).join(' ') + '…' : text;
-    document.getElementById('a7-source-text').value = condensed;
-    a7UpdateMeta();
-    showToast(`✂️ Condensé à ${Math.min(words.length, 22)} mots`, 'ok');
-    enableBtn(btn);
-  }, 400);
+  try {
+    const condensed = await a7CallClaude('Condense le texte sans perdre l\'essentiel. Garde le même registre. Réponds uniquement avec le texte condensé, sans guillemets ni explication.',
+      `Texte à condenser (type: ${ctx}, cible: ${target} mots max) :\n"${text}"`, 300);
+    const ta = document.getElementById('a7-source-text');
+    if (ta) { ta.value = condensed.trim(); a7UpdateMeta(); }
+    showToast('✂️ Condensé par Claude', 'ok');
+  } catch(e) { showToast('Erreur : ' + e.message, 'error'); }
+  enableBtn(btn);
 }
 
 function a7RenderOutput() {
@@ -6661,9 +6762,134 @@ function a7ExportDocx() {
   showToast('📄 Fichier texte exporté', 'ok');
 }
 
+/* ── A7 : Générateur de page livre ── */
+async function a7GenPageText(btn) {
+  disableBtn(btn);
+  const type  = document.getElementById('a7-gen-type')?.value || 'avantpropos';
+  const site  = document.getElementById('a7-gen-site')?.value || '';
+  const notes = document.getElementById('a7-gen-notes')?.value.trim() || '';
+  const div   = document.getElementById('a7-gen-result');
+  const targets = {
+    avantpropos:'250-350 mots', introduction:'400-500 mots', mot_auteur:'150-200 mots',
+    chapitre:'100-150 mots', legende:'20-30 mots', citation:'15-25 mots',
+    lien:'50-80 mots (texte de liaison entre sections)', note_da:'80-120 mots (note directeur artistique)',
+    quatrieme:'180-220 mots (4e de couverture)'
+  };
+  const ctx = site ? `Site : ${site}.` : 'Texte général de la mission.';
+  const sys = `Tu génères les textes du livre 224 pages "Sénégal, Terre d'Histoire et de Rencontres". Chaque texte doit sembler écrit par un écrivain-journaliste de terrain, pas par une IA. Style : précis, ancré, sensible.`;
+  try {
+    const data = await a7CallClaudeJSON(sys,
+      `Type de page : ${type} (cible : ${targets[type]||'100-200 mots'}).\n${ctx}\nNotes terrain (contexte, angle) : ${notes||'Aucune note spécifique.'}\n\nGénère le texte en 3 langues.\nJSON UNIQUEMENT : {"fr":"texte français","en":"English text","ar":"النص العربي","note_da":"courte note du DA sur le placement éditorial (FR)"}`, 1200);
+    a7State.lastOutput = { fr: data.fr||'', en: data.en||'', ar: data.ar||'' };
+    a7RenderOutput();
+    if (div) {
+      const note = data.note_da ? `<div style="margin-top:8px;padding:8px 10px;background:rgba(245,158,11,.12);border-radius:6px;font-size:12px;color:var(--amber)">🎨 DA : ${data.note_da}</div>` : '';
+      const bookSel = a6State.bookPages?.length
+        ? `<div style="margin-top:8px"><button class="btn btn-secondary" style="font-size:11px;padding:4px 10px" onclick="a7SendToBook('${encodeURIComponent(JSON.stringify({fr:data.fr||'',en:data.en||'',ar:data.ar||''}))}','${type}')">📚 Envoyer vers une page du livre</button></div>` : '';
+      div.innerHTML = `<div style="color:var(--emerald);font-size:12px">✓ Texte généré — voir le panneau de sortie ci-dessus${note}${bookSel}</div>`;
+    }
+    addActivity('📝', `Texte "${type}" généré${site?' — '+site:''}`, now());
+  } catch(e) { showToast('Erreur : ' + e.message, 'error'); if (div) div.innerHTML = `<div style="color:var(--red);font-size:12px">Erreur : ${e.message}</div>`; }
+  enableBtn(btn);
+}
+
+function a7SendToBook(encodedOutput, type) {
+  if (!a6State.bookPages?.length) { showToast('Générer le livre d\'abord (Agent DA)', 'warn'); return; }
+  const output = JSON.parse(decodeURIComponent(encodedOutput));
+  const candidates = a6State.bookPages.filter(p => ['avantpropos','introduction','editorial','chapitre','chapitre_desc','legendes','contexte','makingof','remerciements','quatrieme','mot_auteur'].includes(p.type));
+  if (!candidates.length) { showToast('Aucune page compatible trouvée', 'warn'); return; }
+  const div = document.getElementById('a7-gen-result');
+  if (!div) return;
+  const opts = candidates.slice(0,15).map(p => `<option value="${p.id}">[${p.type.toUpperCase()}] ${p.siteName||p.type}</option>`).join('');
+  div.innerHTML += `<div id="a7-send-book-ui" style="margin-top:10px;padding:10px;background:var(--surface-1);border-radius:8px;border:1px solid var(--border)">
+    <label class="input-label" style="font-size:11px">Choisir la page de destination</label>
+    <select class="input-field" id="a7-dest-page" style="font-size:12px;margin-bottom:8px">${opts}</select>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" style="font-size:11px;padding:5px 12px" onclick="a7ConfirmSendToBook('${encodeURIComponent(encodedOutput)}')">✓ Confirmer</button>
+      <button class="btn btn-secondary" style="font-size:11px;padding:5px 12px" onclick="document.getElementById('a7-send-book-ui')?.remove()">Annuler</button>
+    </div>
+  </div>`;
+}
+
+function a7ConfirmSendToBook(encodedOutput) {
+  const pageId = document.getElementById('a7-dest-page')?.value;
+  if (!pageId) { showToast('Sélectionner une page', 'warn'); return; }
+  const output = JSON.parse(decodeURIComponent(encodedOutput));
+  const page = a6State.bookPages.find(p => p.id === pageId);
+  if (!page) { showToast('Page introuvable', 'error'); return; }
+  page.textFr = output.fr || '';
+  page.textEn = output.en || '';
+  page.textAr = output.ar || '';
+  page.status = page.thumbnail ? 'COMPLET' : 'CAPTION';
+  document.getElementById('a7-send-book-ui')?.remove();
+  if (a6State.bookPages.length > 0) a6RenderBook();
+  saveStateToDB();
+  showToast(`📚 Texte envoyé → ${page.siteName || page.type}`, 'ok');
+  addActivity('📚', `Texte A7 lié à la page "${page.siteName||page.type}"`, now());
+}
+
+/* ── A7 : Notes terrain → Prose ── */
+async function a7GenFromNotes(btn) {
+  disableBtn(btn);
+  const notes    = document.getElementById('a7-notes-input')?.value.trim();
+  const register = document.getElementById('a7-notes-register')?.value || 'poetique';
+  const div      = document.getElementById('a7-notes-result');
+  if (!notes) { showToast('Saisir des notes terrain', 'warn'); enableBtn(btn); return; }
+  const regLabel = { poetique:'poétique luxe beau-livre', journalistique:'journalistique terrain reportage', academique:'académique patrimoine UNESCO', social:'social media (Instagram/LinkedIn court)' }[register] || register;
+  const sys = `Tu transformes des notes de terrain brutes en prose publiable pour la mission documentaire SÉNÉGAL V3. Registre : ${regLabel}. Jamais de liste à puces. Jamais de formules IA banales. Ancré dans le concret.`;
+  try {
+    const data = await a7CallClaudeJSON(sys,
+      `Notes brutes du photographe/reporter :\n"${notes}"\n\nTransforme en prose publiable, 3 langues.\nJSON UNIQUEMENT : {"fr":"prose française","en":"English prose","ar":"النثر العربي","titre":"titre court FR pour cette prose"}`, 1000);
+    a7State.lastOutput = { fr: data.fr||'', en: data.en||'', ar: data.ar||'' };
+    a7RenderOutput();
+    if (div) div.innerHTML = `<div style="color:var(--emerald);font-size:12px">✓ ${data.titre ? '"'+data.titre+'"' : 'Prose générée'} — voir sortie ci-dessus</div>`;
+    addActivity('🎒', `Notes terrain → prose (${register})`, now());
+  } catch(e) { showToast('Erreur : ' + e.message, 'error'); if (div) div.innerHTML = `<div style="color:var(--red);font-size:12px">${e.message}</div>`; }
+  enableBtn(btn);
+}
+
+/* ── A7 : Reformulateur 4 registres ── */
+const A7_REFORM_LAST = { poetique:'', journalistique:'', academique:'', social:'' };
+
+async function a7Reformuler(btn) {
+  disableBtn(btn);
+  const text = document.getElementById('a7-reform-input')?.value.trim();
+  const div  = document.getElementById('a7-reform-result');
+  if (!text) { showToast('Saisir un texte à reformuler', 'warn'); enableBtn(btn); return; }
+  const sys = `Tu reformules un texte en 4 registres distincts pour le livre Sénégal V3. Chaque version doit sembler écrite par un auteur différent. Pas de clichés IA.`;
+  try {
+    const data = await a7CallClaudeJSON(sys,
+      `Texte original :\n"${text}"\n\nGénère 4 reformulations distinctes.\nJSON UNIQUEMENT : {"poetique":"registre poétique luxe beau-livre","journalistique":"reportage terrain direct","academique":"analyse patrimoine culturel","social":"caption instagram percutante ≤150 car"}`, 1100);
+    Object.assign(A7_REFORM_LAST, { poetique: data.poetique||'', journalistique: data.journalistique||'', academique: data.academique||'', social: data.social||'' });
+    if (div) div.innerHTML = ['poetique','journalistique','academique','social'].map(k => {
+      const labels = { poetique:'✨ Poétique', journalistique:'📰 Journalistique', academique:'🎓 Académique', social:'📱 Social' };
+      return `<div style="margin-bottom:10px;padding:10px;background:var(--surface-1);border-radius:8px;border:1px solid var(--border)">
+        <div style="font-size:11px;color:var(--text-muted);font-weight:600;margin-bottom:5px">${labels[k]}</div>
+        <div style="font-size:13px;line-height:1.6;white-space:pre-wrap">${data[k]||'—'}</div>
+        <button class="btn btn-secondary" style="margin-top:6px;font-size:11px;padding:3px 10px" onclick="a7CopyRegister('${k}')">📋 Copier</button>
+      </div>`;
+    }).join('');
+    addActivity('🔀', `4 reformulations générées`, now());
+  } catch(e) { showToast('Erreur : ' + e.message, 'error'); if (div) div.innerHTML = `<div style="color:var(--red);font-size:12px">${e.message}</div>`; }
+  enableBtn(btn);
+}
+
+function a7CopyRegister(key) {
+  const text = A7_REFORM_LAST[key] || '';
+  navigator.clipboard?.writeText(text).then(() => showToast(`📋 Registre "${key}" copié`, 'ok'));
+}
+
 function initAgent7() {
   const ta = document.getElementById('a7-source-text');
   if (ta) ta.addEventListener('input', a7UpdateMeta);
+  /* Populer #a7-gen-site depuis la liste des sites */
+  const sel = document.getElementById('a7-gen-site');
+  if (sel && sel.options.length <= 1) {
+    (typeof SITES !== 'undefined' ? SITES : []).forEach(s => {
+      const opt = document.createElement('option'); opt.value = s.name; opt.textContent = `${s.name} (Zone ${s.zone})`;
+      sel.appendChild(opt);
+    });
+  }
   if (a7State.library.length > 0) {
     const card = document.getElementById('a7-library-card');
     const list = document.getElementById('a7-library-list');
@@ -6801,6 +7027,109 @@ function a8RenderHistory() {
     div.innerHTML = `<div class="a8-hist-ctx">${h.ctx.toUpperCase()} · ${new Date(h.ts).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div><div class="a8-hist-score" style="color:${h.score>=80?'var(--emerald)':h.score>=60?'var(--amber)':'var(--red)'}">${h.score}/100</div><div style="font-size:0.6rem;color:var(--text-muted);margin-top:2px">${h.text}…</div>`;
     list.appendChild(div);
   });
+}
+
+/* ── Identité correcteur A8 ── */
+const A8_EDITOR_IDENTITY = `Tu es correcteur éditorial senior de la mission documentaire SÉNÉGAL V3 : livre collector luxe 224 pages. Tu corriges avec exigence de maison d'édition haut-de-gamme (NatGeo, Actes Sud, La Martinière). Tu détectes le ton IA, les tournures mortes, les anglicismes, les clichés. Tu proposes toujours une version réécrite, pas seulement une liste de remarques.`;
+
+async function a8CallClaude(sys, txt, tok) {
+  const res = await fetch('/api/claude', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens: tok||900, system: A8_EDITOR_IDENTITY + '\n\n' + sys, messages:[{ role:'user', content:[{ type:'text', text:txt }] }] })
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error?.message || data.hint || `HTTP ${res.status}`);
+  return data.content?.[0]?.text || '';
+}
+async function a8CallClaudeJSON(sys, txt, tok) {
+  const raw = await a8CallClaude(sys, txt, tok);
+  try { return JSON.parse(raw); }
+  catch { const m = raw.match(/\{[\s\S]*\}/); if (m) return JSON.parse(m[0]); throw new Error('Réponse non parseable'); }
+}
+
+/* ── A8 : Claude Corrige ── */
+async function a8CorrectClaude(btn) {
+  disableBtn(btn);
+  const text = document.getElementById('a8-text-input')?.value.trim();
+  const ctx  = document.getElementById('a8-context')?.value || 'legende';
+  const mode = a8State.currentMode || 'full';
+  if (!text) { showToast('Saisir un texte', 'warn'); enableBtn(btn); return; }
+  const ctxLabel = { legende:'légende photographique (≤25 mots)', intro_chap:'introduction de chapitre (≤120 mots)', corps:'texte corps (≤300 mots)', citation:'citation (≤15 mots)', couverture:'texte couverture (≤40 mots)', quatrieme:'4e de couverture (≤200 mots)' }[ctx] || ctx;
+  const modeLabel = { full:'correction complète orthographe+style+ton', style:'style et registre uniquement', ortho:'orthographe et grammaire uniquement', condense:'condenser sans perdre l\'essentiel' }[mode] || mode;
+  try {
+    const data = await a8CallClaudeJSON('Retourne un JSON valide uniquement.',
+      `Contexte : ${ctxLabel}\nMode : ${modeLabel}\n\nTexte à corriger :\n"${text}"\n\nJSON : {"score":85,"version_corrigee":"texte réécrit","interventions":["changement 1","changement 2"],"justification":"note éditoriale courte","alerte_ia":false}`, 900);
+    const score = data.score || 0;
+    const color = score >= 80 ? 'var(--emerald)' : score >= 60 ? 'var(--amber)' : 'var(--red)';
+    const card = document.getElementById('a8-report-card');
+    if (card) card.style.display = 'block';
+    const sv = document.getElementById('a8-score-val'); if (sv) sv.textContent = score;
+    const sc = document.getElementById('a8-score-circle'); if (sc) sc.style.borderColor = color;
+    const vd = document.getElementById('a8-verdict'); if (vd) vd.textContent = data.alerte_ia ? '⚠ Ton IA détecté' : '✓ Ton humain';
+    const vs = document.getElementById('a8-verdict-sub'); if (vs) vs.textContent = data.justification || '';
+    const cl = document.getElementById('a8-criteria-list'); if (cl) cl.innerHTML = (data.interventions||[]).map(i=>`<div class="a8-criterion"><span class="a8-icon">✎</span><span>${i}</span></div>`).join('');
+    const cw = document.getElementById('a8-corrected-wrap'); if (cw) cw.style.display = 'block';
+    const ct = document.getElementById('a8-corrected-text'); if (ct) { ct.textContent = data.version_corrigee || text; }
+    const an = document.getElementById('a8-annotations'); if (an) an.innerHTML = '';
+    a8State.history.unshift({ ctx, text: text.substring(0,30), score, ts: Date.now() });
+    a8RenderHistory(); saveStateToDB();
+    addActivity('✨', `Claude Corrige — score ${score}/100 (${ctx})`, now());
+  } catch(e) { showToast('Erreur : ' + e.message, 'error'); }
+  enableBtn(btn);
+}
+
+/* ── A8 : Cohérence éditoriale ── */
+async function a8CheckCoherence(btn) {
+  disableBtn(btn);
+  const t1 = document.getElementById('a8-coher-1')?.value.trim();
+  const t2 = document.getElementById('a8-coher-2')?.value.trim();
+  const t3 = document.getElementById('a8-coher-3')?.value.trim();
+  const div = document.getElementById('a8-coher-result');
+  const texts = [t1, t2, t3].filter(Boolean);
+  if (texts.length < 2) { showToast('Saisir au moins 2 textes', 'warn'); enableBtn(btn); return; }
+  try {
+    const data = await a8CallClaudeJSON('Analyse la cohérence éditoriale entre plusieurs textes d\'un même livre. Retourne un JSON valide uniquement.',
+      `Textes à comparer (${texts.length}) :\n${texts.map((t,i)=>`[${i+1}] "${t}"`).join('\n\n')}\n\nJSON : {"score_coherence":75,"registres_detectes":["registre 1","registre 2"],"problemes":["pb 1"],"harmonisation":"texte harmonisé (version synthèse du meilleur de chaque extrait)","recommandation":"conseil éditorial court"}`, 1100);
+    if (div) div.innerHTML = `<div style="padding:10px;background:var(--surface-1);border-radius:8px">
+      <div style="font-size:18px;font-weight:700;color:${(data.score_coherence||0)>=70?'var(--emerald)':'var(--amber)'}">Cohérence : ${data.score_coherence||'?'}/100</div>
+      <div style="font-size:12px;margin:8px 0;color:var(--text-secondary)">Registres détectés : ${(data.registres_detectes||[]).join(' · ')}</div>
+      ${(data.problemes||[]).length ? `<div style="font-size:12px;color:var(--amber);margin-bottom:6px">⚠ ${data.problemes.join(' — ')}</div>` : ''}
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Proposition d'harmonisation :</div>
+      <div style="background:rgba(16,185,129,.07);border-radius:6px;padding:8px;font-size:13px;line-height:1.6;white-space:pre-wrap">${data.harmonisation||'—'}</div>
+      <div style="font-size:11px;font-style:italic;color:var(--text-muted);margin-top:6px">${data.recommandation||''}</div>
+    </div>`;
+    addActivity('🎨', `Cohérence éditoriale analysée — ${data.score_coherence}/100`, now());
+  } catch(e) { showToast('Erreur : ' + e.message, 'error'); if (div) div.innerHTML = `<div style="color:var(--red);font-size:12px">${e.message}</div>`; }
+  enableBtn(btn);
+}
+
+/* ── A8 : Détecteur de Ton IA ── */
+async function a8DetectAI(btn) {
+  disableBtn(btn);
+  const text = document.getElementById('a8-ai-input')?.value.trim();
+  const div  = document.getElementById('a8-ai-result');
+  if (!text) { showToast('Saisir un texte', 'warn'); enableBtn(btn); return; }
+  try {
+    const data = await a8CallClaudeJSON('Tu es expert en détection de textes générés par IA. Tu identifies les marqueurs stylistiques spécifiques aux LLMs (structures, tournures, tics lexicaux). Retourne un JSON uniquement.',
+      `Texte à analyser :\n"${text}"\n\nJSON : {"score_ia":65,"marqueurs":["marqueur 1","marqueur 2"],"explication":"explication courte","version_humanisee":"version réécrite avec un ton clairement humain et ancré"}`, 900);
+    const score = data.score_ia || 0;
+    const color = score >= 70 ? 'var(--red)' : score >= 40 ? 'var(--amber)' : 'var(--emerald)';
+    const label = score >= 70 ? 'Probablement IA' : score >= 40 ? 'Mixte' : 'Humain';
+    if (div) div.innerHTML = `<div style="padding:10px;background:var(--surface-1);border-radius:8px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+        <div style="font-size:22px;font-weight:700;color:${color}">${score}%<span style="font-size:11px;font-weight:400;margin-left:4px">IA</span></div>
+        <div style="padding:3px 10px;background:${color}22;color:${color};border-radius:4px;font-size:12px;font-weight:600">${label}</div>
+      </div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px">Marqueurs détectés : ${(data.marqueurs||[]).join(' · ')}</div>
+      <div style="font-size:12px;font-style:italic;color:var(--text-muted);margin-bottom:8px">${data.explication||''}</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Version humanisée :</div>
+      <div style="background:rgba(16,185,129,.07);border-radius:6px;padding:8px;font-size:13px;line-height:1.6;white-space:pre-wrap">${data.version_humanisee||'—'}</div>
+      <button class="btn btn-secondary" style="margin-top:6px;font-size:11px;padding:3px 10px" onclick="navigator.clipboard?.writeText(${JSON.stringify(JSON.stringify(data.version_humanisee||''))}).then(()=>showToast('Copié','ok'))">📋 Copier version humanisée</button>
+    </div>`;
+    addActivity('🤖', `Ton IA détecté : ${score}% — ${label}`, now());
+  } catch(e) { showToast('Erreur : ' + e.message, 'error'); if (div) div.innerHTML = `<div style="color:var(--red);font-size:12px">${e.message}</div>`; }
+  enableBtn(btn);
 }
 
 function initAgent8() {
