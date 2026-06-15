@@ -4414,6 +4414,7 @@ function initCMAgent() {
   const offGrp = document.createElement('optgroup'); offGrp.label = '⚓ Offshore — 0 jour terrain';
   OFFSHORE.forEach(s => { const opt=document.createElement('option'); opt.value=s.id; opt.textContent=`[Offshore] ${s.name}`; offGrp.appendChild(opt); });
   sel.appendChild(offGrp);
+  renderCMHistory();
 }
 function selectPlatform(plat, el) {
   state.currentPlatform = plat;
@@ -5020,7 +5021,7 @@ function a5SaveJournal() {
 }
 
 function initAgent5() {
-  a5BuildPlan(); a5RenderPlan(); a5UpdateKPIs();
+  a5BuildPlan(); a5RenderPlan(); a5UpdateKPIs(); a5RenderSessionLog();
   const sel = document.getElementById('a5-journal-site');
   if (sel) { SITES.forEach(s => { const o = document.createElement('option'); o.value = s.id; o.textContent = `[Z${s.zone}] ${s.name}`; sel.appendChild(o); }); }
 }
@@ -5149,6 +5150,12 @@ function initAgent6() {
   const og = document.createElement('optgroup'); og.label = '⚓ Offshore';
   OFFSHORE.forEach(s => { const o = document.createElement('option'); o.value = s.id; o.textContent = s.name; og.appendChild(o); });
   sel.appendChild(og);
+  if (a6State.briefs.length > 0) {
+    const card = document.getElementById('a6-archive-card');
+    const list = document.getElementById('a6-archive-list');
+    if (card) card.style.display = 'block';
+    if (list) { list.innerHTML = ''; a6State.briefs.slice(0, 6).forEach(b => { const div = document.createElement('div'); div.className = 'a6-archive-item'; div.innerHTML = `<div class="a6-arch-title">${b.site} · ${b.style}</div><div class="a6-arch-preview">${new Date(b.ts).toLocaleString('fr-FR')}</div>`; list.appendChild(div); }); }
+  }
 }
 
 /* ============================================================
@@ -5323,6 +5330,12 @@ function a7ExportDocx() {
 function initAgent7() {
   const ta = document.getElementById('a7-source-text');
   if (ta) ta.addEventListener('input', a7UpdateMeta);
+  if (a7State.library.length > 0) {
+    const card = document.getElementById('a7-library-card');
+    const list = document.getElementById('a7-library-list');
+    if (card) card.style.display = 'block';
+    if (list) { list.innerHTML = ''; a7State.library.slice(0, 6).forEach(item => { const div = document.createElement('div'); div.className = 'a7-lib-item'; div.innerHTML = `<div class="a7-lib-type">${item.type.toUpperCase()} · ${new Date(item.ts).toLocaleDateString('fr-FR')}</div><div class="a7-lib-preview">${item.output.fr.substring(0,80)}…</div>`; div.onclick = () => { a7State.lastOutput = item.output; a7RenderOutput(); }; list.appendChild(div); }); }
+  }
 }
 
 /* ============================================================
@@ -5459,6 +5472,7 @@ function a8RenderHistory() {
 function initAgent8() {
   const ta = document.getElementById('a8-text-input');
   if (ta) ta.addEventListener('input', a8UpdateComplianceLive);
+  a8RenderHistory();
 }
 
 
