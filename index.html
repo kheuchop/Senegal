@@ -3779,6 +3779,11 @@ function saveStateToDB() {
       a14ApiKey:      a14State.apiKey,
       a15Devis:       a15State.devis,
       a13QrLibrary:   a13State.qrLibrary,
+      cmHistory:      state.cmHistory,
+      a5Sessions:     a5State.sessions,
+      a6Briefs:       a6State.briefs,
+      a7Library:      a7State.library,
+      a8History:      a8State.history,
       a16Raised:      a16State.raised,
       a16Goal:        a16State.goal,
       a16DaysLeft:    a16State.daysLeft,
@@ -3815,6 +3820,11 @@ async function loadStateFromDB() {
     if (typeof d.a14ApiKey === 'string') a14State.apiKey      = d.a14ApiKey;
     if (Array.isArray(d.a15Devis))     a15State.devis         = d.a15Devis;
     if (Array.isArray(d.a13QrLibrary)) a13State.qrLibrary     = d.a13QrLibrary;
+    if (Array.isArray(d.cmHistory))    state.cmHistory         = d.cmHistory;
+    if (Array.isArray(d.a5Sessions))   a5State.sessions        = d.a5Sessions;
+    if (Array.isArray(d.a6Briefs))     a6State.briefs          = d.a6Briefs;
+    if (Array.isArray(d.a7Library))    a7State.library         = d.a7Library;
+    if (Array.isArray(d.a8History))    a8State.history         = d.a8History;
     if (d.a16Raised    !== undefined)  a16State.raised        = d.a16Raised;
     if (d.a16Goal      !== undefined)  a16State.goal          = d.a16Goal;
     if (d.a16DaysLeft  !== undefined)  a16State.daysLeft      = d.a16DaysLeft;
@@ -4465,6 +4475,7 @@ function generateContent() {
     state.cmHistory.unshift(histEntry);
     if (state.cmHistory.length > 10) state.cmHistory.pop();
     renderCMHistory();
+    saveStateToDB();
     enableBtn(btn);
     addActivity('📲', `Contenu ${plat} généré pour ${site.name}`, 'À l\'instant');
   }, 1200);
@@ -5126,6 +5137,7 @@ function a6SaveBrief() {
       list.appendChild(div);
     });
   }
+  saveStateToDB();
   showToast('💾 Brief archivé', 'ok');
   setTimeout(() => enableBtn(btn), 500);
 }
@@ -5293,6 +5305,7 @@ function a7SaveToLibrary() {
       list.appendChild(div);
     });
   }
+  saveStateToDB();
   showToast('📚 Archivé dans la bibliothèque', 'ok');
   setTimeout(() => enableBtn(btn), 500);
 }
@@ -5406,6 +5419,7 @@ function a8Analyser() {
     document.getElementById('a8-report-card').style.display = 'block';
     a8State.history.unshift({ ctx, score, text: text.substring(0, 60), ts: Date.now() });
     a8RenderHistory();
+    saveStateToDB();
     addActivity('🔍', `Analyse éditoriale — Score ${score}/100 (${ctx})`, now());
     enableBtn(btn);
   }, 1200);
@@ -5651,22 +5665,45 @@ function a9ExportDossier() {
 }
 
 function initAgent9() {
-  if (a9State.sponsors.length > 0) { a9RenderSponsors(); a9ComputeTotals(); return; }
-  a9State.sponsors = [
-    { id:'sp_s01', name:'Orange Sénégal',           type:'prive',       amount:8000000,  status:'prospect', contra:'Logo couverture + 30 ex. numérotés + posts réseaux', ts: Date.now() },
-    { id:'sp_s02', name:'Fondation Orange Afrique',  type:'prive',       amount:5000000,  status:'prospect', contra:'Mention mécène + 20 ex. numérotés + exposition', ts: Date.now() },
-    { id:'sp_s03', name:'Total Energies Sénégal',    type:'prive',       amount:10000000, status:'prospect', contra:'Double page intérieure + 25 ex. + communiqué presse', ts: Date.now() },
-    { id:'sp_s04', name:'CBAO — Attijariwafa Bank',  type:'prive',       amount:5000000,  status:'prospect', contra:'Logo intérieur + 15 ex. numérotés', ts: Date.now() },
-    { id:'sp_s05', name:'Air Sénégal',               type:'prive',       amount:3000000,  status:'prospect', contra:'Billets mission + mention partenaire transport', ts: Date.now() },
-    { id:'sp_s06', name:'Groupe Eiffage Sénégal',    type:'prive',       amount:4000000,  status:'prospect', contra:'Mention bâtisseurs + 10 ex. numérotés', ts: Date.now() },
-    { id:'sp_s07', name:'MTAC — Ministère Culture',  type:'mtac',        amount:15000000, status:'prospect', contra:'Dépôt légal + 50 ex. + exposition institutions', ts: Date.now() },
-    { id:'sp_s08', name:'Ministère du Tourisme',     type:'mtac',        amount:10000000, status:'prospect', contra:'Distribution agences + 30 ex. + kit promotion', ts: Date.now() },
-    { id:'sp_s09', name:'SAPCO Sénégal',             type:'prive',       amount:3000000,  status:'prospect', contra:'Distribution hôtels Petite Côte + mention', ts: Date.now() },
-    { id:'sp_s10', name:'Banque Atlantique Sénégal', type:'prive',       amount:3000000,  status:'prospect', contra:'Logo + 10 ex. numérotés + post LinkedIn', ts: Date.now() },
-    { id:'sp_s11', name:'Diaspora USA — Réseau SN',  type:'particulier', amount:2000000,  status:'prospect', contra:'10 ex. numérotés + remerciements page intérieure', ts: Date.now() },
-    { id:'sp_s12', name:'Diaspora France — Paris',   type:'particulier', amount:2000000,  status:'prospect', contra:'10 ex. numérotés + remerciements page intérieure', ts: Date.now() },
-  ];
   a9RenderSponsors(); a9ComputeTotals();
+}
+
+function a9LaunchSourcing(btn) {
+  disableBtn(btn);
+  const results = document.getElementById('a9-sourcing-results');
+  const statusEl = document.getElementById('a9-sourcing-status');
+  if (!results) { enableBtn(btn); return; }
+  if (statusEl) statusEl.textContent = 'Analyse du pipeline en cours…';
+  setTimeout(() => {
+    const sponsors = a9State.sponsors;
+    const byStatus = { prospect:0, negocie:0, signe:0, verse:0 };
+    const byType   = { mtac:0, prive:0, particulier:0, inkind:0 };
+    let raised = 0, pending = 0;
+    sponsors.forEach(s => {
+      byStatus[s.status] = (byStatus[s.status] || 0) + 1;
+      byType[s.type]     = (byType[s.type]     || 0) + 1;
+      if (s.status === 'verse') raised  += s.amount;
+      if (s.status === 'signe') pending += s.amount;
+    });
+    const suggestions = [];
+    if (byType.mtac === 0) suggestions.push('🏛️ <strong>Fonds MTAC manquant</strong> — Contacter le Ministère de la Culture pour un financement institutionnel (15–20M FCFA)');
+    if (byType.prive === 0) suggestions.push('🤝 <strong>Aucun mécénat privé</strong> — Cibler Orange Sénégal, Total Energies ou Eiffage (5–10M FCFA chacun)');
+    if (byType.particulier === 0) suggestions.push('🌍 <strong>Diaspora non sollicitée</strong> — Réseau France/USA/Afrique (2–5M FCFA cumulés)');
+    if (byStatus.prospect >= 3) suggestions.push(`⚡ <strong>${byStatus.prospect} prospect${byStatus.prospect>1?'s':''} à relancer</strong> — Générer un dossier d'impact pour chaque cible`);
+    if (byStatus.signe > 0 && byStatus.verse === 0) suggestions.push(`💳 <strong>${byStatus.signe} contrat${byStatus.signe>1?'s':''} signé${byStatus.signe>1?'s':''} non encaissé${byStatus.signe>1?'s':''}</strong> — Relancer comptabilité partenaire`);
+    if (sponsors.length === 0) suggestions.push('➕ Pipeline vide — Ajoutez vos premiers partenaires via « + Ajouter »');
+    if (suggestions.length === 0) suggestions.push('✅ Pipeline équilibré — Maintenir la cadence de relance (toutes les 2 semaines)');
+    const statusLabels = { prospect:'Prospects', negocie:'Négoc.', signe:'Signés', verse:'Versés' };
+    results.innerHTML = `
+      <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.1em">${sponsors.length} partenaire${sponsors.length>1?'s':''} dans le pipeline</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:10px">
+        ${Object.entries(byStatus).map(([k,v])=>`<div style="text-align:center;padding:6px;background:var(--bg-card-2);border:1px solid var(--border);border-radius:var(--r-sm)"><div style="font-family:var(--font-display);font-size:0.9rem;font-weight:700;color:var(--cyan)">${v}</div><div style="font-family:var(--font-mono);font-size:0.42rem;color:var(--text-muted)">${statusLabels[k]}</div></div>`).join('')}
+      </div>
+      ${suggestions.map(s=>`<div style="padding:8px 10px;background:var(--bg-card-2);border:1px solid rgba(0,242,254,0.15);border-radius:var(--r-sm);font-size:0.62rem;line-height:1.5;margin-bottom:6px">${s}</div>`).join('')}`;
+    results.style.display = 'block';
+    if (statusEl) statusEl.textContent = `${suggestions.length} recommandation${suggestions.length>1?'s':''} — Pipeline analysé`;
+    enableBtn(btn);
+  }, 900);
 }
 
 
