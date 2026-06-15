@@ -1305,6 +1305,35 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 #agent-direction-artistique .a6-erec-body{flex:1;min-width:0}
 #agent-direction-artistique .a6-erec-name{font-size:0.6rem;font-weight:600;color:var(--text-primary);margin-bottom:2px}
 #agent-direction-artistique .a6-erec-why{font-size:0.52rem;color:var(--text-secondary);line-height:1.4}
+/* A6: Livre Vivant */
+#agent-direction-artistique .a6-book-strip{display:flex;flex-direction:column;gap:5px}
+#agent-direction-artistique .a6-book-page{border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden;background:var(--bg-card-2);transition:border-color var(--t)}
+#agent-direction-artistique .a6-book-page.bp-photo{border-color:rgba(255,171,64,0.3)}
+#agent-direction-artistique .a6-book-page.bp-complet{border-color:rgba(0,242,254,0.35)}
+#agent-direction-artistique .a6-book-ph{display:flex;align-items:center;gap:8px;padding:7px 10px;cursor:pointer;user-select:none}
+#agent-direction-artistique .a6-bp-num{font-family:var(--font-display);font-size:0.48rem;color:var(--text-muted);min-width:26px;flex-shrink:0}
+#agent-direction-artistique .a6-bp-thumb{width:38px;height:28px;object-fit:cover;border-radius:3px;flex-shrink:0}
+#agent-direction-artistique .a6-bp-ico{width:38px;height:28px;border-radius:3px;flex-shrink:0;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text-muted)}
+#agent-direction-artistique .a6-bp-info{flex:1;min-width:0}
+#agent-direction-artistique .a6-bp-type{font-family:var(--font-mono);font-size:0.41rem;text-transform:uppercase;letter-spacing:0.04em}
+#agent-direction-artistique .a6-bp-site{font-size:0.57rem;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#agent-direction-artistique .a6-bp-st{font-family:var(--font-mono);font-size:0.39rem;padding:1px 5px;border-radius:8px;flex-shrink:0}
+#agent-direction-artistique .st-vide{color:var(--text-muted);background:rgba(55,77,110,0.12);border:1px solid var(--border)}
+#agent-direction-artistique .st-photo{color:var(--amber);background:rgba(255,171,64,0.08);border:1px solid rgba(255,171,64,0.2)}
+#agent-direction-artistique .st-caption{color:var(--violet);background:rgba(124,111,255,0.08);border:1px solid rgba(124,111,255,0.2)}
+#agent-direction-artistique .st-complet{color:var(--emerald);background:rgba(0,230,118,0.08);border:1px solid rgba(0,230,118,0.2)}
+#agent-direction-artistique .a6-book-body{border-top:1px solid var(--border);padding:10px;display:none}
+#agent-direction-artistique .a6-book-body.open{display:block}
+#agent-direction-artistique .a6-bkb-photo{width:100%;max-height:160px;object-fit:cover;border-radius:var(--r-sm);margin-bottom:8px}
+#agent-direction-artistique .a6-bkb-lang{font-family:var(--font-mono);font-size:0.42rem;color:var(--cyan);margin:6px 0 2px}
+#agent-direction-artistique .a6-bkb-cap{font-size:0.57rem;color:var(--text-secondary);line-height:1.5}
+#agent-direction-artistique .a6-bkb-cap-ar{direction:rtl;text-align:right}
+#agent-direction-artistique .a6-bkb-qr{display:flex;align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+#agent-direction-artistique .a6-bkb-qr-img{width:56px;height:56px;flex-shrink:0;border-radius:4px}
+#agent-direction-artistique .a6-bkb-qr-ph{width:56px;height:56px;flex-shrink:0;border-radius:4px;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:18px}
+#agent-direction-artistique .a6-bkb-da{font-family:var(--font-mono);font-size:0.44rem;color:var(--text-muted);font-style:italic;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)}
+#agent-direction-artistique .a6-book-progress-bar{height:4px;background:var(--border);border-radius:2px;margin-bottom:8px;overflow:hidden}
+#agent-direction-artistique .a6-book-progress-fill{height:100%;background:var(--grad-cyan);border-radius:2px;transition:width 0.5s ease}
 
 /* ============================================================
    AGENT 7 — RÉDACTEUR-TRADUCTEUR — CSS Scopé #agent-redacteur
@@ -2896,6 +2925,22 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <div id="a6-erec-result" style="margin-top:8px"></div>
         </div>
 
+        <!-- A6-IA-9 : Livre Vivant — Maquette Complète -->
+        <div class="card">
+          <div class="card-title">📖 Livre Vivant — Page par Page
+            <span class="pill pill-cyan" id="a6-book-pill" style="margin-left:auto;font-size:0.45rem">0 page</span>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:8px">Maquette complète mise à jour automatiquement au fil des photos. Captions trilingues FR+EN+AR générées par Claude. QR codes immersifs par site.</div>
+          <div class="a6-book-progress-bar"><div class="a6-book-progress-fill" id="a6-book-pbar" style="width:0%"></div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+            <button class="btn btn-primary btn-sm" onclick="a6InitBook(this)">
+              <div class="spinner"></div><span class="btn-text">📖 Initialiser le livre</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="a6BookExport()">📋 Exporter</button>
+          </div>
+          <div id="a6-book-strip" class="a6-book-strip"></div>
+        </div>
+
       </div><!-- /agent-direction-artistique -->
 
       <!-- =====================================================
@@ -4046,6 +4091,7 @@ function saveStateToDB() {
       a5Sessions:     a5State.sessions,
       a6Briefs:       a6State.briefs,
       a6BookGallery:  a6State.bookGallery,
+      a6BookPages:    a6State.bookPages,
       a7Library:      a7State.library,
       a8History:      a8State.history,
       a16Raised:      a16State.raised,
@@ -4088,6 +4134,7 @@ async function loadStateFromDB() {
     if (Array.isArray(d.a5Sessions))   a5State.sessions        = d.a5Sessions;
     if (Array.isArray(d.a6Briefs))     a6State.briefs          = d.a6Briefs;
     if (Array.isArray(d.a6BookGallery)) a6State.bookGallery    = d.a6BookGallery;
+    if (Array.isArray(d.a6BookPages))  a6State.bookPages       = d.a6BookPages;
     if (Array.isArray(d.a7Library))    a7State.library         = d.a7Library;
     if (Array.isArray(d.a8History))    a8State.history         = d.a8History;
     if (d.a16Raised    !== undefined)  a16State.raised        = d.a16Raised;
@@ -5567,7 +5614,7 @@ function initAgent5() {
 /* ============================================================
    AGENT 6 — DIRECTION ARTISTIQUE
    ============================================================ */
-const a6State = { style: 'natgeo', briefs: [], currentBrief: null, currentPrompt: null, bookGallery: [] };
+const a6State = { style: 'natgeo', briefs: [], currentBrief: null, currentPrompt: null, bookGallery: [], bookPages: [] };
 
 const A6_STYLE_PARAMS = {
   natgeo:  { label:'National Geographic', lens:'85mm f/1.4', iso:'ISO 100-400', light:'Lumière naturelle dorée, contre-jour maîtrisé', tech:'Règle des tiers stricte, profondeur de champ sélective', mood:'Grandiose & intemporel' },
@@ -5695,6 +5742,7 @@ function initAgent6() {
     if (list) { list.innerHTML = ''; a6State.briefs.slice(0, 6).forEach(b => { const div = document.createElement('div'); div.className = 'a6-archive-item'; div.innerHTML = `<div class="a6-arch-title">${b.site} · ${b.style}</div><div class="a6-arch-preview">${new Date(b.ts).toLocaleString('fr-FR')}</div>`; list.appendChild(div); }); }
   }
   a6RenderGallery();
+  if (a6State.bookPages.length > 0) a6RenderBook();
 }
 
 /* ============================================================
@@ -6029,7 +6077,9 @@ async function a6SaveToBook(photoUrl, raison, modifications) {
     mods:      modifications || '',
   };
   a6State.bookGallery.unshift(entry);
+  a6AutoLinkToBook(entry);
   a6RenderGallery();
+  if (a6State.bookPages.length > 0) a6RenderBook();
   saveStateToDB();
   showToast('📚 Photo ajoutée à la galerie du livre', 'ok');
   addActivity('📚', `Photo ajoutée au livre — Site : ${siteName}`, now());
@@ -6062,6 +6112,225 @@ function a6RemoveFromBook(id) {
   a6RenderGallery();
   saveStateToDB();
   showToast('Photo retirée du livre', 'info');
+}
+
+/* --- Livre Vivant --- */
+function a6InitBook(btn) {
+  if (a6State.bookPages.length > 0) {
+    if (!confirm('Le livre existe déjà. Réinitialiser la structure ? Les captions et QR déjà saisis seront perdus.')) return;
+  }
+  if (btn) disableBtn(btn);
+  a6BuildDefaultPages();
+  a6AutoLinkAllPhotos();
+  a6RenderBook();
+  saveStateToDB();
+  if (btn) { setTimeout(() => enableBtn(btn), 600); }
+  showToast('📖 ' + a6State.bookPages.length + ' pages initialisées', 'ok');
+  addActivity('📖', 'Livre vivant initialisé — ' + a6State.bookPages.length + ' pages', now());
+}
+
+function a6BuildDefaultPages() {
+  const pages = [];
+  let n = 0;
+  const mk = ov => {
+    n++;
+    return Object.assign({ id:'pg_'+n, num:n, type:'texte', layout:'texte', siteId:null, siteName:'', zone:null, chapter:'', thumbnail:null, caption_fr:'', caption_en:'', caption_ar:'', qrUrl:'', notes_da:'', status:'vide' }, ov);
+  };
+  pages.push(mk({ type:'couverture', siteName:'Couverture' }));
+  pages.push(mk({ type:'page_titre', siteName:'Page titre & crédits' }));
+  pages.push(mk({ type:'intro',      siteName:'Préface' }));
+  pages.push(mk({ type:'carte',      siteName:'Carte · 32 sites Sénégal' }));
+  const byZone = {};
+  SITES.forEach(s => { (byZone[s.zone] = byZone[s.zone]||[]).push(s); });
+  Object.keys(byZone).sort((a,b)=>Number(a)-Number(b)).forEach(z => {
+    pages.push(mk({ type:'chapitre', zone:Number(z), chapter:`Chapitre ${z}`, siteName:`Zone ${z}` }));
+    byZone[z].forEach(s => {
+      pages.push(mk({ type:'pleine_page', siteId:s.id, siteName:s.name, zone:Number(z) }));
+      pages.push(mk({ type:'legendes',    siteId:s.id, siteName:s.name, zone:Number(z) }));
+    });
+  });
+  pages.push(mk({ type:'sponsor',   siteName:'Pages Sponsors' }));
+  pages.push(mk({ type:'colophon',  siteName:'Colophon & Remerciements' }));
+  pages.push(mk({ type:'quatrieme', siteName:'4ème de couverture' }));
+  pages.forEach((p,i) => { p.num = i+1; });
+  a6State.bookPages = pages;
+}
+
+function a6AutoLinkAllPhotos() {
+  a6State.bookGallery.forEach(e => a6AutoLinkToBook(e, false));
+}
+
+function a6AutoLinkToBook(entry, rerender) {
+  if (!a6State.bookPages.length || !entry.thumbnail) return;
+  const page = a6State.bookPages.find(p => p.type === 'pleine_page' && p.siteName === entry.site && !p.thumbnail);
+  if (!page) return;
+  page.thumbnail = entry.thumbnail;
+  page.status = page.caption_fr ? 'complet' : 'photo';
+  if (rerender) { a6RenderBook(); saveStateToDB(); }
+}
+
+const A6_TYPE_COLOR = { couverture:'var(--amber)', page_titre:'var(--text-muted)', intro:'var(--text-muted)', carte:'var(--cyan)', chapitre:'var(--cyan)', pleine_page:'var(--emerald)', legendes:'var(--violet)', sponsor:'var(--amber)', colophon:'var(--text-muted)', quatrieme:'var(--amber)' };
+const A6_TYPE_LABEL = { couverture:'Couverture', page_titre:'Page titre', intro:'Introduction', carte:'Carte', chapitre:'Chapitre', pleine_page:'Pleine page', legendes:'Légende', sponsor:'Sponsor', colophon:'Colophon', quatrieme:'4ème couv.' };
+const A6_TYPE_ICON  = { couverture:'🖼', page_titre:'📄', intro:'✍️', carte:'🗺', chapitre:'📍', pleine_page:'📷', legendes:'🔤', sponsor:'🤝', colophon:'⚙️', quatrieme:'🖼' };
+const A6_ST_CLASS   = { vide:'st-vide', photo:'st-photo', caption:'st-caption', complet:'st-complet' };
+const A6_ST_LABEL   = { vide:'VIDE', photo:'PHOTO', caption:'CAPTION', complet:'COMPLET' };
+
+function a6RenderBook() {
+  const strip  = document.getElementById('a6-book-strip');
+  const pill   = document.getElementById('a6-book-pill');
+  const pbar   = document.getElementById('a6-book-pbar');
+  if (!strip) return;
+  const pages = a6State.bookPages;
+  if (!pages.length) {
+    strip.innerHTML = '<div style="text-align:center;font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted);padding:18px">Cliquez «Initialiser le livre» pour créer la structure.</div>';
+    return;
+  }
+  const photoPages  = pages.filter(p => p.type === 'pleine_page');
+  const withPhoto   = photoPages.filter(p => p.thumbnail).length;
+  const withCaption = photoPages.filter(p => p.caption_fr).length;
+  const pct = photoPages.length ? Math.round(withPhoto / photoPages.length * 100) : 0;
+  if (pill) pill.textContent = `${pages.length}p · ${withPhoto}/${photoPages.length} photos · ${withCaption} captions`;
+  if (pbar) pbar.style.width = pct + '%';
+
+  strip.innerHTML = pages.map(p => {
+    const col  = A6_TYPE_COLOR[p.type] || 'var(--text-muted)';
+    const lab  = A6_TYPE_LABEL[p.type] || p.type;
+    const ico  = A6_TYPE_ICON[p.type]  || '📄';
+    const sCls = A6_ST_CLASS[p.status] || 'st-vide';
+    const sLab = A6_ST_LABEL[p.status] || 'VIDE';
+    const bCls = p.status === 'complet' ? 'bp-complet' : p.thumbnail ? 'bp-photo' : '';
+    const isPhoto = p.type === 'pleine_page' || p.type === 'legendes';
+    const thumbHtml = p.thumbnail
+      ? `<img class="a6-bp-thumb" src="${p.thumbnail}" loading="lazy">`
+      : `<div class="a6-bp-ico">${ico}</div>`;
+    const pid = escapeAttr(p.id);
+    // Body
+    const photoHtml    = p.thumbnail  ? `<img class="a6-bkb-photo" src="${p.thumbnail}" loading="lazy">` : '';
+    const captionBtnHtml = isPhoto && !p.caption_fr
+      ? `<button class="btn btn-primary btn-sm" style="width:100%;margin-bottom:8px" onclick="a6GenPageCaption('${pid}',this)"><div class="spinner"></div><span class="btn-text">✍️ Générer captions FR+EN+AR</span></button>`
+      : isPhoto && p.caption_fr
+      ? `<button class="btn btn-ghost btn-sm" style="width:100%;margin-bottom:8px" onclick="a6GenPageCaption('${pid}',this)"><div class="spinner"></div><span class="btn-text">🔄 Régénérer captions</span></button>`
+      : '';
+    const capFr = p.caption_fr ? `<div class="a6-bkb-lang">🇫🇷 FRANÇAIS</div><div class="a6-bkb-cap">${escapeHtml(p.caption_fr)}</div>` : '';
+    const capEn = p.caption_en ? `<div class="a6-bkb-lang">🇬🇧 ENGLISH</div><div class="a6-bkb-cap">${escapeHtml(p.caption_en)}</div>` : '';
+    const capAr = p.caption_ar ? `<div class="a6-bkb-lang">🇸🇦 عربية</div><div class="a6-bkb-cap a6-bkb-cap-ar">${escapeHtml(p.caption_ar)}</div>` : '';
+    const qrImgHtml = p.qrUrl
+      ? `<img class="a6-bkb-qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=56x56&data=${encodeURIComponent(p.qrUrl)}" loading="lazy" alt="QR">`
+      : `<div class="a6-bkb-qr-ph">🔲</div>`;
+    const daHtml = p.notes_da ? `<div class="a6-bkb-da">DA : ${escapeHtml(p.notes_da)}</div>` : '';
+    return `<div class="a6-book-page ${bCls}" id="bkpg-${pid}">
+      <div class="a6-book-ph" onclick="a6ToggleBookPage('${pid}')">
+        <div class="a6-bp-num">${String(p.num).padStart(2,'0')}</div>
+        ${thumbHtml}
+        <div class="a6-bp-info">
+          <div class="a6-bp-type" style="color:${col}">${lab}</div>
+          <div class="a6-bp-site">${escapeHtml(p.siteName || p.chapter || '')}</div>
+        </div>
+        <div class="a6-bp-st ${sCls}">${sLab}</div>
+      </div>
+      <div class="a6-book-body" id="bkbody-${pid}">
+        ${photoHtml}
+        ${captionBtnHtml}
+        ${capFr}${capEn}${capAr}
+        <div class="a6-bkb-qr">
+          ${qrImgHtml}
+          <div style="flex:1">
+            <div style="font-family:var(--font-mono);font-size:0.42rem;color:var(--text-muted);margin-bottom:4px">URL CONTENU IMMERSIF</div>
+            <input class="input-field" style="font-size:0.52rem;padding:5px 8px" placeholder="https://youtube.com/…" value="${escapeHtml(p.qrUrl||'')}" onblur="a6SetBookQR('${pid}',this.value)">
+          </div>
+        </div>
+        ${daHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function a6ToggleBookPage(id) {
+  const body = document.getElementById('bkbody-' + id);
+  if (body) body.classList.toggle('open');
+}
+
+async function a6GenPageCaption(id, btn) {
+  const page = (a6State.bookPages || []).find(p => p.id === id);
+  if (!page) return;
+  disableBtn(btn);
+  const siteObj = SITES.find(s => s.id === page.siteId) || {};
+  const siteName = page.siteName || siteObj.name || 'Site documentaire';
+  const zone  = page.zone || siteObj.zone || '';
+  const km    = siteObj.km || '';
+  const days  = siteObj.days || 1;
+  const brief = a6GetBriefText();
+  const prompt = `Site documentaire : ${siteName}${zone ? ', Zone '+zone : ''}${km ? ', '+km+'km de Dakar' : ''}, ${days}j de terrain.\nBrief DA :\n${brief}\n\nRédige une légende photographique pour ce site pour le livre collector SÉNÉGAL V3.\nJSON :\n{"fr":"légende française 80-110 mots, poétique, précis, première personne si pertinent","en":"English caption 80-110 words, same tone and quality","ar":"تعليق بالعربية 80-110 كلمة، نفس الجودة","note_da":"note courte du DA sur la mise en valeur visuelle de cette page"}`;
+  const content = page.thumbnail
+    ? [{ type:'image', source:{ type:'base64', media_type:'image/jpeg', data: page.thumbnail.split(',')[1] } }, { type:'text', text: prompt }]
+    : [{ type:'text', text: prompt }];
+  try {
+    const data = await a6CallClaude('Tu es directeur artistique expert en légendes pour livres photographiques de luxe. Même sensibilité poétique dans les trois langues.', content, 1000);
+    page.caption_fr = data.fr || '';
+    page.caption_en = data.en || '';
+    page.caption_ar = data.ar || '';
+    page.notes_da   = data.note_da || '';
+    page.status = page.thumbnail ? 'complet' : 'caption';
+    // Sync captions to the twin légende page
+    const twin = a6State.bookPages.find(p => p.type === 'legendes' && p.siteId === page.siteId && p.id !== page.id);
+    if (twin && !twin.caption_fr) { twin.caption_fr = data.fr||''; twin.caption_en = data.en||''; twin.caption_ar = data.ar||''; twin.notes_da = data.note_da||''; twin.status = 'caption'; }
+    saveStateToDB();
+    a6RenderBook();
+    requestAnimationFrame(() => {
+      const body = document.getElementById('bkbody-' + id);
+      if (body) body.classList.add('open');
+      document.getElementById('bkpg-' + id)?.scrollIntoView({ behavior:'smooth', block:'nearest' });
+    });
+    addActivity('✍️', `Captions trilingues · ${siteName}`, now());
+  } catch(e) {
+    showToast('Erreur caption : ' + e.message, 'error');
+    enableBtn(btn);
+  }
+}
+
+function a6SetBookQR(id, url) {
+  const page = (a6State.bookPages || []).find(p => p.id === id);
+  if (!page || page.qrUrl === url.trim()) return;
+  page.qrUrl = url.trim();
+  saveStateToDB();
+  const qrRow = document.querySelector(`#bkbody-${id} .a6-bkb-qr`);
+  if (!qrRow) return;
+  const old = qrRow.querySelector('.a6-bkb-qr-img, .a6-bkb-qr-ph');
+  if (!old) return;
+  if (page.qrUrl) {
+    const img = document.createElement('img');
+    img.className = 'a6-bkb-qr-img';
+    img.loading = 'lazy';
+    img.alt = 'QR';
+    img.src = `https://api.qrserver.com/v1/create-qr-code/?size=56x56&data=${encodeURIComponent(page.qrUrl)}`;
+    old.replaceWith(img);
+  } else {
+    const ph = document.createElement('div');
+    ph.className = 'a6-bkb-qr-ph';
+    ph.textContent = '🔲';
+    old.replaceWith(ph);
+  }
+}
+
+function a6BookExport() {
+  const pages = a6State.bookPages || [];
+  if (!pages.length) { showToast('Livre non initialisé', 'warn'); return; }
+  const withPhoto   = pages.filter(p => p.thumbnail).length;
+  const withCaption = pages.filter(p => p.caption_fr).length;
+  const lines = [
+    `MAQUETTE SÉNÉGAL V3 — ${pages.length} pages — ${withPhoto} photos — ${withCaption} captions`,
+    '='.repeat(50),
+    ...pages.map(p => {
+      let line = `p.${String(p.num).padStart(2,'0')}  [${(A6_TYPE_LABEL[p.type]||p.type).toUpperCase()}]  ${p.siteName||p.chapter||''}`;
+      if (p.caption_fr) line += `\n      FR: ${p.caption_fr.slice(0,80)}…`;
+      if (p.caption_en) line += `\n      EN: ${p.caption_en.slice(0,80)}…`;
+      if (p.caption_ar) line += `\n      AR: ${p.caption_ar.slice(0,60)}…`;
+      if (p.qrUrl) line += `\n      QR: ${p.qrUrl}`;
+      if (p.notes_da) line += `\n      DA: ${p.notes_da}`;
+      return line;
+    })
+  ];
+  navigator.clipboard?.writeText(lines.join('\n')).then(() => showToast('📋 Maquette complète copiée', 'ok'));
 }
 
 /* --- Maquette du Livre --- */
