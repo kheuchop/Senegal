@@ -2895,8 +2895,9 @@ textarea.input-field { resize: vertical; min-height: 80px; }
             <label class="input-label">Nombre de pages cible</label>
             <select class="input-field" id="a6-maq-pages">
               <option value="128">128 pages</option>
-              <option value="160" selected>160 pages</option>
+              <option value="160">160 pages</option>
               <option value="200">200 pages</option>
+              <option value="224" selected>224 pages (structure par défaut)</option>
               <option value="240">240 pages</option>
               <option value="288">288 pages</option>
             </select>
@@ -6130,29 +6131,59 @@ function a6InitBook(btn) {
 }
 
 function a6BuildDefaultPages() {
+  // Structure cible : 224 pages
+  // Front matter  :  8 pages
+  // Zones (7×2)   : 14 pages  (ouverture + description par zone)
+  // Sites (32×6)  :192 pages  (pleine page, double G, double D, portfolio, légende, terrain)
+  // Back matter   : 10 pages
+  // TOTAL         :224 pages
   const pages = [];
   let n = 0;
   const mk = ov => {
     n++;
     return Object.assign({ id:'pg_'+n, num:n, type:'texte', layout:'texte', siteId:null, siteName:'', zone:null, chapter:'', thumbnail:null, caption_fr:'', caption_en:'', caption_ar:'', qrUrl:'', notes_da:'', status:'vide' }, ov);
   };
-  pages.push(mk({ type:'couverture', siteName:'Couverture' }));
-  pages.push(mk({ type:'page_titre', siteName:'Page titre & crédits' }));
-  pages.push(mk({ type:'intro',      siteName:'Préface' }));
-  pages.push(mk({ type:'carte',      siteName:'Carte · 32 sites Sénégal' }));
+
+  // ── FRONT MATTER (8 pages) ──────────────────────────────────────
+  pages.push(mk({ type:'couverture',   siteName:'Couverture' }));
+  pages.push(mk({ type:'page_titre',   siteName:'Page titre' }));
+  pages.push(mk({ type:'copyright',    siteName:'Copyright & Crédits photographiques' }));
+  pages.push(mk({ type:'avantpropos',  siteName:'Avant-propos' }));
+  pages.push(mk({ type:'introduction', siteName:'Introduction — 59 jours au Sénégal' }));
+  pages.push(mk({ type:'carte',        siteName:'Carte · 32 sites documentaires' }));
+  pages.push(mk({ type:'editorial',    siteName:'Note éditoriale & Direction artistique' }));
+  pages.push(mk({ type:'sommaire',     siteName:'Sommaire' }));
+
+  // ── ZONES + SITES (14 + 192 pages) ─────────────────────────────
   const byZone = {};
   SITES.forEach(s => { (byZone[s.zone] = byZone[s.zone]||[]).push(s); });
   Object.keys(byZone).sort((a,b)=>Number(a)-Number(b)).forEach(z => {
-    pages.push(mk({ type:'chapitre', zone:Number(z), chapter:`Chapitre ${z}`, siteName:`Zone ${z}` }));
+    const zn = Number(z);
+    pages.push(mk({ type:'chapitre',      zone:zn, chapter:`Zone ${z}`, siteName:`Zone ${z} — Ouverture de chapitre` }));
+    pages.push(mk({ type:'chapitre_desc', zone:zn, chapter:`Zone ${z}`, siteName:`Zone ${z} — Présentation géographique` }));
     byZone[z].forEach(s => {
-      pages.push(mk({ type:'pleine_page', siteId:s.id, siteName:s.name, zone:Number(z) }));
-      pages.push(mk({ type:'legendes',    siteId:s.id, siteName:s.name, zone:Number(z) }));
+      pages.push(mk({ type:'pleine_page',  siteId:s.id, siteName:s.name, zone:zn }));           // Photo principale
+      pages.push(mk({ type:'double_page',  siteId:s.id, siteName:s.name+' · Double p.G', zone:zn })); // Spread gauche
+      pages.push(mk({ type:'double_suite', siteId:s.id, siteName:s.name+' · Double p.D', zone:zn })); // Spread droite
+      pages.push(mk({ type:'portfolio',    siteId:s.id, siteName:s.name+' · Portfolio', zone:zn }));   // 3–4 petites photos
+      pages.push(mk({ type:'legendes',     siteId:s.id, siteName:s.name, zone:zn }));           // Légende + texte
+      pages.push(mk({ type:'contexte',     siteId:s.id, siteName:s.name+' · Notes terrain', zone:zn }));// Behind the scenes
     });
   });
-  pages.push(mk({ type:'sponsor',   siteName:'Pages Sponsors' }));
-  pages.push(mk({ type:'colophon',  siteName:'Colophon & Remerciements' }));
-  pages.push(mk({ type:'quatrieme', siteName:'4ème de couverture' }));
-  pages.forEach((p,i) => { p.num = i+1; });
+
+  // ── BACK MATTER (10 pages) ──────────────────────────────────────
+  pages.push(mk({ type:'makingof',      siteName:'Making-of · Coulisses de la mission' }));
+  pages.push(mk({ type:'index',         siteName:'Index · 32 sites & coordonnées' }));
+  pages.push(mk({ type:'remerciements', siteName:'Remerciements' }));
+  pages.push(mk({ type:'sponsor',       siteName:'Partenaires — Page 1' }));
+  pages.push(mk({ type:'sponsor',       siteName:'Partenaires — Page 2' }));
+  pages.push(mk({ type:'equipe',        siteName:"L'Équipe Mission" }));
+  pages.push(mk({ type:'biographie',    siteName:'Biographie · Directeur Artistique' }));
+  pages.push(mk({ type:'credits_photo', siteName:'Crédits photographiques' }));
+  pages.push(mk({ type:'colophon',      siteName:'Colophon · Informations techniques' }));
+  pages.push(mk({ type:'quatrieme',     siteName:'4ème de couverture' }));
+
+  pages.forEach((p, i) => { p.num = i + 1; });
   a6State.bookPages = pages;
 }
 
@@ -6169,9 +6200,38 @@ function a6AutoLinkToBook(entry, rerender) {
   if (rerender) { a6RenderBook(); saveStateToDB(); }
 }
 
-const A6_TYPE_COLOR = { couverture:'var(--amber)', page_titre:'var(--text-muted)', intro:'var(--text-muted)', carte:'var(--cyan)', chapitre:'var(--cyan)', pleine_page:'var(--emerald)', legendes:'var(--violet)', sponsor:'var(--amber)', colophon:'var(--text-muted)', quatrieme:'var(--amber)' };
-const A6_TYPE_LABEL = { couverture:'Couverture', page_titre:'Page titre', intro:'Introduction', carte:'Carte', chapitre:'Chapitre', pleine_page:'Pleine page', legendes:'Légende', sponsor:'Sponsor', colophon:'Colophon', quatrieme:'4ème couv.' };
-const A6_TYPE_ICON  = { couverture:'🖼', page_titre:'📄', intro:'✍️', carte:'🗺', chapitre:'📍', pleine_page:'📷', legendes:'🔤', sponsor:'🤝', colophon:'⚙️', quatrieme:'🖼' };
+const A6_TYPE_COLOR = {
+  couverture:'var(--amber)',    page_titre:'var(--text-muted)',   copyright:'var(--text-muted)',
+  avantpropos:'var(--text-secondary)', introduction:'var(--text-secondary)', carte:'var(--cyan)',
+  editorial:'var(--text-muted)', sommaire:'var(--text-muted)',
+  chapitre:'var(--cyan)',       chapitre_desc:'var(--cyan)',
+  pleine_page:'var(--emerald)', double_page:'var(--emerald)',    double_suite:'var(--emerald)',
+  portfolio:'var(--blue)',      legendes:'var(--violet)',         contexte:'var(--text-secondary)',
+  makingof:'var(--blue)',       index:'var(--text-muted)',        remerciements:'var(--text-muted)',
+  sponsor:'var(--amber)',       equipe:'var(--blue)',             biographie:'var(--blue)',
+  credits_photo:'var(--text-muted)', colophon:'var(--text-muted)', quatrieme:'var(--amber)'
+};
+const A6_TYPE_LABEL = {
+  couverture:'Couverture',       page_titre:'Page titre',          copyright:'Copyright',
+  avantpropos:'Avant-propos',    introduction:'Introduction',       carte:'Carte',
+  editorial:'Note éditoriale',   sommaire:'Sommaire',
+  chapitre:'Chapitre',           chapitre_desc:'Chap. Description',
+  pleine_page:'Pleine page',     double_page:'Double page G',      double_suite:'Double page D',
+  portfolio:'Portfolio',         legendes:'Légende',                contexte:'Notes terrain',
+  makingof:'Making-of',          index:'Index',                     remerciements:'Remerciements',
+  sponsor:'Sponsor',             equipe:'Équipe',                   biographie:'Biographie',
+  credits_photo:'Crédits photo', colophon:'Colophon',               quatrieme:'4ème couv.'
+};
+const A6_TYPE_ICON = {
+  couverture:'🖼',    page_titre:'📄',    copyright:'©',        avantpropos:'✍️',
+  introduction:'📜',  carte:'🗺',          editorial:'🎨',        sommaire:'📑',
+  chapitre:'📍',      chapitre_desc:'🌍',
+  pleine_page:'📷',   double_page:'🖼',    double_suite:'🖼',    portfolio:'🎞',
+  legendes:'🔤',      contexte:'🎒',
+  makingof:'🎬',      index:'📋',          remerciements:'🙏',   sponsor:'🤝',
+  equipe:'👥',        biographie:'👤',     credits_photo:'📷',   colophon:'⚙️',
+  quatrieme:'🖼'
+};
 const A6_ST_CLASS   = { vide:'st-vide', photo:'st-photo', caption:'st-caption', complet:'st-complet' };
 const A6_ST_LABEL   = { vide:'VIDE', photo:'PHOTO', caption:'CAPTION', complet:'COMPLET' };
 
@@ -6199,7 +6259,7 @@ function a6RenderBook() {
     const sCls = A6_ST_CLASS[p.status] || 'st-vide';
     const sLab = A6_ST_LABEL[p.status] || 'VIDE';
     const bCls = p.status === 'complet' ? 'bp-complet' : p.thumbnail ? 'bp-photo' : '';
-    const isPhoto = p.type === 'pleine_page' || p.type === 'legendes';
+    const isPhoto = ['pleine_page','double_page','double_suite','portfolio','contexte','legendes'].includes(p.type);
     const thumbHtml = p.thumbnail
       ? `<img class="a6-bp-thumb" src="${p.thumbnail}" loading="lazy">`
       : `<div class="a6-bp-ico">${ico}</div>`;
