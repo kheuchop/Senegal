@@ -1696,6 +1696,15 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 #agent-juridique .a10-journal-item:last-child{border-bottom:none}
 #agent-juridique .a10-journal-item .a10-ji-time{font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted);white-space:nowrap}
 #agent-juridique .a10-journal-item .a10-ji-text{font-size:0.65rem;flex:1}
+#agent-juridique .a10-doc-output{background:var(--bg-input);border:1px solid var(--border-hi);border-radius:var(--r-sm);padding:14px;font-size:0.62rem;line-height:1.75;color:var(--text-primary);white-space:pre-wrap;max-height:320px;overflow-y:auto;margin-bottom:8px}
+#agent-juridique .a10-lang-tabs{display:flex;gap:6px;margin-bottom:10px}
+#agent-juridique .a10-lang-tab{flex:1;padding:6px 4px;border-radius:var(--r-sm);font-family:var(--font-mono);font-size:0.52rem;border:1px solid var(--border);color:var(--text-muted);background:transparent;cursor:pointer;text-align:center;transition:all .15s}
+#agent-juridique .a10-lang-tab.active{border-color:rgba(0,242,254,.4);color:var(--cyan);background:rgba(0,242,254,.07)}
+#agent-juridique .a10-checklist-item{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.63rem}
+#agent-juridique .a10-checklist-item:last-child{border-bottom:none}
+#agent-juridique .a10-checklist-icon{font-size:13px;flex-shrink:0}
+#agent-juridique .a10-checklist-text{flex:1;color:var(--text-secondary)}
+#agent-juridique .a10-checklist-status{font-family:var(--font-mono);font-size:0.45rem;flex-shrink:0}
 
 /* ============================================================
    AGENT 11 — LOGISTIQUE MATÉRIEL
@@ -1730,6 +1739,23 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 #agent-logistique .a11-sum-box{background:var(--bg-card-2);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px;text-align:center}
 #agent-logistique .a11-sum-val{font-family:var(--font-display);font-size:1.1rem;font-weight:700;background:var(--grad-cyan);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 #agent-logistique .a11-sum-label{font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-top:2px}
+#agent-logistique .a11-tournee-list{display:flex;flex-direction:column;gap:4px;max-height:220px;overflow-y:auto;margin-bottom:10px}
+#agent-logistique .a11-tournee-equip{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;background:var(--bg-card-2);border:1px solid var(--border);cursor:pointer;transition:all .15s}
+#agent-logistique .a11-tournee-equip.selected{border-color:rgba(0,242,254,.5);background:rgba(0,242,254,.06)}
+#agent-logistique .a11-tournee-equip input[type=checkbox]{accent-color:var(--cyan);width:14px;height:14px;flex-shrink:0}
+#agent-logistique .a11-reco-output{background:var(--bg-input);border:1px solid var(--border-hi);border-radius:var(--r-sm);padding:12px;font-size:0.63rem;line-height:1.7;color:var(--text-primary);white-space:pre-wrap;max-height:280px;overflow-y:auto}
+#agent-logistique .a11-mem-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+#agent-logistique .a11-mem-box{background:var(--bg-card-2);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px;text-align:center}
+#agent-logistique .a11-mem-val{font-family:var(--font-display);font-size:1rem;font-weight:700}
+#agent-logistique .a11-mem-label{font-family:var(--font-mono);font-size:0.45rem;color:var(--text-muted);margin-top:2px}
+#agent-logistique .a11-check-item{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+#agent-logistique .a11-check-item:last-child{border-bottom:none}
+#agent-logistique .a11-check-icon{font-size:13px;flex-shrink:0;margin-top:1px}
+#agent-logistique .a11-check-text{flex:1;font-size:0.63rem;color:var(--text-secondary)}
+#agent-logistique .a11-check-priority{font-family:var(--font-mono);font-size:0.42rem;flex-shrink:0;padding:2px 5px;border-radius:3px}
+#agent-logistique .a11-check-priority.p1{background:rgba(239,68,68,.15);color:var(--red)}
+#agent-logistique .a11-check-priority.p2{background:rgba(245,158,11,.15);color:var(--amber)}
+#agent-logistique .a11-check-priority.p3{background:rgba(16,185,129,.12);color:var(--emerald)}
 
 /* ============================================================
    AGENT 12 — DISTRIBUTION & VENTES
@@ -3569,6 +3595,92 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <div class="card-title">Journal Juridique</div>
           <div id="a10-journal-list"></div>
         </div>
+
+        <!-- A10: Relance Claude Personnalisée -->
+        <div class="card">
+          <div class="card-title">✉️ Relance Claude Personnalisée <span class="pill pill-amber" style="margin-left:auto;font-size:0.45rem">Claude</span></div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:10px">Ton adapté par Claude selon le type d'organisme (présidence, dahira, mairie, UNESCO…)</div>
+          <div class="input-group"><label class="input-label">Autorisation à relancer</label>
+            <select class="input-field" id="a10-claude-site"></select>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="input-group"><label class="input-label">Niveau de relance</label>
+              <select class="input-field" id="a10-relance-level">
+                <option value="1">1ère relance — cordiale</option>
+                <option value="2">2ème relance — ferme</option>
+                <option value="3">3ème relance — urgente</option>
+              </select>
+            </div>
+            <div class="input-group"><label class="input-label">Langue</label>
+              <select class="input-field" id="a10-relance-lang">
+                <option value="fr">Français</option>
+                <option value="ar">Arabe + Français</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="a10GenRelanceClaude(this)"><div class="spinner"></div><span class="btn-text">✉️ Générer la relance</span></button>
+          <div id="a10-claude-relance-result" style="margin-top:10px"></div>
+        </div>
+
+        <!-- A10: Droit à l'Image Terrain -->
+        <div class="card">
+          <div class="card-title">📝 Droit à l'Image Terrain <span class="pill pill-amber" style="margin-left:auto;font-size:0.45rem">Claude</span></div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:10px">Formulaire bilingue FR/Wolof pour accords signés sur place</div>
+          <div class="input-group"><label class="input-label">Site / contexte</label>
+            <select class="input-field" id="a10-di-site"></select>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="input-group"><label class="input-label">Type de sujet</label>
+              <select class="input-field" id="a10-di-type">
+                <option value="adulte">Adulte</option>
+                <option value="mineur">Mineur (accord tuteur)</option>
+                <option value="groupe">Groupe / Communauté</option>
+                <option value="artisan">Artisan / Commerçant</option>
+              </select>
+            </div>
+            <div class="input-group"><label class="input-label">Usage</label>
+              <select class="input-field" id="a10-di-usage">
+                <option value="livre">Livre collector</option>
+                <option value="expo">Exposition</option>
+                <option value="presse">Presse / Digital</option>
+                <option value="all">Tous droits</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="a10GenDroitImage(this)"><div class="spinner"></div><span class="btn-text">📝 Générer formulaire</span></button>
+          <div id="a10-di-result" style="margin-top:10px"></div>
+        </div>
+
+        <!-- A10: Checklist Juridique Pré-Site -->
+        <div class="card">
+          <div class="card-title">✅ Checklist Juridique Pré-Site <span class="pill pill-amber" style="margin-left:auto;font-size:0.45rem">Claude</span></div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:10px">Points à vérifier avant d'arriver sur chaque site (autorisations, protocoles, restrictions)</div>
+          <div class="input-group"><label class="input-label">Site</label>
+            <select class="input-field" id="a10-cl-site"></select>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="a10GenChecklistSite(this)"><div class="spinner"></div><span class="btn-text">✅ Générer la checklist</span></button>
+          <div id="a10-cl-result" style="margin-top:10px"></div>
+        </div>
+
+        <!-- A10: Contrat Cession de Droits -->
+        <div class="card">
+          <div class="card-title">📜 Contrat Cession de Droits <span class="pill pill-amber" style="margin-left:auto;font-size:0.45rem">Claude</span></div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:10px">Pour ayants droits sur sites culturels, gardiens, descendants d'artisans</div>
+          <div class="input-group"><label class="input-label">Contexte / objet de la cession</label>
+            <textarea class="input-field" id="a10-ces-context" placeholder="ex: Gardien de la Grande Mosquée de Diourbel — autorisation photographier les fresques intérieures pour le livre collector Sénégal V3…" style="min-height:70px"></textarea>
+          </div>
+          <div class="input-group"><label class="input-label">Type de cédant</label>
+            <select class="input-field" id="a10-ces-type">
+              <option value="gardien">Gardien de site / Autorité coutumière</option>
+              <option value="artisan">Artisan (œuvre artisanale)</option>
+              <option value="ayant_droit">Ayant droit / Descendant</option>
+              <option value="institution">Institution culturelle</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="a10GenCession(this)"><div class="spinner"></div><span class="btn-text">📜 Générer le contrat</span></button>
+          <div id="a10-ces-result" style="margin-top:10px"></div>
+        </div>
+
       </div>
 
       <!-- =====================================================
@@ -3641,6 +3753,85 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <div class="card-title">Résumé Parc</div>
           <div class="a11-summary-grid" id="a11-summary-grid"></div>
         </div>
+
+        <!-- A11: Préparer une Tournée -->
+        <div class="card">
+          <div class="card-title">🗓 Préparer une Tournée</div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:10px">Sélectionne les équipements pour une tournée et check-out en une seule opération.</div>
+          <div class="input-group"><label class="input-label">Site de tournée</label>
+            <select class="input-field" id="a11-tournee-site">
+              <option value="">— Sélectionner un site —</option>
+            </select>
+          </div>
+          <div class="input-group"><label class="input-label">Date</label>
+            <input type="date" class="input-field" id="a11-tournee-date">
+          </div>
+          <div class="input-group"><label class="input-label">Équipements (sélection multiple)</label></div>
+          <div class="a11-tournee-list" id="a11-tournee-list">
+            <div style="font-size:12px;color:var(--text-muted);text-align:center;padding:12px">Ajouter du matériel dans le Parc Technique pour le sélectionner ici.</div>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="a11ConfirmTournee(this)"><div class="spinner"></div><span class="btn-text">🚀 Lancer la tournée</span></button>
+          <div id="a11-tournee-result" style="margin-top:8px"></div>
+        </div>
+
+        <!-- A11: Recommandation Claude par Site -->
+        <div class="card">
+          <div class="card-title">🤖 Recommandation par Site <span class="pill pill-amber" style="margin-left:auto;font-size:0.45rem">Claude</span></div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:10px">Claude analyse le terrain, la lumière et les contraintes du site et recommande l'équipement depuis ton parc.</div>
+          <div class="input-group"><label class="input-label">Site</label>
+            <select class="input-field" id="a11-reco-site">
+              <option value="">— Sélectionner un site —</option>
+            </select>
+          </div>
+          <div class="input-group"><label class="input-label">Durée prévue</label>
+            <select class="input-field" id="a11-reco-duree">
+              <option value="demi">Demi-journée</option>
+              <option value="journee" selected>Journée complète</option>
+              <option value="multiday">Plusieurs jours</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="a11RecoSite(this)"><div class="spinner"></div><span class="btn-text">🤖 Obtenir recommandations</span></button>
+          <div id="a11-reco-result" style="margin-top:10px"></div>
+        </div>
+
+        <!-- A11: Calculateur de Capacité Mémoire -->
+        <div class="card">
+          <div class="card-title">💾 Capacité Mémoire</div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:10px">Calcule si tes cartes suffisent pour les jours restants.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="input-group"><label class="input-label">Photos RAW / jour</label>
+              <input type="number" class="input-field" id="a11-mem-photos" value="300" min="1" oninput="a11CalcMemoire()">
+            </div>
+            <div class="input-group"><label class="input-label">Taille RAW (Mo)</label>
+              <input type="number" class="input-field" id="a11-mem-raw" value="45" min="1" oninput="a11CalcMemoire()">
+            </div>
+            <div class="input-group"><label class="input-label">Jours restants</label>
+              <input type="number" class="input-field" id="a11-mem-days" value="59" min="1" oninput="a11CalcMemoire()">
+            </div>
+            <div class="input-group"><label class="input-label">Ratio JPG backup (x)</label>
+              <input type="number" class="input-field" id="a11-mem-jpg" value="1.3" min="1" step="0.1" oninput="a11CalcMemoire()">
+            </div>
+          </div>
+          <div class="a11-mem-grid" id="a11-mem-grid"></div>
+          <div id="a11-mem-alert" style="font-size:12px;margin-top:6px"></div>
+        </div>
+
+        <!-- A11: Checklist Avant Départ -->
+        <div class="card">
+          <div class="card-title">📋 Checklist Avant Départ <span class="pill pill-amber" style="margin-left:auto;font-size:0.45rem">Claude</span></div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:10px">Liste personnalisée pour chaque type de terrain : plage, forêt, mosquée, parc national…</div>
+          <div class="input-group"><label class="input-label">Site</label>
+            <select class="input-field" id="a11-cl-site">
+              <option value="">— Sélectionner un site —</option>
+            </select>
+          </div>
+          <div class="input-group"><label class="input-label">Départ prévu</label>
+            <input type="time" class="input-field" id="a11-cl-heure" value="06:00">
+          </div>
+          <button class="btn btn-primary btn-full" onclick="a11GenChecklistDepart(this)"><div class="spinner"></div><span class="btn-text">📋 Générer la checklist</span></button>
+          <div id="a11-cl-result" style="margin-top:10px"></div>
+        </div>
+
       </div>
 
       <!-- =====================================================
@@ -7728,9 +7919,129 @@ function a10AddJournal(text) {
 }
 
 function initAgent10() {
-  const sel = document.getElementById('a10-new-site');
-  if (sel) { SITES.forEach(s => { const o = document.createElement('option'); o.value = s.id; o.textContent = `[Z${s.zone}] ${s.name}`; sel.appendChild(o); }); }
+  ['a10-new-site','a10-claude-site','a10-di-site','a10-cl-site'].forEach(sid => {
+    const sel = document.getElementById(sid);
+    if (!sel) return;
+    if (sid === 'a10-new-site') {
+      SITES.forEach(s => { const o = document.createElement('option'); o.value = s.id; o.textContent = `[Z${s.zone}] ${s.name}`; sel.appendChild(o); });
+    } else {
+      const first = document.createElement('option'); first.value = ''; first.textContent = '— Sélectionner —'; sel.appendChild(first);
+      a10State.auths.forEach(a => { const o = document.createElement('option'); o.value = a.id; o.textContent = `${a.site}`; sel.appendChild(o); });
+    }
+  });
   a10RenderTable();
+}
+
+/* ── A10 : Claude helpers ── */
+const A10_LEGAL_IDENTITY = `Tu es juriste expert en droit de l'image, droit de la propriété intellectuelle et droit administratif sénégalais. Tu rédiges pour la Mission Documentaire SÉNÉGAL V3 — livre collector 224 pages, 500 exemplaires numérotés. Tes documents sont professionnels, juridiquement solides et adaptés au contexte sénégalais. Tu maîtrises le français juridique et l'arabe standard lorsque requis.`;
+
+async function a10CallClaude(sys, txt, tok) {
+  const res = await fetch('/api/claude', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens: tok||900, system: A10_LEGAL_IDENTITY + '\n\n' + sys, messages:[{role:'user',content:[{type:'text',text:txt}]}] })
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error?.message || data.hint || `HTTP ${res.status}`);
+  return data.content?.[0]?.text || '';
+}
+async function a10CallClaudeJSON(sys, txt, tok) {
+  const raw = await a10CallClaude(sys, txt, tok);
+  try { return JSON.parse(raw); }
+  catch { const m = raw.match(/\{[\s\S]*\}/); if (m) return JSON.parse(m[0]); throw new Error('Réponse non-JSON'); }
+}
+
+/* ── A10 : Relance Claude ── */
+async function a10GenRelanceClaude(btn) {
+  disableBtn(btn);
+  const authId = document.getElementById('a10-claude-site')?.value;
+  const level  = document.getElementById('a10-relance-level')?.value || '1';
+  const lang   = document.getElementById('a10-relance-lang')?.value || 'fr';
+  const div    = document.getElementById('a10-claude-relance-result');
+  const auth   = a10State.auths.find(a => a.id === authId);
+  if (!auth) { showToast('Sélectionner une autorisation', 'warn'); enableBtn(btn); return; }
+  const levelLabel = {1:'première relance — ton cordial mais ferme', 2:'deuxième relance — ton plus pressant, rappel des délais', 3:'troisième relance — ton urgent, mention des contraintes de calendrier terrain'}[level];
+  const langInstr  = lang === 'ar' ? 'Génère d\'abord la version française PUIS la version arabe formelle sous le titre "النسخة العربية".' : 'Génère uniquement la version française.';
+  try {
+    const text = await a10CallClaude('Rédige des courriers de relance officiels. Pas de listes à puces. Registre formel. Adapte le protocole selon le type d\'organisme.',
+      `Site : ${auth.site}\nOrganisme : ${auth.org}\nRéférence : ${auth.ref}\nDate demande initiale : ${auth.date}\nContact : ${auth.contact}\nNiveau : ${levelLabel}\n\n${langInstr}\n\nRédige le courrier de relance complet. Adapte le protocole (Présidence = très formel, Dahira/Mouride = respect islamique, UNESCO = académique, Mairie = administratif, Parc National = environnemental). Mission : livre collector "Sénégal, Terre d'Histoire et de Rencontres", 500 exemplaires, budget 100M FCFA.`, 1100);
+    if (div) div.innerHTML = `<div class="a10-doc-output">${escapeHtml(text)}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard?.writeText(${JSON.stringify(JSON.stringify(text))}).then(()=>showToast('📋 Copié','ok'))">📋 Copier</button>
+        <button class="btn btn-primary btn-sm" onclick="a10MarkRelanceSentDirect('${auth.id}')">📤 Marquer envoyé</button>
+      </div>`;
+    a10AddJournal(`Relance Claude (niveau ${level}) générée : ${auth.site}`);
+    addActivity('✉️', `Relance juridique ${level}ère — ${auth.site}`, now());
+  } catch(e) { if(div) div.innerHTML = `<div style="color:var(--red);font-size:12px">${e.message}</div>`; showToast('Erreur : ' + e.message, 'error'); }
+  enableBtn(btn);
+}
+
+function a10MarkRelanceSentDirect(id) {
+  const a = a10State.auths.find(x => x.id === id);
+  if (a) { a.status = 'encours'; a10RenderTable(); a10AddJournal(`Relance envoyée : ${a.site}`); addActivity('📤', `Relance envoyée : ${a.site}`, now()); saveStateToDB(); showToast('📤 Marqué envoyé', 'ok'); }
+}
+
+/* ── A10 : Droit à l'Image ── */
+async function a10GenDroitImage(btn) {
+  disableBtn(btn);
+  const authId  = document.getElementById('a10-di-site')?.value;
+  const type    = document.getElementById('a10-di-type')?.value || 'adulte';
+  const usage   = document.getElementById('a10-di-usage')?.value || 'livre';
+  const div     = document.getElementById('a10-di-result');
+  const auth    = a10State.auths.find(a => a.id === authId);
+  const site    = auth?.site || (authId ? authId : 'Site documentaire Sénégal');
+  const typeLabel  = {adulte:'personne adulte', mineur:'mineur (signature tuteur légal)', groupe:'groupe ou communauté', artisan:'artisan ou commerçant'}[type];
+  const usageLabel = {livre:'livre collector 500 exemplaires numérotés', expo:'exposition photographique', presse:'presse et digital', all:'tous supports (livre, expo, presse, digital)'}[usage];
+  try {
+    const text = await a10CallClaude('Rédige des formulaires juridiques courts et pratiques pour le terrain. Bilingue français + wolof simple. Court, clair, signable sur place.',
+      `Génère un formulaire de droit à l'image pour :\n- Site : ${site}\n- Type : ${typeLabel}\n- Usage : ${usageLabel}\n- Mission : "Sénégal, Terre d'Histoire et de Rencontres" — édition de prestige, non commerciale, culturelle\n\nFormat : formulaire terrain court (1 page max), avec zones de signature, date, nom. Commence en français, puis version wolof simplifiée. Inclure clause de rétractation 30j.`, 900);
+    if (div) div.innerHTML = `<div class="a10-doc-output">${escapeHtml(text)}</div>
+      <button class="btn btn-ghost btn-sm btn-full" onclick="navigator.clipboard?.writeText(${JSON.stringify(JSON.stringify(text))}).then(()=>showToast('📋 Copié','ok'))">📋 Copier le formulaire</button>`;
+    addActivity('📝', `Droit à l\'image généré — ${site} (${type})`, now());
+  } catch(e) { if(div) div.innerHTML = `<div style="color:var(--red);font-size:12px">${e.message}</div>`; }
+  enableBtn(btn);
+}
+
+/* ── A10 : Checklist Juridique Pré-Site ── */
+async function a10GenChecklistSite(btn) {
+  disableBtn(btn);
+  const authId = document.getElementById('a10-cl-site')?.value;
+  const div    = document.getElementById('a10-cl-result');
+  const auth   = a10State.auths.find(a => a.id === authId);
+  const site   = auth ? SITES.find(s => s.name === auth.site) || {name: auth.site, zone:'?', km:0, days:1} : null;
+  if (!site) { showToast('Sélectionner un site', 'warn'); enableBtn(btn); return; }
+  try {
+    const data = await a10CallClaudeJSON('Génère une checklist juridique terrain. Retourne un JSON uniquement.',
+      `Site : ${auth.site}\nOrganisme : ${auth.org}\nStatut autorisation : ${auth.status}\nZone : ${site.zone}\n\nJSON : {"ok":[{"icon":"✅","text":"point validé","detail":""}],"attention":[{"icon":"⚠️","text":"point à vérifier","detail":""}],"bloquant":[{"icon":"🔴","text":"point bloquant","detail":""}],"protocole":"note de protocole spécifique à ce site (ex: tenue vestimentaire, interdictions photo)"}`, 800);
+    if (div) {
+      const renderItems = (arr, cls) => (arr||[]).map(i => `<div class="a10-checklist-item"><span class="a10-checklist-icon">${i.icon}</span><div class="a10-checklist-text"><b>${i.text}</b>${i.detail ? '<br><span style="font-size:0.58rem;opacity:.7">'+escapeHtml(i.detail)+'</span>' : ''}</div></div>`).join('');
+      div.innerHTML = `<div style="padding:10px;background:var(--surface-1);border-radius:8px">
+        ${data.bloquant?.length ? `<div style="margin-bottom:8px;font-size:11px;color:var(--red);font-weight:600">Points bloquants</div>${renderItems(data.bloquant)}` : ''}
+        ${data.attention?.length ? `<div style="margin:8px 0 4px;font-size:11px;color:var(--amber);font-weight:600">À vérifier</div>${renderItems(data.attention)}` : ''}
+        ${data.ok?.length ? `<div style="margin:8px 0 4px;font-size:11px;color:var(--emerald);font-weight:600">Validé</div>${renderItems(data.ok)}` : ''}
+        ${data.protocole ? `<div style="margin-top:10px;padding:8px;background:rgba(0,242,254,.07);border-radius:6px;font-size:12px;color:var(--cyan)">📌 ${escapeHtml(data.protocole)}</div>` : ''}
+      </div>`;
+    }
+    addActivity('✅', `Checklist juridique générée — ${auth.site}`, now());
+  } catch(e) { if(div) div.innerHTML = `<div style="color:var(--red);font-size:12px">${e.message}</div>`; }
+  enableBtn(btn);
+}
+
+/* ── A10 : Contrat Cession de Droits ── */
+async function a10GenCession(btn) {
+  disableBtn(btn);
+  const context = document.getElementById('a10-ces-context')?.value.trim();
+  const type    = document.getElementById('a10-ces-type')?.value || 'gardien';
+  const div     = document.getElementById('a10-ces-result');
+  if (!context) { showToast('Décrire le contexte de la cession', 'warn'); enableBtn(btn); return; }
+  const typeLabel = {gardien:'Gardien de site / Autorité coutumière', artisan:'Artisan (œuvre artisanale)', ayant_droit:'Ayant droit / Descendant', institution:'Institution culturelle'}[type];
+  try {
+    const text = await a10CallClaude('Rédige des contrats de cession de droits courts, clairs et juridiquement valides selon le droit sénégalais. Français, signable sur place.',
+      `Type de cédant : ${typeLabel}\nContexte : ${context}\n\nRédige un contrat de cession de droits photographiques et d'exploitation d'image/œuvre pour la Mission Documentaire SÉNÉGAL V3. Usage : livre collector 500 exemplaires + exposition culturelle. Rémunération : citation nominative + exemplaire offert. Durée : illimitée territoire mondial. Inclure clauses : objet, cédant/cessionnaire, usage autorisé, territoire, durée, contreparties, droit moral, signatures.`, 1000);
+    if (div) div.innerHTML = `<div class="a10-doc-output">${escapeHtml(text)}</div>
+      <button class="btn btn-ghost btn-sm btn-full" onclick="navigator.clipboard?.writeText(${JSON.stringify(JSON.stringify(text))}).then(()=>showToast('📋 Copié','ok'))">📋 Copier le contrat</button>`;
+    addActivity('📜', `Contrat cession généré — ${typeLabel}`, now());
+  } catch(e) { if(div) div.innerHTML = `<div style="color:var(--red);font-size:12px">${e.message}</div>`; }
+  enableBtn(btn);
 }
 
 /* ============================================================
@@ -7831,6 +8142,7 @@ function a11RenderEquipment() {
   });
   a11RenderSummary();
   a11PopulateSelect();
+  if (typeof a11RenderTourneeList === 'function') a11RenderTourneeList();
 }
 
 function a11RenderSummary() {
@@ -7927,6 +8239,158 @@ function a11SyncAll(evt) {
 function initAgent11() {
   a11RenderEquipment();
   a11RenderBackups();
+  a11CalcMemoire();
+  ['a11-tournee-site','a11-reco-site','a11-cl-site'].forEach(sid => {
+    const sel = document.getElementById(sid);
+    if (!sel) return;
+    SITES.forEach(s => { const o = document.createElement('option'); o.value = s.name; o.textContent = `[Z${s.zone}] ${s.name}`; sel.appendChild(o); });
+  });
+  const today = new Date().toISOString().split('T')[0];
+  const dateEl = document.getElementById('a11-tournee-date');
+  if (dateEl) dateEl.value = today;
+}
+
+/* ── A11 : Claude helpers ── */
+const A11_LOGISTICS_IDENTITY = `Tu es coordinateur logistique expert en missions photographiques documentaires terrain. Tu maîtrises les équipements photo/vidéo professionnels, les contraintes terrain au Sénégal (chaleur, humidité, sable, lumière tropicale), et l'optimisation de la couverture photographique. Mission : SÉNÉGAL V3, 32 sites, 59 jours.`;
+
+async function a11CallClaude(sys, txt, tok) {
+  const res = await fetch('/api/claude', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens: tok||800, system: A11_LOGISTICS_IDENTITY + '\n\n' + sys, messages:[{role:'user',content:[{type:'text',text:txt}]}] })
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error?.message || data.hint || `HTTP ${res.status}`);
+  return data.content?.[0]?.text || '';
+}
+async function a11CallClaudeJSON(sys, txt, tok) {
+  const raw = await a11CallClaude(sys, txt, tok);
+  try { return JSON.parse(raw); }
+  catch { const m = raw.match(/\{[\s\S]*\}/); if (m) return JSON.parse(m[0]); throw new Error('Réponse non-JSON'); }
+}
+
+/* ── A11 : Préparer une Tournée ── */
+function a11RenderTourneeList() {
+  const list = document.getElementById('a11-tournee-list');
+  if (!list) return;
+  if (a11State.equipment.length === 0) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:12px">Ajouter du matériel dans le Parc Technique pour le sélectionner ici.</div>';
+    return;
+  }
+  const available = a11State.equipment.filter(e => e.status === 'operationnel');
+  if (available.length === 0) { list.innerHTML = '<div style="font-size:12px;color:var(--amber);text-align:center;padding:12px">Aucun équipement disponible (tous en tournage ou maintenance).</div>'; return; }
+  list.innerHTML = available.map(e => `
+    <label class="a11-tournee-equip" id="te-${e.id}">
+      <input type="checkbox" id="tec-${e.id}" value="${e.id}" onchange="document.getElementById('te-${e.id}').classList.toggle('selected',this.checked)">
+      <span style="font-size:16px">${e.icon}</span>
+      <span style="flex:1;font-size:0.65rem">${e.name}</span>
+      <span style="font-family:var(--font-mono);font-size:0.45rem;color:var(--text-muted)">${e.type}</span>
+    </label>`).join('');
+}
+
+function a11ConfirmTournee(btn) {
+  disableBtn(btn);
+  const site  = document.getElementById('a11-tournee-site')?.value;
+  const date  = document.getElementById('a11-tournee-date')?.value;
+  const div   = document.getElementById('a11-tournee-result');
+  const selected = [...document.querySelectorAll('#a11-tournee-list input[type=checkbox]:checked')].map(cb => cb.value);
+  if (!site)              { showToast('Sélectionner un site', 'warn'); enableBtn(btn); return; }
+  if (selected.length===0){ showToast('Sélectionner au moins un équipement', 'warn'); enableBtn(btn); return; }
+  const names = [];
+  selected.forEach(id => {
+    const eq = a11State.equipment.find(e => e.id === id);
+    if (eq) { eq.status = 'tournage'; names.push(eq.name); }
+  });
+  a11RenderEquipment();
+  saveStateToDB();
+  if (div) div.innerHTML = `<div style="padding:8px;background:rgba(16,185,129,.1);border-radius:6px;font-size:12px;color:var(--emerald)">✅ Tournée lancée — ${names.length} équipement(s) en check-out pour <b>${site}</b>${date?' le '+date:''}.<br><span style="font-size:11px;opacity:.8">${names.join(', ')}</span></div>`;
+  addActivity('🚀', `Tournée lancée : ${site} — ${names.length} équipements`, now());
+  showToast(`✅ Tournée lancée — ${names.length} équipement(s)`, 'ok');
+  setTimeout(() => enableBtn(btn), 800);
+}
+
+/* ── A11 : Recommandation par Site ── */
+async function a11RecoSite(btn) {
+  disableBtn(btn);
+  const site  = document.getElementById('a11-reco-site')?.value;
+  const duree = document.getElementById('a11-reco-duree')?.value || 'journee';
+  const div   = document.getElementById('a11-reco-result');
+  if (!site) { showToast('Sélectionner un site', 'warn'); enableBtn(btn); return; }
+  const siteObj = SITES.find(s => s.name === site) || {name:site, zone:'?', km:0, days:1};
+  const equip = a11State.equipment.length ? a11State.equipment.map(e => `${e.icon} ${e.name} (${e.type}, statut:${e.status})`).join('\n') : 'Parc vide — liste les équipements recommandés idéaux.';
+  const dureeLabel = {demi:'demi-journée',journee:'journée complète',multiday:'plusieurs jours'}[duree];
+  try {
+    const data = await a11CallClaudeJSON('Analyse terrain et recommande le matériel. Retourne un JSON uniquement.',
+      `Site : ${site}\nZone : ${site.zone||siteObj.zone}\nDistance Dakar : ${siteObj.km} km\nDurée : ${dureeLabel}\n\nParc matériel disponible :\n${equip}\n\nJSON : {"priorite_haute":["matériel indispensable (nom exact du parc)"],"priorite_moyenne":["matériel utile"],"laisser":["matériel inutile ou dangereux pour ce site"],"notes_terrain":"conseils terrain spécifiques (lumière, protections, batteries)","alerte":"contrainte spécifique à ce site (ex: drone interdit à Touba, humidité mangrove Saloum)"}`, 900);
+    if (div) {
+      const section = (arr, label, col) => arr?.length ? `<div style="margin-bottom:8px"><div style="font-size:10px;font-weight:600;color:${col};font-family:var(--font-mono);margin-bottom:4px">${label}</div>${arr.map(i=>`<div style="font-size:12px;padding:3px 0;color:var(--text-secondary)">• ${i}</div>`).join('')}</div>` : '';
+      div.innerHTML = `<div class="a11-reco-output">
+        ${data.alerte ? `<div style="padding:6px 10px;background:rgba(239,68,68,.12);border-radius:6px;color:var(--red);font-size:12px;margin-bottom:10px">⚠️ ${escapeHtml(data.alerte)}</div>` : ''}
+        ${section(data.priorite_haute,'INDISPENSABLE','var(--emerald)')}
+        ${section(data.priorite_moyenne,'UTILE','var(--amber)')}
+        ${section(data.laisser,'LAISSER À LA BASE','var(--text-muted)')}
+        ${data.notes_terrain ? `<div style="margin-top:8px;padding:8px;background:rgba(0,242,254,.07);border-radius:6px;font-size:12px;color:var(--cyan)">📸 ${escapeHtml(data.notes_terrain)}</div>` : ''}
+      </div>`;
+    }
+    addActivity('🤖', `Reco logistique Claude — ${site}`, now());
+  } catch(e) { if(div) div.innerHTML=`<div style="color:var(--red);font-size:12px">${e.message}</div>`; showToast('Erreur : '+e.message,'error'); }
+  enableBtn(btn);
+}
+
+/* ── A11 : Calculateur Mémoire ── */
+function a11CalcMemoire() {
+  const photos = parseFloat(document.getElementById('a11-mem-photos')?.value) || 300;
+  const raw    = parseFloat(document.getElementById('a11-mem-raw')?.value)    || 45;
+  const days   = parseFloat(document.getElementById('a11-mem-days')?.value)   || 59;
+  const jpg    = parseFloat(document.getElementById('a11-mem-jpg')?.value)    || 1.3;
+  const totalRawGo = (photos * raw * days) / 1024;
+  const totalGo    = totalRawGo * jpg;
+  const cardsGo    = a11State.backups.reduce((s,b) => {
+    const m = b.size.match(/(\d+\.?\d*)\s*(Go|To|GB|TB)/i);
+    if (!m) return s;
+    return s + parseFloat(m[1]) * (/To|TB/i.test(m[2]) ? 1024 : 1);
+  }, 0);
+  const grid  = document.getElementById('a11-mem-grid');
+  const alert = document.getElementById('a11-mem-alert');
+  if (grid) grid.innerHTML = `
+    <div class="a11-mem-box"><div class="a11-mem-val" style="color:var(--cyan)">${totalRawGo.toFixed(0)} Go</div><div class="a11-mem-label">RAW nécessaires</div></div>
+    <div class="a11-mem-box"><div class="a11-mem-val" style="color:var(--amber)">${totalGo.toFixed(0)} Go</div><div class="a11-mem-label">Total (RAW+JPG backup)</div></div>
+    <div class="a11-mem-box"><div class="a11-mem-val" style="color:${cardsGo>=totalGo?'var(--emerald)':'var(--red)'}">${cardsGo>0?cardsGo.toFixed(0)+' Go':'—'}</div><div class="a11-mem-label">Cartes enregistrées</div></div>
+    <div class="a11-mem-box"><div class="a11-mem-val" style="color:${cardsGo>=totalGo?'var(--emerald)':'var(--red)'}">${cardsGo>0?(cardsGo>=totalGo?'✅ OK':'❌'):'?'}</div><div class="a11-mem-label">Capacité suffisante</div></div>`;
+  if (alert) {
+    if (cardsGo === 0) alert.innerHTML = `<span style="color:var(--text-muted)">Ajoute tes cartes mémoire dans "Validation Backups" pour calculer la suffisance.</span>`;
+    else if (cardsGo < totalGo) alert.innerHTML = `<span style="color:var(--red)">⚠️ Déficit de ${(totalGo-cardsGo).toFixed(0)} Go — prévoir ${Math.ceil((totalGo-cardsGo)/512)} carte(s) CFexpress 512 Go supplémentaire(s).</span>`;
+    else alert.innerHTML = `<span style="color:var(--emerald)">✅ Capacité suffisante — marge de ${(cardsGo-totalGo).toFixed(0)} Go.</span>`;
+  }
+}
+
+/* ── A11 : Checklist Avant Départ ── */
+async function a11GenChecklistDepart(btn) {
+  disableBtn(btn);
+  const site  = document.getElementById('a11-cl-site')?.value;
+  const heure = document.getElementById('a11-cl-heure')?.value || '06:00';
+  const div   = document.getElementById('a11-cl-result');
+  if (!site) { showToast('Sélectionner un site', 'warn'); enableBtn(btn); return; }
+  const siteObj = SITES.find(s => s.name === site) || {name:site, zone:'?', km:0};
+  const equip = a11State.equipment.filter(e=>e.status==='operationnel').map(e=>`${e.icon} ${e.name}`).join(', ') || 'non renseigné';
+  try {
+    const data = await a11CallClaudeJSON('Génère une checklist opérationnelle pré-départ. JSON uniquement.',
+      `Site : ${site}\nZone : ${siteObj.zone}\nDistance Dakar : ${siteObj.km} km\nHeure départ : ${heure}\nÉquipement disponible : ${equip}\n\nJSON : {"items":[{"priorite":1,"icon":"🔴","texte":"item critique","categorie":"materiel|juridique|preparation|securite"}],"briefing":"phrase de briefing équipe pour ce départ","golden_hour":"conseil heure de lumière idéale pour ce site"}`, 900);
+    if (div) {
+      const pClass = {1:'p1',2:'p2',3:'p3'};
+      const items = (data.items||[]).sort((a,b)=>a.priorite-b.priorite);
+      div.innerHTML = `<div style="padding:10px;background:var(--surface-1);border-radius:8px">
+        ${data.briefing ? `<div style="padding:8px 10px;background:rgba(0,242,254,.07);border-radius:6px;font-size:12px;color:var(--cyan);margin-bottom:10px;font-style:italic">"${escapeHtml(data.briefing)}"</div>` : ''}
+        ${items.map(i=>`<div class="a11-check-item">
+          <span class="a11-check-icon">${i.icon}</span>
+          <span class="a11-check-text">${escapeHtml(i.texte)}</span>
+          <span class="a11-check-priority ${pClass[i.priorite]||'p3'}">${i.categorie?.toUpperCase()||''}</span>
+        </div>`).join('')}
+        ${data.golden_hour ? `<div style="margin-top:10px;padding:8px;background:rgba(245,158,11,.08);border-radius:6px;font-size:12px;color:var(--amber)">🌅 ${escapeHtml(data.golden_hour)}</div>` : ''}
+      </div>`;
+    }
+    addActivity('📋', `Checklist départ générée — ${site} à ${heure}`, now());
+  } catch(e) { if(div) div.innerHTML=`<div style="color:var(--red);font-size:12px">${e.message}</div>`; showToast('Erreur : '+e.message,'error'); }
+  enableBtn(btn);
 }
 
 /* ============================================================
