@@ -1777,6 +1777,140 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 #agent-risk .a17-log-time{font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);white-space:nowrap;flex-shrink:0;margin-top:2px}
 #agent-risk .a17-log-text{font-size:0.63rem;line-height:1.4;flex:1}
 
+/* ============================================================
+   ANIMATION SYSTEM — Vivant · Cinétique · Immersif
+   ============================================================ */
+
+:root {
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* --- Keyframes --- */
+@keyframes card-reveal {
+  from { opacity: 0; transform: translateY(22px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes stat-enter {
+  from { opacity: 0; transform: translateY(6px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes scan-sweep {
+  0%   { transform: translateX(-100%); opacity: 1; }
+  100% { transform: translateX(300%);  opacity: 0; }
+}
+@keyframes vault-reveal {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes badge-pop {
+  0%   { transform: scale(0.7); opacity: 0; }
+  60%  { transform: scale(1.12); }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
+/* --- Panel card entrance stagger --- */
+.panel-entering .card {
+  animation: card-reveal 0.38s var(--ease-out-expo) both;
+  animation-delay: calc(var(--ci, 0) * 45ms);
+}
+
+/* --- Boot stat box stagger --- */
+.stats-grid.booting .stat-box {
+  animation: stat-enter 0.42s var(--ease-out-expo) both;
+}
+.stats-grid.booting .stat-box:nth-child(1) { animation-delay:   0ms; }
+.stats-grid.booting .stat-box:nth-child(2) { animation-delay:  60ms; }
+.stats-grid.booting .stat-box:nth-child(3) { animation-delay: 120ms; }
+.stats-grid.booting .stat-box:nth-child(4) { animation-delay: 180ms; }
+.stats-grid.booting .stat-box:nth-child(5) { animation-delay: 240ms; }
+
+/* --- Header scan line on boot --- */
+#header.scanning::after {
+  content: '';
+  position: absolute; top: 0; left: 0; bottom: 0; width: 35%;
+  background: linear-gradient(90deg, transparent, rgba(0,242,254,0.18), transparent);
+  animation: scan-sweep 1s var(--ease-out-expo) forwards;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* --- Vault unlock reveal --- */
+#agent-coffre .vault-content.unlocked {
+  animation: vault-reveal 0.42s var(--ease-out-expo);
+}
+
+/* --- Button hover/press micro-interactions --- */
+.btn {
+  will-change: transform;
+}
+.btn:hover:not(:disabled) {
+  transform: scale(1.05);
+  filter: brightness(1.15);
+}
+.btn:active:not(:disabled) {
+  transform: scale(0.94);
+  filter: brightness(0.9);
+  transition: transform 0.08s, filter 0.08s, box-shadow var(--t-fast);
+}
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 0 28px rgba(0,242,254,0.55), 0 0 56px rgba(0,242,254,0.2);
+}
+.btn-success:hover:not(:disabled) {
+  box-shadow: 0 0 20px rgba(0,230,118,0.4);
+}
+.btn-danger:hover:not(:disabled) {
+  box-shadow: 0 0 20px rgba(255,82,82,0.4);
+}
+
+/* --- Numpad tactile press --- */
+#agent-coffre .numpad-btn {
+  will-change: transform;
+  transition: all var(--t), transform 0.08s;
+}
+#agent-coffre .numpad-btn:active {
+  transform: scale(0.86);
+  background: rgba(0,242,254,0.18);
+  border-color: var(--cyan);
+  box-shadow: 0 0 20px rgba(0,242,254,0.45), 0 0 40px rgba(0,242,254,0.18);
+}
+
+/* --- Nav button hover --- */
+.nav-btn {
+  transition: color var(--t), transform 0.15s var(--ease-out-quart);
+}
+.nav-btn:hover:not(.active) {
+  color: var(--text-secondary);
+  transform: translateY(-1px);
+}
+
+/* --- Agent tab hover glow --- */
+.agent-tab:hover:not(.active) {
+  color: var(--text-secondary);
+  background: rgba(0,242,254,0.03);
+}
+
+/* --- Nav badge pop-in --- */
+.nav-badge {
+  animation: badge-pop 0.35s var(--ease-out-expo);
+}
+
+/* --- Key action btn hover --- */
+#agent-coffre .key-action-btn:hover {
+  border-color: rgba(0,242,254,0.4);
+  color: var(--text-secondary);
+  background: rgba(0,242,254,0.05);
+}
+
+/* --- prefers-reduced-motion --- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration:        0.01ms !important;
+    animation-iteration-count: 1      !important;
+    transition-duration:       0.01ms !important;
+  }
+}
+
 </style>
 
 </head>
@@ -3897,6 +4031,24 @@ function switchTab(idx) {
   const activeNav = navMap[idx];
   if (activeNav) document.getElementById(activeNav)?.classList.add('active');
   scrollTabIntoView(idx);
+
+  // Panel card entrance stagger — déclenché APRÈS le glissement (0.28s) pour être visible
+  const panels = document.querySelectorAll('.agent-panel');
+  const panel = panels[idx];
+  if (panel) {
+    const cards = panel.querySelectorAll('.card');
+    cards.forEach((el) => { el.style.animation = 'none'; el.style.opacity = '0'; });
+    void panel.offsetWidth;
+    setTimeout(() => {
+      cards.forEach((el, i) => {
+        const delay = i * 70;
+        el.style.opacity = '';
+        el.style.animation = `card-reveal 0.5s cubic-bezier(0.16,1,0.3,1) ${delay}ms both`;
+        setTimeout(() => { el.style.animation = ''; }, 600 + delay);
+      });
+    }, 290);
+  }
+
   if (idx === 17) setTimeout(() => { if (state.leafletMap) state.leafletMap.invalidateSize(); }, 320);
   if (idx === 4) { a5UpdateKPIs(); a5RenderPlan(); }
   if (idx === 4) a5UpdateKPIs();
@@ -4584,6 +4736,13 @@ async function init() {
   setStatus('Système prêt ✓');
   await sleep(600);
   splash.classList.add('hidden');
+
+  // Boot entrance — déclenché APRÈS disparition du splash
+  await sleep(50);
+  const _header = document.getElementById('header');
+  const _statsGrid = _header?.querySelector('.stats-grid');
+  if (_header) { _header.classList.add('scanning'); setTimeout(() => _header.classList.remove('scanning'), 1200); }
+  if (_statsGrid) { _statsGrid.classList.add('booting'); setTimeout(() => _statsGrid.classList.remove('booting'), 900); }
 }
 
 
