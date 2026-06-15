@@ -3118,6 +3118,28 @@ textarea.input-field { resize: vertical; min-height: 80px; }
             <button class="a11-filter-btn" onclick="a11FilterEq('maintenance',this)">🔧 Maintenance</button>
           </div>
           <div id="a11-equip-list"></div>
+          <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="a11ToggleAddForm()">+ Ajouter Équipement</button>
+        </div>
+        <div class="card" id="a11-add-form" style="display:none">
+          <div class="card-title">Nouvel Équipement</div>
+          <div class="input-group"><label class="input-label">Nom</label><input type="text" class="input-field" id="a11-add-name" placeholder="ex: Canon EOS R5" autocomplete="off"></div>
+          <div class="input-group"><label class="input-label">Type</label>
+            <select class="input-field" id="a11-add-type">
+              <option value="Appareil photo">📷 Appareil photo</option>
+              <option value="Objectif">🔭 Objectif</option>
+              <option value="Drone">🚁 Drone</option>
+              <option value="Éclairage">💡 Éclairage</option>
+              <option value="Trépied">🔩 Trépied / Support</option>
+              <option value="Audio">🎙️ Audio</option>
+              <option value="Accessoire">📦 Accessoire</option>
+            </select>
+          </div>
+          <div class="input-group"><label class="input-label">Numéro de série</label><input type="text" class="input-field" id="a11-add-serial" placeholder="ex: SN-001" autocomplete="off"></div>
+          <div class="input-group"><label class="input-label">Note</label><input type="text" class="input-field" id="a11-add-note" placeholder="ex: Corps principal" autocomplete="off"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <button class="btn btn-success" onclick="a11SaveEquip(event)"><div class="spinner"></div><span class="btn-text">💾 Ajouter</span></button>
+            <button class="btn btn-ghost" onclick="a11ToggleAddForm()">Annuler</button>
+          </div>
         </div>
         <div class="card">
           <div class="card-title">Check-In / Check-Out</div>
@@ -3137,7 +3159,17 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <div class="card-title">Validation Backups Cloud</div>
           <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted);margin-bottom:10px;letter-spacing:0.08em">Cartes mémoire à synchroniser · Déduction API automatique</div>
           <div id="a11-backup-list"></div>
-          <button class="btn btn-primary btn-full" style="margin-top:10px" onclick="a11SyncAll(event)"><div class="spinner"></div><span class="btn-text">☁️ Synchroniser Toutes</span></button>
+          <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="a11ToggleBackupForm()">+ Ajouter Carte Mémoire</button>
+          <button class="btn btn-primary btn-full" style="margin-top:6px" onclick="a11SyncAll(event)"><div class="spinner"></div><span class="btn-text">☁️ Synchroniser Toutes</span></button>
+        </div>
+        <div class="card" id="a11-backup-form" style="display:none">
+          <div class="card-title">Nouvelle Carte Mémoire</div>
+          <div class="input-group"><label class="input-label">Nom</label><input type="text" class="input-field" id="a11-bk-name" placeholder="ex: CFexpress 512Go #1" autocomplete="off"></div>
+          <div class="input-group"><label class="input-label">Capacité</label><input type="text" class="input-field" id="a11-bk-size" placeholder="ex: 512 Go" autocomplete="off"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <button class="btn btn-success" onclick="a11SaveBackup(event)"><div class="spinner"></div><span class="btn-text">💾 Ajouter</span></button>
+            <button class="btn btn-ghost" onclick="a11ToggleBackupForm()">Annuler</button>
+          </div>
         </div>
         <div class="card">
           <div class="card-title">Résumé Parc</div>
@@ -5806,27 +5838,71 @@ function initAgent10() {
    ============================================================ */
 const a11State = {
   filter: 'all',
-  equipment: [
-    { id:'e01', name:'Sony Alpha 7R V', type:'Appareil photo', icon:'📷', status:'operationnel', serial:'SN-A7RV-001', note:'Corps principal' },
-    { id:'e02', name:'Sony Alpha 7R V (Backup)', type:'Appareil photo', icon:'📷', status:'operationnel', serial:'SN-A7RV-002', note:'Corps de secours' },
-    { id:'e03', name:'DJI Mavic 3 Pro', type:'Drone', icon:'🚁', status:'operationnel', serial:'DJI-M3P-4471', note:'Drone principal' },
-    { id:'e04', name:'DJI Mini 4 Pro', type:'Drone', icon:'🚁', status:'operationnel', serial:'DJI-M4P-8823', note:'Drone compact' },
-    { id:'e05', name:'Sony FE 24mm f/1.4 GM', type:'Objectif', icon:'🔭', status:'operationnel', serial:'OBJ-24-001', note:'' },
-    { id:'e06', name:'Sony FE 85mm f/1.4 GM', type:'Objectif', icon:'🔭', status:'operationnel', serial:'OBJ-85-001', note:'' },
-    { id:'e07', name:'Sony FE 100-400mm GM', type:'Objectif', icon:'🔭', status:'maintenance', serial:'OBJ-100400-001', note:'Révision optique' },
-    { id:'e08', name:'Trépied Gitzo GT3543LS', type:'Accessoire', icon:'🔩', status:'operationnel', serial:'GIT-001', note:'' },
-    { id:'e09', name:'Chargeurs & Batteries ×12', type:'Accessoire', icon:'🔋', status:'operationnel', serial:'BAT-POOL-01', note:'Stock batteries' },
-    { id:'e10', name:'Réflecteurs Lastolite ×4', type:'Accessoire', icon:'💡', status:'operationnel', serial:'REF-001', note:'' },
-  ],
-  backups: [
-    { id:'bk01', name:'CFexpress A — 512Go #1', size:'512 Go', shots: 0, synced: false },
-    { id:'bk02', name:'CFexpress A — 512Go #2', size:'512 Go', shots: 0, synced: false },
-    { id:'bk03', name:'SD UHS-II — 256Go #1',   size:'256 Go', shots: 0, synced: false },
-    { id:'bk04', name:'SD UHS-II — 256Go #2',   size:'256 Go', shots: 0, synced: false },
-    { id:'bk05', name:'SD UHS-II — 256Go #3',   size:'256 Go', shots: 0, synced: false },
-  ],
+  equipment: [],
+  backups: [],
   log: []
 };
+
+function a11ToggleAddForm() {
+  const f = document.getElementById('a11-add-form');
+  if (!f) return;
+  const open = f.style.display === 'none';
+  f.style.display = open ? 'block' : 'none';
+  if (open) document.getElementById('a11-add-name')?.focus();
+}
+
+function a11SaveEquip(evt) {
+  const btn = evt.currentTarget; disableBtn(btn);
+  const name = document.getElementById('a11-add-name')?.value.trim();
+  const type = document.getElementById('a11-add-type')?.value;
+  const serial = document.getElementById('a11-add-serial')?.value.trim() || '—';
+  const note = document.getElementById('a11-add-note')?.value.trim() || '';
+  if (!name) { showToast('Nom requis', 'warn'); enableBtn(btn); return; }
+  const iconMap = { 'Appareil photo':'📷', 'Objectif':'🔭', 'Drone':'🚁', 'Éclairage':'💡', 'Trépied':'🔩', 'Audio':'🎙️', 'Accessoire':'📦' };
+  a11State.equipment.push({ id:'e_'+Date.now(), name, type, icon: iconMap[type]||'📦', status:'operationnel', serial, note });
+  ['a11-add-name','a11-add-serial','a11-add-note'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  a11RenderEquipment();
+  saveStateToDB();
+  showToast(`✅ ${name} ajouté au parc`, 'ok');
+  a11ToggleAddForm();
+  setTimeout(() => enableBtn(btn), 500);
+}
+
+function a11DeleteEquip(id) {
+  a11State.equipment = a11State.equipment.filter(e => e.id !== id);
+  a11RenderEquipment();
+  saveStateToDB();
+  showToast('Équipement supprimé', 'info');
+}
+
+function a11ToggleBackupForm() {
+  const f = document.getElementById('a11-backup-form');
+  if (!f) return;
+  const open = f.style.display === 'none';
+  f.style.display = open ? 'block' : 'none';
+  if (open) document.getElementById('a11-bk-name')?.focus();
+}
+
+function a11SaveBackup(evt) {
+  const btn = evt.currentTarget; disableBtn(btn);
+  const name = document.getElementById('a11-bk-name')?.value.trim();
+  const size = document.getElementById('a11-bk-size')?.value.trim() || '—';
+  if (!name) { showToast('Nom requis', 'warn'); enableBtn(btn); return; }
+  a11State.backups.push({ id:'bk_'+Date.now(), name, size, shots:0, synced:false });
+  ['a11-bk-name','a11-bk-size'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  a11RenderBackups();
+  saveStateToDB();
+  showToast(`✅ ${name} ajoutée`, 'ok');
+  a11ToggleBackupForm();
+  setTimeout(() => enableBtn(btn), 500);
+}
+
+function a11DeleteBackup(id) {
+  a11State.backups = a11State.backups.filter(b => b.id !== id);
+  a11RenderBackups();
+  saveStateToDB();
+  showToast('Carte supprimée', 'info');
+}
 
 function a11FilterEq(f, el) {
   a11State.filter = f;
@@ -5840,6 +5916,7 @@ function a11RenderEquipment() {
   if (!list) return;
   const items = a11State.filter === 'all' ? a11State.equipment : a11State.equipment.filter(e => e.status === a11State.filter);
   const statusLabel = { operationnel: 'Opérationnel', tournage: 'En tournage', maintenance: 'Maintenance' };
+  if (items.length === 0) { list.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);text-align:center;padding:16px">Aucun équipement — cliquez sur + Ajouter</div>'; a11RenderSummary(); a11PopulateSelect(); return; }
   list.innerHTML = '';
   items.forEach(e => {
     const div = document.createElement('div'); div.className = `a11-equip-item st-${e.status}`;
@@ -5848,7 +5925,8 @@ function a11RenderEquipment() {
         <div class="a11-equip-name">${e.name}</div>
         <div class="a11-equip-meta">${e.type} · ${e.serial}${e.note ? ' · ' + e.note : ''}</div>
       </div>
-      <div class="a11-equip-status">${statusLabel[e.status]}</div>`;
+      <div class="a11-equip-status">${statusLabel[e.status]}</div>
+      <button onclick="a11DeleteEquip('${e.id}')" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:4px;margin-left:4px;flex-shrink:0" title="Supprimer">🗑</button>`;
     list.appendChild(div);
   });
   a11RenderSummary();
@@ -5895,6 +5973,7 @@ function a11CheckOp(evt) {
 function a11RenderBackups() {
   const list = document.getElementById('a11-backup-list');
   if (!list) return;
+  if (a11State.backups.length === 0) { list.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);text-align:center;padding:12px">Aucune carte mémoire — cliquez sur + Ajouter</div>'; return; }
   list.innerHTML = '';
   a11State.backups.forEach(bk => {
     const div = document.createElement('div'); div.className = 'a11-backup-item';
@@ -5906,7 +5985,8 @@ function a11RenderBackups() {
       <label class="a11-switch">
         <input type="checkbox" id="${switchId}" ${bk.synced ? 'checked' : ''} onchange="a11ToggleBackup('${bk.id}',this)">
         <span class="a11-switch-slider"></span>
-      </label>`;
+      </label>
+      <button onclick="a11DeleteBackup('${bk.id}')" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:4px;margin-left:4px;flex-shrink:0" title="Supprimer">🗑</button>`;
     list.appendChild(div);
   });
 }
@@ -5954,14 +6034,7 @@ function initAgent11() {
    ============================================================ */
 const a12State = {
   totalEdition: 500,
-  points: [
-    { id:'pv01', name:'Librairie Aux Quatre Vents',       ville:'Dakar — Plateau',   type:'librairie', alloc:60, vendu:0 },
-    { id:'pv02', name:'Librairie Clairafrique',            ville:'Dakar — Médina',    type:'librairie', alloc:45, vendu:0 },
-    { id:'pv03', name:'Boutique BOMA',                     ville:'Dakar — Almadies',  type:'boutique',  alloc:30, vendu:0 },
-    { id:'pv04', name:'Musée des Civilisations Noires',   ville:'Dakar',             type:'musee',     alloc:25, vendu:0 },
-    { id:'pv05', name:'Hôtel Terrou-Bi',                   ville:'Dakar — Corniche',  type:'hotel',     alloc:20, vendu:0 },
-    { id:'pv06', name:'Librairie Saint-Louis',             ville:'Saint-Louis',       type:'librairie', alloc:20, vendu:0 },
-  ],
+  points: [],
   seuil: 5
 };
 
