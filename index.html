@@ -770,6 +770,9 @@ textarea.input-field { resize: vertical; min-height: 80px; }
   color:var(--amber); background:rgba(255,171,64,0.12); border:1px solid rgba(255,171,64,0.3);
   border-radius:var(--r-sm); padding:2px 6px; margin-bottom:6px;
 }
+#agent-cm .plat-tab.active-facebook { border-color:#1877f2; color:#1877f2; background:rgba(24,119,242,0.08); }
+#agent-cm .cm-action-bar { margin-top:2px; }
+#agent-cm .cm-make-status { font-family:var(--font-mono);font-size:0.45rem;color:var(--text-muted);text-align:center;margin-top:4px;min-height:12px; }
 
 /* ============================================================
    AGENT 4: CONTRÔLE FINANCIER — #agent-financier
@@ -2244,9 +2247,13 @@ textarea.input-field { resize: vertical; min-height: 80px; }
             <button class="plat-tab" data-plat="instagram" onclick="selectPlatform('instagram',this)">
               <svg width="14" height="14" fill="url(#igGrad)" viewBox="0 0 24 24">
                 <defs><linearGradient id="igGrad" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="25%" stop-color="#e6683c"/><stop offset="50%" stop-color="#dc2743"/><stop offset="75%" stop-color="#cc2366"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs>
-                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/>
+                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/>
               </svg>
               Instagram
+            </button>
+            <button class="plat-tab" data-plat="facebook" onclick="selectPlatform('facebook',this)">
+              <svg width="14" height="14" fill="#1877f2" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+              Facebook
             </button>
           </div>
         </div>
@@ -2313,6 +2320,15 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <div class="preview-box" id="content-preview">
             <div class="preview-empty">Sélectionner un site et générer le contenu…</div>
           </div>
+        </div>
+
+        <!-- Action Bar — visible après génération -->
+        <div class="cm-action-bar" id="cm-action-bar" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="cmOpenSocial()">🔗 Ouvrir <span id="cm-plat-label">Instagram</span></button>
+            <button class="btn btn-ghost btn-sm" onclick="cmSendToMake()">📤 Envoyer à Make.com</button>
+          </div>
+          <div class="cm-make-status" id="cm-make-status"></div>
         </div>
 
         <!-- History -->
@@ -4326,6 +4342,7 @@ function checkPin() {
     state.vaultUnlocked = true;
     document.getElementById('vault-lock-card').style.display = 'none';
     document.getElementById('vault-content-area').classList.add('unlocked');
+    vaultPrePopulateSocial();
     renderVaultKeys();
     showToast('🔓 Coffre déverrouillé', 'ok');
     // Force le changement du PIN par défaut au premier usage
@@ -4479,6 +4496,16 @@ const CM_TEMPLATES = {
     const t = texts[tone] || texts['informative'];
     return { text: t, hashtags: '', meta: `Réseau professionnel · Format recommandé : 1200-2000 caractères · Image haute résolution conseillée` };
   },
+  facebook: (site, tone) => {
+    const texts = {
+      inspiring: `Je suis debout depuis 5h pour être à ${site.name} au lever du soleil.\n\nZone ${site.zone}. Site ${site.id} sur 32. Et franchement — ça valait chaque kilomètre parcouru.\n\nOn tourne un documentaire sur le Sénégal. 32 sites. 59 jours terrain. Un livre qui sera collector.\n\nSi tu veux suivre l'aventure, partage ce post. 🙏`,
+      informative: `📍 Mise à jour mission — ${site.name}\n\nSite ${site.id}/32 · Zone ${site.zone} · ${site.km}km de Dakar · ${site.days} jour${site.days>1?'s':''} sur place\n\nOn avance. Chaque site est un chapitre. Chaque photo une preuve que ce pays mérite mieux qu'une brochure touristique.\n\nLe livre sort en 2027. Laissez "intéressé" en commentaire 👇`,
+      exciting: `ON EST À ${site.name.toUpperCase()} ET C'EST INCROYABLE 🔥\n\nSite ${site.id} sur 32. Zone ${site.zone}. ${site.km}km. ${site.days} jour${site.days>1?'s':''}.\n\nOn ne s'arrête pas.\n\nTagguez quelqu'un qui doit voir ça 👇`,
+      cultural: `${site.name} — Zone ${site.zone}\n\nIl y a des endroits qui te changent. Pas de façon dramatique. Juste... tu repars différent.\n\n${site.days} jour${site.days>1?'s':''} sur place. ${site.km}km depuis Dakar. Et des images qu'on n'oubliera pas.\n\nCe documentaire, c'est pour garder vivante cette mémoire. 🇸🇳`,
+      promotional: `🎬 TOURNAGE EN COURS — ${site.name}\n\nSite ${site.id} sur 32. Le livre documentaire sur le Sénégal le plus ambitieux jamais produit avance.\n\n📖 500 exemplaires · 32 sites · 100M FCFA de production\n✅ Précommandes ouvertes\n\nLaisser "intéressé" en commentaire et on vous contacte 👇`
+    };
+    return { text: texts[tone] || texts['informative'], hashtags: `#Sénégal #${site.name.replace(/[^\w]/g,'')} #Documentaire #Afrique #WestAfrica #${site.zone==='A'?'Dakar':site.zone==='C'?'Casamance':'Sénégal'}`, meta: `Réseau communautaire · Post texte ou carrousel · Épingler les annonces importantes` };
+  },
   instagram: (site, tone) => {
     const captions = { inspiring:`✨ ${site.name}\n\nCertains endroits ne se décrivent pas. Ils se ressentent.\n\nZone ${site.zone} · Site ${site.id} sur 32\n${site.coords[0].toFixed(4)}°N · ${site.days}j de tournage\n\nCe documentaire est pour vous 🎬\n\n📖 Lien en bio pour précommander`, informative:`📍 ${site.name}\n\n🗺 Zone ${site.zone} · Site ${site.id}/32\n📏 ${site.km}km de Dakar\n⏱ ${site.days} jour${site.days>1?'s':''} sur place\n\nNotre équipe capture l'essence de chaque lieu pour un livre documentaire exceptionnel sur le Sénégal.\n\n📖 32 sites · 100M FCFA · 2027`, exciting:`🔥🔥🔥 ${site.name.toUpperCase()}\n\nON EST LÀ ET C'EST INSANE 🎥\n\nZone ${site.zone} · ${site.km}km · ${site.days}j\n32 SITES. 5400KM. UN LIVRE. 💥\n\nSave this post si tu veux être notifié !\n#VenirVite`, cultural:`🌍 ${site.name}\n\nUne page de l'histoire de l'Afrique de l'Ouest.\nZone ${site.zone}, à ${site.km}km de Dakar.\n\nNotre documentaire raconte ces histoires que le monde doit connaître.\n\n📖 Réservation ouverte — lien en bio`, promotional:`🎬 TOURNAGE EN COURS 📸\n\n${site.name} — Zone ${site.zone}\n\nDevenez les premiers à tenir entre vos mains le documentaire photographique le plus ambitieux jamais réalisé sur le Sénégal.\n\n👉 Lien de précommande en bio\n🔔 Activez les notifications !` };
     return { text: captions[tone] || captions['informative'], hashtags: `#Sénégal #Dakar #Afrique #${site.zone==='A'?'Dakar':site.zone==='C'?'Casamance':site.zone==='D'?'Kédougou':'Sénégal'} #Documentary #Photography #AfriqueOuest #${site.name.replace(/[^\w]/g,'')} #WestAfrica #NatGeoAfrica #DiscoverAfrica`, meta: `Format : Carré 1080×1080 ou Portrait 4:5 · Premier commentaire : hashtags secondaires` };
@@ -4502,11 +4529,13 @@ function generateContent() {
     if (plat === 'tiktok') content = CM_TEMPLATES.tiktok(site, tone);
     else if (plat === 'youtube') content = CM_TEMPLATES.youtube(site, tone, duration);
     else if (plat === 'linkedin') content = CM_TEMPLATES.linkedin(site, tone);
+    else if (plat === 'facebook') content = CM_TEMPLATES.facebook(site, tone);
     else content = CM_TEMPLATES.instagram(site, tone);
     preview.className = 'preview-box';
-    const platColors = { tiktok:'#ee1d52', youtube:'#ff0000', linkedin:'#4fc3f7', instagram:'#e1306c' };
+    const platColors = { tiktok:'#ee1d52', youtube:'#ff0000', linkedin:'#4fc3f7', instagram:'#e1306c', facebook:'#1877f2' };
     preview.innerHTML = `<div class="preview-platform-badge" style="color:${platColors[plat]}">▶ ${plat.toUpperCase()} · ${site.name}</div><div class="preview-text">${(content.title ? `<strong>${content.title}</strong>\n\n` : '') + content.text}</div>${content.hashtags ? `<div class="preview-hashtags">${content.hashtags}</div>` : ''}<div class="preview-meta">${content.meta}</div>`;
     document.getElementById('copy-btn').style.display = 'inline-flex';
+    cmShowActionBar(plat, content);
     const histEntry = { plat, siteName: site.name, preview: content.text.substring(0,60), full: content, ts: Date.now() };
     state.cmHistory.unshift(histEntry);
     if (state.cmHistory.length > 10) state.cmHistory.pop();
@@ -4538,6 +4567,92 @@ function renderCMHistory() {
     };
     list.appendChild(div);
   });
+}
+
+/* ============================================================
+   CM — ACTION BAR (Ouvrir réseau / Make.com)
+   ============================================================ */
+let cmCurrentGeneration = null; // { plat, content } — pour les boutons d'action
+
+function cmShowActionBar(plat, content) {
+  cmCurrentGeneration = { plat, content };
+  const bar = document.getElementById('cm-action-bar');
+  if (!bar) return;
+  const platNames = { tiktok:'TikTok', youtube:'YouTube', linkedin:'LinkedIn', instagram:'Instagram', facebook:'Facebook' };
+  const label = document.getElementById('cm-plat-label');
+  if (label) label.textContent = platNames[plat] || plat;
+  bar.style.display = 'block';
+  const statusEl = document.getElementById('cm-make-status');
+  if (statusEl) statusEl.textContent = '';
+}
+
+function getVaultValue(name) {
+  if (!state.vaultUnlocked) return null;
+  for (const cat of ['social','whatsapp','cloud','maps']) {
+    const found = (state.vault[cat] || []).find(e => e.name === name);
+    if (found) return found.value || null;
+  }
+  return null;
+}
+
+function cmOpenSocial() {
+  const plat = cmCurrentGeneration?.plat;
+  if (!plat) return;
+  const keyMap = { tiktok:'TIKTOK_URL', youtube:'YOUTUBE_URL', linkedin:'LINKEDIN_URL', instagram:'INSTAGRAM_URL', facebook:'FACEBOOK_URL' };
+  const url = getVaultValue(keyMap[plat]);
+  if (!url) {
+    showToast('URL non configurée — ouvrez le Vault (A2) et complétez la section Réseaux Sociaux', 'warn');
+    return;
+  }
+  window.open(url, '_blank', 'noopener');
+}
+
+async function cmSendToMake() {
+  const gen = cmCurrentGeneration;
+  if (!gen) return;
+  const webhook = getVaultValue('MAKE_CM_WEBHOOK');
+  if (!webhook) {
+    showToast('MAKE_CM_WEBHOOK non configuré dans le Vault (A2)', 'warn');
+    return;
+  }
+  const statusEl = document.getElementById('cm-make-status');
+  if (statusEl) statusEl.textContent = '⏳ Envoi en cours…';
+  try {
+    const payload = {
+      platform: gen.plat,
+      title:    gen.content.title || '',
+      text:     gen.content.text  || '',
+      hashtags: gen.content.hashtags || '',
+      meta:     gen.content.meta || '',
+      sent_at:  new Date().toISOString()
+    };
+    const res = await fetch(webhook, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    if (res.ok) {
+      if (statusEl) statusEl.textContent = '✅ Contenu envoyé à Make.com';
+      showToast('📤 Contenu envoyé à Make.com', 'ok');
+      addActivity('📤', `Contenu ${gen.plat.toUpperCase()} envoyé à Make.com`, 'À l\'instant');
+    } else {
+      throw new Error(`HTTP ${res.status}`);
+    }
+  } catch (err) {
+    if (statusEl) statusEl.textContent = `❌ Erreur : ${err.message}`;
+    showToast(`Make.com — erreur : ${err.message}`, 'error');
+  }
+}
+
+function vaultPrePopulateSocial() {
+  if (!state.vault.social) state.vault.social = [];
+  if (state.vault.social.length > 0) return;
+  const defaults = [
+    { name:'INSTAGRAM_URL',    value:'https://instagram.com/VOTRE_COMPTE' },
+    { name:'TIKTOK_URL',       value:'https://tiktok.com/@VOTRE_COMPTE' },
+    { name:'YOUTUBE_URL',      value:'https://youtube.com/@VOTRE_CHAINE' },
+    { name:'LINKEDIN_URL',     value:'https://linkedin.com/company/VOTRE_ORG' },
+    { name:'FACEBOOK_URL',     value:'https://facebook.com/VOTRE_PAGE' },
+    { name:'MAKE_CM_WEBHOOK',  value:'' },
+  ];
+  defaults.forEach(d => state.vault.social.push(d));
+  saveStateToDB();
 }
 
 /* ============================================================
@@ -4596,30 +4711,46 @@ async function cmGenerateFromPhoto(btn) {
   previewEl.className  = 'preview-box loading';
   previewEl.innerHTML  = '<div class="preview-empty">Claude Vision analyse votre photo terrain…</div>';
 
-  const systemPrompt = `Tu es le Community Manager d'une mission documentaire photographique au Sénégal (livre collector 32 sites, 100 M FCFA de production, sortie 2027). Tu génères du contenu authentique basé sur les photos réelles du terrain.`;
+  const systemPrompt = `Tu es photographe-documentariste et community manager de la mission SÉNÉGAL V3 (livre collector, 32 sites, 100M FCFA, sortie 2027). Tu écris depuis le terrain, en immersion totale.
 
-  const userPrompt = `Site : "${siteName}" ${siteZone}. Tonalité : ${toneLabels[tone] || 'inspirant'}.
+RÈGLES D'ÉCRITURE HUMAINE — OBLIGATOIRES :
+- Première personne systématique : "j'étais là", "on a filmé ça ce matin", "ce que j'ai vu"
+- Varie la longueur des phrases : courtes. Très courtes. Puis une phrase plus longue et descriptive qui ancre le lecteur dans la scène.
+- Inclure UN détail ultra-précis visible dans la photo : une couleur exacte, une texture, un geste, un reflet, une expression
+- Langage naturel, jamais corporatif : "franchement", "honnêtement", "c'est dingue", "on n'attendait pas ça"
+- Commencer par quelque chose d'inattendu — jamais une question rhétorique
+- MOTS INTERDITS : "découvrez", "incontournable", "paradis", "unique en son genre", "n'attendez plus", "pépite", "authenticité"
+- TikTok/Instagram : brut, direct, comme si tu envoyais un message vocal transcrit à un ami
+- LinkedIn : réflexion personnelle d'un pro en pleine mission, sans langue de bois
+- YouTube : voix de narrateur documentaire, descriptions cinématographiques et sensorielles
+- Facebook : chaleureux et communautaire, entre ami proche et grand public, invitation naturelle à partager`;
 
-Analyse attentivement cette photo de terrain et génère du contenu social media ORIGINAL basé sur ce que tu vois réellement (lumière, ambiance, sujets, couleurs, contexte).
+  const userPrompt = `Site : "${siteName}" ${siteZone}. Tonalité souhaitée : ${toneLabels[tone] || 'inspirant'}.
+
+Analyse cette photo de terrain avec soin. Repère ce qui est unique dans CETTE image précise.
 
 Réponds UNIQUEMENT avec ce JSON valide, sans markdown ni backticks :
 {
-  "description": "Description précise de la photo (2 phrases)",
+  "description": "Ce que tu vois dans cette photo — 2 phrases précises avec détails concrets",
   "tiktok": {
-    "hook": "Accroche première ligne (max 80 car.)",
-    "text": "Corps du post (4-5 lignes, avec emojis)",
-    "hashtags": "8 hashtags pertinents"
+    "hook": "Première ligne accrocheuse et inattendue (max 80 car.)",
+    "text": "Corps du post (4-5 lignes authentiques, avec emojis naturels)",
+    "hashtags": "8 hashtags pertinents mix FR/EN"
   },
   "youtube": {
-    "title": "Titre SEO optimisé (max 70 car.)",
-    "description": "Description chaîne (6-8 lignes avec emojis et contexte mission)"
+    "title": "Titre narratif et SEO (max 70 car.)",
+    "description": "Description immersive (6-8 lignes, style documentaire, emojis contextuels)"
   },
   "linkedin": {
-    "text": "Post professionnel impactant (7-9 lignes, ton expert)"
+    "text": "Réflexion pro depuis le terrain (7-9 lignes, ton humain expert, pas corporate)"
   },
   "instagram": {
-    "caption": "Légende engageante (5-7 lignes avec emojis)",
-    "hashtags": "12 hashtags mix FR/EN"
+    "caption": "Légende authentique (5-7 lignes avec emojis naturels)",
+    "hashtags": "12 hashtags mix FR/EN/Wolof"
+  },
+  "facebook": {
+    "text": "Post chaleureux communautaire (5-7 lignes, invitation à partager)",
+    "hashtags": "6 hashtags grand public"
   }
 }`;
 
@@ -4629,7 +4760,7 @@ Réponds UNIQUEMENT avec ce JSON valide, sans markdown ni backticks :
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1400,
+        max_tokens: 1600,
         messages: [{
           role: 'user',
           content: [
@@ -4650,21 +4781,23 @@ Réponds UNIQUEMENT avec ce JSON valide, sans markdown ni backticks :
     catch { const m = raw.match(/\{[\s\S]*\}/); content = m ? JSON.parse(m[0]) : null; }
     if (!content) throw new Error('Réponse Claude non parseable — réessayez');
 
-    const platColors = { tiktok:'#ee1d52', youtube:'#ff0000', linkedin:'#4fc3f7', instagram:'#e1306c' };
+    const platColors = { tiktok:'#ee1d52', youtube:'#ff0000', linkedin:'#4fc3f7', instagram:'#e1306c', facebook:'#1877f2' };
     let displayText = '', displayTitle = '', displayHash = '';
 
     if (plat === 'tiktok') {
-      displayTitle = '';
-      displayText  = `${content.tiktok.hook}\n\n${content.tiktok.text}`;
-      displayHash  = content.tiktok.hashtags;
+      displayText = `${content.tiktok.hook}\n\n${content.tiktok.text}`;
+      displayHash = content.tiktok.hashtags;
     } else if (plat === 'youtube') {
       displayTitle = content.youtube.title;
       displayText  = content.youtube.description;
     } else if (plat === 'linkedin') {
-      displayText  = content.linkedin.text;
+      displayText = content.linkedin.text;
+    } else if (plat === 'facebook') {
+      displayText = content.facebook.text;
+      displayHash = content.facebook.hashtags;
     } else {
-      displayText  = content.instagram.caption;
-      displayHash  = content.instagram.hashtags;
+      displayText = content.instagram.caption;
+      displayHash = content.instagram.hashtags;
     }
 
     previewEl.className = 'preview-box';
@@ -4674,12 +4807,13 @@ Réponds UNIQUEMENT avec ce JSON valide, sans markdown ni backticks :
       ${displayTitle ? `<strong style="display:block;margin-bottom:8px;font-size:0.72rem">${displayTitle}</strong>` : ''}
       <div class="preview-text">${displayText}</div>
       ${displayHash ? `<div class="preview-hashtags">${displayHash}</div>` : ''}
-      <div class="preview-meta">Généré par Claude Haiku · Basé sur analyse visuelle réelle</div>`;
+      <div class="preview-meta">Claude Haiku · Écriture humaine · Analyse visuelle réelle</div>`;
 
     document.getElementById('copy-btn').style.display = 'inline-flex';
     statusEl.textContent = '✅ Contenu généré avec succès';
 
     const full = { text: displayText, title: displayTitle, hashtags: displayHash, meta: `IA · ${content.description}` };
+    cmShowActionBar(plat, full);
     state.cmHistory.unshift({ plat, siteName, preview: displayText.substring(0,60), full, ts: Date.now(), ia: true });
     if (state.cmHistory.length > 10) state.cmHistory.pop();
     renderCMHistory();
