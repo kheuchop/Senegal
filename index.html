@@ -1282,6 +1282,29 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 #agent-direction-artistique .a6-seq-site { font-weight: 600; color: var(--text-primary); }
 #agent-direction-artistique .a6-seq-chap { font-family: var(--font-mono); font-size: 0.48rem; color: var(--amber); margin-top: 2px; }
 #agent-direction-artistique .a6-seq-trans { font-size: 0.55rem; color: var(--text-muted); font-style: italic; margin-top: 2px; }
+/* A6: Galerie du Livre */
+#agent-direction-artistique .a6-gallery-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+#agent-direction-artistique .a6-gallery-item{position:relative;border-radius:var(--r-sm);overflow:hidden;background:var(--bg-card-2);border:1px solid var(--border)}
+#agent-direction-artistique .a6-gallery-thumb{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
+#agent-direction-artistique .a6-gallery-label{padding:5px 6px;font-family:var(--font-mono);font-size:0.44rem;color:var(--text-muted);line-height:1.3}
+#agent-direction-artistique .a6-gallery-rm{position:absolute;top:3px;right:3px;width:18px;height:18px;background:rgba(255,82,82,0.85);color:#fff;border:none;border-radius:50%;cursor:pointer;font-size:11px;line-height:18px;text-align:center;padding:0}
+#agent-direction-artistique .a6-gallery-empty{text-align:center;font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted);padding:20px 0}
+/* A6: Maquette */
+#agent-direction-artistique .a6-maq-page{display:flex;align-items:flex-start;gap:8px;padding:8px;background:var(--bg-card-2);border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:6px}
+#agent-direction-artistique .a6-maq-num{font-family:var(--font-display);font-size:0.52rem;color:var(--text-muted);min-width:30px;padding-top:1px}
+#agent-direction-artistique .a6-maq-type{font-family:var(--font-mono);font-size:0.44rem;color:var(--cyan);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:2px}
+#agent-direction-artistique .a6-maq-desc{font-size:0.56rem;color:var(--text-secondary);line-height:1.4}
+#agent-direction-artistique .a6-maq-caption{font-family:var(--font-mono);font-size:0.43rem;color:var(--text-muted);margin-top:2px;font-style:italic}
+/* A6: Recommandations Matériel */
+#agent-direction-artistique .a6-erec-cat{font-family:var(--font-mono);font-size:0.46rem;letter-spacing:0.08em;color:var(--amber);margin:10px 0 5px;text-transform:uppercase}
+#agent-direction-artistique .a6-erec-item{display:flex;align-items:flex-start;gap:6px;margin-bottom:6px;padding:6px 8px;background:var(--bg-card-2);border-radius:var(--r-xs)}
+#agent-direction-artistique .a6-erec-prio{font-family:var(--font-mono);font-size:0.42rem;padding:2px 6px;border-radius:10px;flex-shrink:0;margin-top:2px;white-space:nowrap}
+#agent-direction-artistique .prio-essentiel{color:var(--emerald);background:rgba(0,230,118,0.1);border:1px solid rgba(0,230,118,0.2)}
+#agent-direction-artistique .prio-recommande{color:var(--amber);background:rgba(255,171,64,0.1);border:1px solid rgba(255,171,64,0.2)}
+#agent-direction-artistique .prio-optionnel{color:var(--text-muted);background:rgba(55,77,110,0.15);border:1px solid var(--border)}
+#agent-direction-artistique .a6-erec-body{flex:1;min-width:0}
+#agent-direction-artistique .a6-erec-name{font-size:0.6rem;font-weight:600;color:var(--text-primary);margin-bottom:2px}
+#agent-direction-artistique .a6-erec-why{font-size:0.52rem;color:var(--text-secondary);line-height:1.4}
 
 /* ============================================================
    AGENT 7 — RÉDACTEUR-TRADUCTEUR — CSS Scopé #agent-redacteur
@@ -2817,6 +2840,62 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <div id="a6-seq-result" style="margin-top:8px"></div>
         </div>
 
+        <!-- A6-IA-6 : Galerie du Livre -->
+        <div class="card">
+          <div class="card-title">📚 Galerie du Livre <span class="pill pill-cyan" id="a6-gallery-count" style="margin-left:auto;font-size:0.45rem">0 photo</span></div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:8px">Photos sélectionnées par Claude via «Meilleure Photo». Elles seront intégrées à la maquette.</div>
+          <div class="a6-gallery-grid" id="a6-gallery-grid">
+            <div class="a6-gallery-empty" id="a6-gallery-empty">Aucune photo encore. Utilisez «Meilleure Photo» et cliquez «Ajouter au livre».</div>
+          </div>
+        </div>
+
+        <!-- A6-IA-7 : Maquette du Livre -->
+        <div class="card">
+          <div class="card-title">📐 Maquette du Livre <span class="pill pill-amber" style="margin-left:auto;font-size:0.45rem">Claude</span></div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:8px">Claude conçoit la structure page à page : photos pleine page, doubles pages, légendes, chapitres, sponsors.</div>
+          <div class="input-group">
+            <label class="input-label">Langue(s) du livre</label>
+            <select class="input-field" id="a6-maq-lang">
+              <option value="fr">Français uniquement</option>
+              <option value="fr_en" selected>Bilingue Français + Anglais</option>
+              <option value="fr_en_ar">Trilingue FR + EN + AR</option>
+              <option value="en">English only</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Nombre de pages cible</label>
+            <select class="input-field" id="a6-maq-pages">
+              <option value="128">128 pages</option>
+              <option value="160" selected>160 pages</option>
+              <option value="200">200 pages</option>
+              <option value="240">240 pages</option>
+              <option value="288">288 pages</option>
+            </select>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="a6GenMaquette(this)">
+              <div class="spinner"></div><span class="btn-text">📐 Générer maquette</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" id="a6-maq-copy" onclick="a6MaquetteCopy()" style="display:none">📋 Copier</button>
+          </div>
+          <div id="a6-maq-result" style="margin-top:8px"></div>
+        </div>
+
+        <!-- A6-IA-8 : Recommandations Matériel -->
+        <div class="card">
+          <div class="card-title">🛍️ Recommandations Matériel <span class="pill pill-amber" style="margin-left:auto;font-size:0.45rem">Claude</span></div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:8px">Claude analyse les 32 sites et recommande le matériel idéal. Avec ou sans parc existant.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="a6GenEquipmentRecs(this,'mission')">
+              <div class="spinner"></div><span class="btn-text">🎒 Besoins mission</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="a6GenEquipmentRecs(this,'optimize')">
+              <div class="spinner"></div><span class="btn-text">🔧 Optimiser mon parc</span>
+            </button>
+          </div>
+          <div id="a6-erec-result" style="margin-top:8px"></div>
+        </div>
+
       </div><!-- /agent-direction-artistique -->
 
       <!-- =====================================================
@@ -3966,6 +4045,7 @@ function saveStateToDB() {
       cmHistory:      state.cmHistory,
       a5Sessions:     a5State.sessions,
       a6Briefs:       a6State.briefs,
+      a6BookGallery:  a6State.bookGallery,
       a7Library:      a7State.library,
       a8History:      a8State.history,
       a16Raised:      a16State.raised,
@@ -4007,6 +4087,7 @@ async function loadStateFromDB() {
     if (Array.isArray(d.cmHistory))    state.cmHistory         = d.cmHistory;
     if (Array.isArray(d.a5Sessions))   a5State.sessions        = d.a5Sessions;
     if (Array.isArray(d.a6Briefs))     a6State.briefs          = d.a6Briefs;
+    if (Array.isArray(d.a6BookGallery)) a6State.bookGallery    = d.a6BookGallery;
     if (Array.isArray(d.a7Library))    a7State.library         = d.a7Library;
     if (Array.isArray(d.a8History))    a8State.history         = d.a8History;
     if (d.a16Raised    !== undefined)  a16State.raised        = d.a16Raised;
@@ -5486,7 +5567,7 @@ function initAgent5() {
 /* ============================================================
    AGENT 6 — DIRECTION ARTISTIQUE
    ============================================================ */
-const a6State = { style: 'natgeo', briefs: [], currentBrief: null, currentPrompt: null };
+const a6State = { style: 'natgeo', briefs: [], currentBrief: null, currentPrompt: null, bookGallery: [] };
 
 const A6_STYLE_PARAMS = {
   natgeo:  { label:'National Geographic', lens:'85mm f/1.4', iso:'ISO 100-400', light:'Lumière naturelle dorée, contre-jour maîtrisé', tech:'Règle des tiers stricte, profondeur de champ sélective', mood:'Grandiose & intemporel' },
@@ -5613,6 +5694,7 @@ function initAgent6() {
     if (card) card.style.display = 'block';
     if (list) { list.innerHTML = ''; a6State.briefs.slice(0, 6).forEach(b => { const div = document.createElement('div'); div.className = 'a6-archive-item'; div.innerHTML = `<div class="a6-arch-title">${b.site} · ${b.style}</div><div class="a6-arch-preview">${new Date(b.ts).toLocaleString('fr-FR')}</div>`; list.appendChild(div); }); }
   }
+  a6RenderGallery();
 }
 
 /* ============================================================
@@ -5634,18 +5716,38 @@ function a6ReadFile(file) {
   });
 }
 
+function a6GetEquipmentContext() {
+  if (!a11State.equipment || a11State.equipment.length === 0) return '';
+  const list = a11State.equipment.map(e => `${e.name} (${e.type}, ${e.status})`).join(', ');
+  return `\nMatériel disponible : ${list}.`;
+}
+
 function a6GetBriefText() {
   const b  = a6State.currentBrief;
   const sp = A6_STYLE_PARAMS[a6State.style] || A6_STYLE_PARAMS.natgeo;
-  if (!b) return `Style: ${sp.label}\nOptique: ${sp.lens}\nISO: ${sp.iso}\nLumière: ${sp.light}\nTechnique: ${sp.tech}\nPalette: Or Teranga #C4872A, Bleu Dakar #1A3A5C, Latérite #D4522A`;
-  return `Site: ${b.site}\nStyle: ${b.style}\nOptique: ${sp.lens}\nISO: ${sp.iso}\nLumière: ${sp.light}\nTechnique: ${sp.tech}\nPalette: Or Teranga #C4872A, Bleu Dakar #1A3A5C, Latérite #D4522A\nFormat cible: Double page 420x315mm 300 DPI`;
+  const equip = a6GetEquipmentContext();
+  if (!b) return `Style: ${sp.label}\nOptique: ${sp.lens}\nISO: ${sp.iso}\nLumière: ${sp.light}\nTechnique: ${sp.tech}\nPalette: Or Teranga #C4872A, Bleu Dakar #1A3A5C, Latérite #D4522A${equip}`;
+  return `Site: ${b.site}\nStyle: ${b.style}\nOptique: ${sp.lens}\nISO: ${sp.iso}\nLumière: ${sp.light}\nTechnique: ${sp.tech}\nPalette: Or Teranga #C4872A, Bleu Dakar #1A3A5C, Latérite #D4522A\nFormat cible: Double page 420x315mm 300 DPI${equip}`;
 }
 
+const A6_DA_IDENTITY = `Agis en tant que Directeur Artistique de renommée internationale, expert en infographie et en édition de "beaux-livres" (photographie haut de gamme, culture, art). Tu possèdes le niveau d'exigence des plus grandes maisons d'édition de luxe, combiné à l'œil photographique de National Geographic.
+
+Tu supervises la direction visuelle, graphique et éditoriale du projet : « Sénégal, Terre d'Histoire et de Rencontres ». Ouvrage de prestige, fruit d'une mission de documentation sur 32 sites au Sénégal, 59 jours de terrain.
+
+Tes responsabilités :
+- Direction Éditoriale : grilles de mise en page sophistiquées, maîtrise de l'espace blanc (negative space), associations typographiques élégantes haut de gamme.
+- Ingénierie Visuelle : formulation de prompts Midjourney/Veo ultra-premium, 8K, esthétique éditoriale, lumière et profondeur de champ parfaites.
+- Storytelling & Rythme : séquençage du livre, rythme visuel entre paysages grandioses, portraits intimes et détails architecturaux.
+- Excellence Technique : finitions d'impression (grammage, gaufrage, dorure à chaud, vernis sélectif, reliure), vocabulaire précis (CMJN, fond perdu, crénage, colorimétrie).
+
+Règles : Sois proactif et audacieux. Si une directive nuit à l'esthétique premium, dis-le frontalement et propose une alternative épurée. Toujours pousser vers la version la plus luxueuse et professionnelle.`;
+
 async function a6CallClaude(systemPrompt, contentArr, maxTok) {
+  const fullSystem = A6_DA_IDENTITY + '\n\n' + systemPrompt;
   const res = await fetch('/api/claude', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: maxTok || 800, system: systemPrompt, messages: [{ role: 'user', content: contentArr }] })
+    body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: maxTok || 800, system: fullSystem, messages: [{ role: 'user', content: contentArr }] })
   });
   const data = await res.json();
   if (!res.ok || data.error) throw new Error(data.error?.message || data.hint || `HTTP ${res.status}`);
@@ -5746,12 +5848,16 @@ async function a6SelectBest(btn) {
     );
     const winner = data.choix || 1;
     const rows = (data.analyse || []).map(a => `<div class="a6-crit-row"><span class="a6-crit-key">Photo ${a.photo}${a.photo === winner ? ' 🏆' : ''}</span><span class="a6-crit-val">${a.score}/100</span></div><div style="font-size:0.55rem;color:var(--text-muted);padding:2px 0 6px 0">${a.forces}${a.faiblesses ? ` · ⚠ ${a.faiblesses}` : ''}</div>`).join('');
+    const winnerPhoto = a6SelPhotos[winner - 1];
+    const raison = escapeHtml(data.raison || '');
+    const mods   = escapeHtml((data.analyse || []).find(a => a.photo === winner)?.faiblesses || '');
     resultEl.innerHTML = `<div class="a6-ia-result">
       <div class="a6-ia-score" style="color:var(--emerald)">Photo ${winner}</div>
       <div class="a6-ia-label" style="color:var(--emerald)">SÉLECTION DIRECTEUR ARTISTIQUE</div>
-      <div style="font-size:0.6rem;color:var(--text-secondary);margin-bottom:10px">${data.raison}</div>
+      <div style="font-size:0.6rem;color:var(--text-secondary);margin-bottom:10px">${raison}</div>
       ${rows}
-    </div>`;
+    </div>
+    <button class="btn btn-primary btn-sm" style="margin-top:8px;width:100%" onclick="a6SaveToBook('${escapeAttr(winnerPhoto?.url||'')}','${escapeAttr(data.raison||'')}','${escapeAttr((data.analyse||[]).find(a=>a.photo===winner)?.faiblesses||'')}')">💾 Ajouter au livre</button>`;
     addActivity('🏆', `Meilleure photo sélectionnée : Photo ${winner} sur ${a6SelPhotos.length}`, now());
   } catch(e) { resultEl.innerHTML = `<div class="a6-ia-result" style="color:var(--red)">${e.message}</div>`; }
   enableBtn(btn);
@@ -5890,6 +5996,171 @@ async function a6GenSequencing(btn) {
 }
 function a6SeqCopy() {
   navigator.clipboard?.writeText(a6SeqText).then(() => showToast('📋 Séquençage copié', 'ok'));
+}
+
+/* --- Galerie du Livre --- */
+function a6CreateThumbnail(dataUrl) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const maxW = 200;
+      const scale = Math.min(1, maxW / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width  = Math.round(img.width  * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.7));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
+async function a6SaveToBook(photoUrl, raison, modifications) {
+  if (!photoUrl) { showToast('Aucune photo à sauvegarder', 'warn'); return; }
+  const thumbnail = await a6CreateThumbnail(photoUrl);
+  const siteName  = a6State.currentBrief?.site || 'Site inconnu';
+  const entry = {
+    id:        'bk_' + Date.now(),
+    ts:        Date.now(),
+    site:      siteName,
+    thumbnail,
+    raison:    raison || '',
+    mods:      modifications || '',
+  };
+  a6State.bookGallery.unshift(entry);
+  a6RenderGallery();
+  saveStateToDB();
+  showToast('📚 Photo ajoutée à la galerie du livre', 'ok');
+  addActivity('📚', `Photo ajoutée au livre — Site : ${siteName}`, now());
+}
+
+function a6RenderGallery() {
+  const grid  = document.getElementById('a6-gallery-grid');
+  const empty = document.getElementById('a6-gallery-empty');
+  const count = document.getElementById('a6-gallery-count');
+  if (!grid) return;
+  const n = a6State.bookGallery.length;
+  if (count) count.textContent = `${n} photo${n !== 1 ? 's' : ''}`;
+  grid.innerHTML = '';
+  if (n === 0) {
+    grid.innerHTML = '<div class="a6-gallery-empty" id="a6-gallery-empty">Aucune photo encore. Utilisez «Meilleure Photo» et cliquez «Ajouter au livre».</div>';
+    return;
+  }
+  a6State.bookGallery.forEach(entry => {
+    const item = document.createElement('div');
+    item.className = 'a6-gallery-item';
+    item.innerHTML = `<img class="a6-gallery-thumb" src="${entry.thumbnail}" loading="lazy">
+      <button class="a6-gallery-rm" onclick="a6RemoveFromBook('${escapeAttr(entry.id)}')" title="Retirer">×</button>
+      <div class="a6-gallery-label">${escapeHtml(entry.site)}<br>${new Date(entry.ts).toLocaleDateString('fr-FR')}</div>`;
+    grid.appendChild(item);
+  });
+}
+
+function a6RemoveFromBook(id) {
+  a6State.bookGallery = a6State.bookGallery.filter(e => e.id !== id);
+  a6RenderGallery();
+  saveStateToDB();
+  showToast('Photo retirée du livre', 'info');
+}
+
+/* --- Maquette du Livre --- */
+let a6MaquetteText = '';
+async function a6GenMaquette(btn) {
+  disableBtn(btn);
+  const resultEl = document.getElementById('a6-maq-result');
+  resultEl.innerHTML = '<div class="a6-ia-result" style="color:var(--text-muted)">Claude conçoit la maquette…</div>';
+  const lang  = document.getElementById('a6-maq-lang')?.value  || 'fr_en';
+  const pages = document.getElementById('a6-maq-pages')?.value || '160';
+  const langLabel = { fr:'Français', fr_en:'Bilingue FR+EN', fr_en_ar:'Trilingue FR+EN+AR', en:'English' }[lang] || lang;
+  const sponsors = (a9State.sponsors || []).filter(s => ['Confirmé','Signé'].includes(s.status));
+  const sponsorLine = sponsors.length > 0 ? `\nSponsors à intégrer (${sponsors.length}) : ${sponsors.map(s=>s.name).join(', ')}. Prévoir pages sponsors.` : '';
+  const gallery = a6State.bookGallery.length > 0 ? `\nPhotos déjà sélectionnées pour le livre : ${a6State.bookGallery.map(e=>e.site).join(', ')}.` : '';
+  const equip = a6GetEquipmentContext();
+  const sitesList = SITES.map(s => `#${s.id} [Zone ${s.zone}] ${s.name}`).join(', ');
+  const prompt = `Mission documentaire SÉNÉGAL V3 : 32 sites, 59 jours, livre collector.\nSites : ${sitesList}\nFormat livre : 210×280mm, ${pages} pages, impression offset luxe.\nLangue(s) : ${langLabel}.${sponsorLine}${gallery}${equip}\n\nConçois la maquette structurée du livre. Chaque section = un objet JSON.\nJSON :\n{"titre_livre":"...","accroche":"phrase de couverture","sections":[{"pages":"p.1-2","type":"couverture|page_titre|intro|chapitre|pleine_page|double_page|portfolio|legendes|sponsor|colophon|quatrieme","titre":"...","contenu":"description du contenu","note_da":"conseil pour le DA"}],"notes_generales":"conseils globaux"}`;
+  try {
+    const data = await a6CallClaude(
+      'Tu es directeur artistique et maquettiste expert en livres de photographie documentaire de luxe.',
+      [{ type:'text', text: prompt }], 2000
+    );
+    const sections = data.sections || [];
+    const typeColor = {
+      couverture:'var(--amber)', page_titre:'var(--cyan)', intro:'var(--text-secondary)',
+      chapitre:'var(--cyan)', pleine_page:'var(--emerald)', double_page:'var(--emerald)',
+      portfolio:'var(--violet)', legendes:'var(--text-muted)', sponsor:'var(--amber)',
+      colophon:'var(--text-muted)', quatrieme:'var(--amber)'
+    };
+    const pagesHtml = sections.map(s => {
+      const col = typeColor[s.type] || 'var(--text-muted)';
+      return `<div class="a6-maq-page">
+        <div class="a6-maq-num">${escapeHtml(s.pages)}</div>
+        <div style="flex:1;min-width:0">
+          <div class="a6-maq-type" style="color:${col}">${escapeHtml(s.type?.replace(/_/g,' ') || '')}</div>
+          <div class="a6-maq-desc">${escapeHtml(s.titre || '')}${s.contenu ? ' — ' + escapeHtml(s.contenu) : ''}</div>
+          ${s.note_da ? `<div class="a6-maq-caption">DA : ${escapeHtml(s.note_da)}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+    a6MaquetteText = sections.map(s => `${s.pages} | ${s.type} | ${s.titre}`).join('\n');
+    resultEl.innerHTML = `<div class="a6-ia-result">
+      <div style="font-family:var(--font-display);font-size:0.65rem;color:var(--amber);margin-bottom:4px">${escapeHtml(data.titre_livre || '')}</div>
+      <div style="font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted);margin-bottom:10px;font-style:italic">${escapeHtml(data.accroche || '')}</div>
+      ${pagesHtml}
+      ${data.notes_generales ? `<div style="font-family:var(--font-mono);font-size:0.45rem;color:var(--text-muted);margin-top:8px">NOTES DA</div><div style="font-size:0.56rem;color:var(--text-secondary);margin-top:3px;font-style:italic">${escapeHtml(data.notes_generales)}</div>` : ''}
+    </div>`;
+    document.getElementById('a6-maq-copy').style.display = 'inline-flex';
+    addActivity('📐', `Maquette du livre générée : ${sections.length} sections, ${pages}p, ${langLabel}`, now());
+  } catch(e) { resultEl.innerHTML = `<div class="a6-ia-result" style="color:var(--red)">${e.message}</div>`; }
+  enableBtn(btn);
+}
+
+function a6MaquetteCopy() {
+  navigator.clipboard?.writeText(a6MaquetteText).then(() => showToast('📋 Maquette copiée', 'ok'));
+}
+
+/* --- Recommandations Matériel --- */
+async function a6GenEquipmentRecs(btn, mode) {
+  disableBtn(btn);
+  const resultEl = document.getElementById('a6-erec-result');
+  resultEl.innerHTML = '<div class="a6-ia-result" style="color:var(--text-muted)">Claude analyse les besoins…</div>';
+  const existing = (a11State.equipment || []).map(e => `${e.name} (${e.type})`).join(', ');
+  const zones = [...new Set(SITES.map(s => s.zone))].join(', ');
+  const types = 'urbain, rural, côtier, désertique, patrimoine, marché';
+  const sitesSummary = SITES.map(s => `${s.name} [Zone ${s.zone}]`).join(', ');
+  const basePrompt = `Mission : SÉNÉGAL V3, 32 sites documentaires, 59 jours de terrain.\nZones géographiques : ${zones}.\nTypes de terrains : ${types}.\nSites : ${sitesSummary}.\nObjectif : livre collector luxe + contenus réseaux sociaux + vidéo documentaire.`;
+  const modePrompt = mode === 'optimize' && existing
+    ? `\n\nParc existant : ${existing}.\n\nAnalyse ce parc et recommande ce qu'il manque ou ce qui devrait être remplacé pour couvrir optimalement les 32 sites. JSON :\n{"categories":[{"nom":"...","items":[{"nom":"...","priorite":"essentiel|recommande|optionnel","justification":"pourquoi pour cette mission"}]}],"priorite_absolue":"les 3 achats les plus urgents","budget_estime":"fourchette en EUR"}`
+    : `\n\nSans contrainte de parc existant. Recommande le kit matériel idéal pour couvrir les 32 sites en photo + vidéo documentaire luxe. JSON :\n{"categories":[{"nom":"...","items":[{"nom":"...","priorite":"essentiel|recommande|optionnel","justification":"pourquoi pour cette mission"}]}],"kit_minimal":"liste des absolus","budget_estime":"fourchette en EUR","conseil":"conseil terrain le plus important"}`;
+  try {
+    const data = await a6CallClaude(
+      'Tu es directeur de photographie expert en missions documentaires terrain, spécialiste du matériel photo/vidéo pour reportages Africa.',
+      [{ type:'text', text: basePrompt + modePrompt }], 1800
+    );
+    const cats = data.categories || [];
+    const prioClass = { essentiel:'prio-essentiel', recommande:'prio-recommande', optionnel:'prio-optionnel' };
+    const catsHtml = cats.map(cat => {
+      const items = (cat.items || []).map(item => `<div class="a6-erec-item">
+        <div class="a6-erec-prio ${prioClass[item.priorite] || 'prio-optionnel'}">${item.priorite}</div>
+        <div class="a6-erec-body">
+          <div class="a6-erec-name">${escapeHtml(item.nom)}</div>
+          <div class="a6-erec-why">${escapeHtml(item.justification)}</div>
+        </div>
+      </div>`).join('');
+      return `<div class="a6-erec-cat">${escapeHtml(cat.nom)}</div>${items}`;
+    }).join('');
+    const footer = mode === 'optimize'
+      ? `${data.priorite_absolue ? `<div style="font-family:var(--font-mono);font-size:0.45rem;color:var(--red);margin-top:10px">PRIORITÉ ABSOLUE</div><div style="font-size:0.58rem;color:var(--text-secondary);margin-top:3px">${escapeHtml(data.priorite_absolue)}</div>` : ''}`
+      : `${data.kit_minimal ? `<div style="font-family:var(--font-mono);font-size:0.45rem;color:var(--emerald);margin-top:10px">KIT MINIMAL</div><div style="font-size:0.56rem;color:var(--text-secondary);margin-top:3px">${escapeHtml(data.kit_minimal)}</div>` : ''}
+         ${data.conseil ? `<div style="font-family:var(--font-mono);font-size:0.45rem;color:var(--amber);margin-top:8px">CONSEIL TERRAIN</div><div style="font-size:0.56rem;color:var(--text-secondary);margin-top:3px;font-style:italic">${escapeHtml(data.conseil)}</div>` : ''}`;
+    resultEl.innerHTML = `<div class="a6-ia-result">
+      ${catsHtml}
+      ${footer}
+      ${data.budget_estime ? `<div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--cyan);margin-top:8px">Budget estimé : ${escapeHtml(data.budget_estime)}</div>` : ''}
+    </div>`;
+    addActivity('🛍️', `Recommandations matériel générées (${mode === 'optimize' ? 'optimisation parc' : 'besoins mission'})`, now());
+  } catch(e) { resultEl.innerHTML = `<div class="a6-ia-result" style="color:var(--red)">${e.message}</div>`; }
+  enableBtn(btn);
 }
 
 /* ============================================================
