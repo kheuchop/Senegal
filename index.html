@@ -4656,7 +4656,7 @@ function saveStateToDB() {
 
   // Sync cloud non-bloquant — guard complet
   if (typeof SupaSync !== 'undefined' && typeof SupaSync.syncState === 'function') {
-    SupaSync.syncState(state).catch(e => console.warn('[Sync] syncState:', e.message));
+    SupaSync.syncState({ ...state, a14ApiKey: a14State.apiKey }).catch(e => console.warn('[Sync] syncState:', e.message));
   }
 }
 
@@ -5856,6 +5856,22 @@ async function init() {
   // Vérification session auth — après init Supabase, jamais avant
   setStatus('Vérification session…');
   await checkAuthSession();
+
+  // Restauration depuis le cloud : récupère les réglages absents en local
+  // (ex: clé météo perdue après un effacement ou sur un nouvel appareil)
+  if (typeof SupaSync !== 'undefined' && typeof SupaSync.fetchState === 'function') {
+    setStatus('Restauration cloud…');
+    try {
+      const cloud = await SupaSync.fetchState();
+      if (cloud) {
+        if (!a14State.apiKey && typeof cloud.a14ApiKey === 'string' && cloud.a14ApiKey) {
+          a14State.apiKey = cloud.a14ApiKey;
+          saveStateToDB();
+          showToast('🔑 Clé météo restaurée depuis le cloud', 'info');
+        }
+      }
+    } catch (e) { console.warn('[Sync] fetchState:', e.message); }
+  }
 
 
   setStatus('Initialisation WakeLock…');
@@ -10398,6 +10414,11 @@ function _onSessionReady(session) {
           if (d.daysDone    !== undefined && d.daysDone    !== state.daysDone)    { state.daysDone    = d.daysDone;    changed = true; }
           if (d.sitesDone   !== undefined && d.sitesDone   !== state.sitesDone)   { state.sitesDone   = d.sitesDone;   changed = true; }
           if (d.catSpend    !== undefined)                                         { state.catSpend    = d.catSpend;    changed = true; }
+          if (typeof d.a14ApiKey === 'string' && d.a14ApiKey && d.a14ApiKey !== a14State.apiKey) {
+            a14State.apiKey = d.a14ApiKey;
+            saveStateToDB();
+            if (typeof initAgent14 === 'function') initAgent14();
+          }
           if (changed) {
             updateFinancialUI();
             updateCOORing();

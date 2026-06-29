@@ -278,6 +278,7 @@
             daysDone:       stateData.daysDone        ?? 0,
             sitesDone:      stateData.sitesDone       ?? 0,
             printRate:      stateData.printRate       ?? 150,
+            a14ApiKey:      stateData.a14ApiKey       ?? null,
             schema_version: SCHEMA_VERSION
           }
           // updated_at : NE PAS passer — généré par now() Supabase RLS
@@ -573,6 +574,29 @@
      * Synchronise le state global vers Supabase.
      */
     syncState: _syncState,
+
+    /**
+     * Récupère le state global depuis Supabase (singleton id=1).
+     * Utilisé au démarrage pour restaurer les données après un effacement
+     * local ou sur un nouvel appareil. Retourne l'objet data ou null.
+     */
+    async fetchState() {
+      const client = _buildClient();
+      if (!client || !navigator.onLine) return null;
+      try {
+        const { data, error } = await client
+          .from('mission_state')
+          .select('data')
+          .eq('id', 1)
+          .maybeSingle();
+        if (error) { _logError('FETCH_STATE_FAIL', error); return null; }
+        _log('info', 'State cloud récupéré au démarrage');
+        return data?.data ?? null;
+      } catch (e) {
+        _log('error', `fetchState échoué : ${e.message}`);
+        return null;
+      }
+    },
 
     /**
      * Synchronise une transaction individuelle.
