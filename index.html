@@ -9747,6 +9747,16 @@ async function a15ReadDevisPDF(input) {
         })
       });
       const d = await r.json();
+      // Erreur explicite renvoyée par le proxy (clé manquante, etc.)
+      if (!r.ok || d.error) {
+        const msg = d.error === 'NO_KEY'
+          ? 'Clé API Claude non configurée sur le serveur (ANTHROPIC_API_KEY). L\'extraction automatique est indisponible — saisissez le devis manuellement.'
+          : d.error === 'PROXY_FAIL'
+          ? 'Le service Claude est momentanément indisponible. Réessayez ou saisissez manuellement.'
+          : (d.error?.message || d.error || `Erreur serveur (${r.status})`);
+        if (status) status.innerHTML = `<div style="color:var(--red);font-size:0.58rem;line-height:1.5">${msg}</div>`;
+        return;
+      }
       const text = d.content?.[0]?.text || '';
       let data; try { data = JSON.parse(text); } catch(e) { const m=text.match(/\{[\s\S]*\}/); try { data=JSON.parse(m?.[0]||'{}'); } catch(e2) { data={}; } }
       if (!data.prestataire && !data.montant_fcfa) {
