@@ -5869,6 +5869,15 @@ async function init() {
           saveStateToDB();
           showToast('🔑 Clé météo restaurée depuis le cloud', 'info');
         }
+        // Coffre-Fort : restaure si le vault local est vide (après effacement / nouvel appareil)
+        const localKeys = Object.values(state.vault || {}).reduce((n, arr) => n + (Array.isArray(arr) ? arr.length : 0), 0);
+        const cloudKeys = cloud.vault ? Object.values(cloud.vault).reduce((n, arr) => n + (Array.isArray(arr) ? arr.length : 0), 0) : 0;
+        if (localKeys === 0 && cloudKeys > 0) {
+          state.vault = { ...state.vault, ...cloud.vault };
+          saveStateToDB();
+          if (typeof renderVaultKeys === 'function') renderVaultKeys();
+          showToast('🔐 Coffre-Fort restauré depuis le cloud', 'info');
+        }
       }
     } catch (e) { console.warn('[Sync] fetchState:', e.message); }
   }
@@ -10504,6 +10513,15 @@ function _onSessionReady(session) {
             a14State.apiKey = d.a14ApiKey;
             saveStateToDB();
             if (typeof initAgent14 === 'function') initAgent14();
+          }
+          // Coffre-Fort : adopte le vault cloud si le local est encore vide
+          const localKeys = Object.values(state.vault || {}).reduce((n, arr) => n + (Array.isArray(arr) ? arr.length : 0), 0);
+          const cloudKeys = d.vault ? Object.values(d.vault).reduce((n, arr) => n + (Array.isArray(arr) ? arr.length : 0), 0) : 0;
+          if (localKeys === 0 && cloudKeys > 0) {
+            state.vault = { ...state.vault, ...d.vault };
+            saveStateToDB();
+            if (typeof renderVaultKeys === 'function') renderVaultKeys();
+            showToast('🔐 Coffre-Fort synchronisé depuis le cloud', 'info');
           }
           if (changed) {
             updateFinancialUI();
