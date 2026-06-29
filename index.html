@@ -2218,6 +2218,13 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           </div><!-- /.progress-ring-wrap wrapper -->
         </div>
 
+        <!-- Check-list du jour -->
+        <div class="card">
+          <div class="card-title">✅ Check-list du Jour <span class="pill pill-cyan" style="margin-left:auto;font-size:0.5rem" id="checklist-progress">0/0</span></div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:10px">Rituel de mission — se réinitialise chaque jour. Coche au fil de la journée.</div>
+          <div id="checklist-items"></div>
+        </div>
+
         <!-- Pending Approvals -->
         <div class="card">
           <div class="card-title">File d'Approbations <span class="pill pill-amber" style="margin-left:auto;font-size:0.5rem" id="approval-count">3 en attente</span></div>
@@ -4556,6 +4563,7 @@ const state = {
   leafletMap: null,
   mapMarkers: [],
   mapFallback: false,
+  dailyChecklist: { date: '', checked: {} },
 };
 
 /* ============================================================
@@ -4651,6 +4659,7 @@ function saveStateToDB() {
       a16Backers:     a16State.backers,
       a16Paliers:     a16State.paliers,
       approvals:      state.approvals,
+      dailyChecklist: state.dailyChecklist,
     }
   }).catch(e => console.error('[DB] saveState échoué:', e));
 
@@ -4697,6 +4706,7 @@ async function loadStateFromDB() {
     if (Array.isArray(d.a16Backers))   a16State.backers       = d.a16Backers;
     if (Array.isArray(d.a16Paliers))   a16State.paliers       = d.a16Paliers;
     if (Array.isArray(d.approvals))    state.approvals        = d.approvals;
+    if (d.dailyChecklist && typeof d.dailyChecklist === 'object') state.dailyChecklist = { date: d.dailyChecklist.date || '', checked: d.dailyChecklist.checked || {} };
   }
 }
 
@@ -5129,11 +5139,70 @@ function addActivity(icon, title, time) {
   feed.insertBefore(div, feed.firstChild);
   if (feed.children.length > 8) feed.removeChild(feed.lastChild);
 }
+/* --- Check-list du jour (rituel de mission) --- */
+const DAILY_CHECKLIST_ITEMS = [
+  { id: 'meteo',      icon: '🌅', group: 'Matin', label: 'Vérifier la météo + golden hours du site' },
+  { id: 'autoris',    icon: '⚖️', group: 'Matin', label: 'Vérifier les autorisations du/des sites du jour' },
+  { id: 'checkout',   icon: '📤', group: 'Matin', label: 'Check-out du matériel emporté' },
+  { id: 'backups',    icon: '📥', group: 'Soir',  label: 'Check-in matériel + valider les backups cartes' },
+  { id: 'jours',      icon: '📆', group: 'Soir',  label: 'Mettre à jour jours faits / sites faits' },
+  { id: 'depenses',   icon: '💰', group: 'Soir',  label: 'Saisir les dépenses du jour' },
+  { id: 'juridique',  icon: '📝', group: 'Soir',  label: 'Mettre à jour les autorisations qui ont bougé' },
+];
+
+function _todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function renderChecklist() {
+  const cont = document.getElementById('checklist-items');
+  if (!cont) return;
+  // Réinitialisation quotidienne
+  const today = _todayKey();
+  if (state.dailyChecklist.date !== today) {
+    state.dailyChecklist = { date: today, checked: {} };
+    saveStateToDB();
+  }
+  const checked = state.dailyChecklist.checked || {};
+  let html = '';
+  let lastGroup = '';
+  DAILY_CHECKLIST_ITEMS.forEach(it => {
+    if (it.group !== lastGroup) {
+      html += `<div style="font-family:var(--font-mono);font-size:0.45rem;letter-spacing:0.1em;color:var(--text-muted);text-transform:uppercase;margin:8px 0 4px">${it.group === 'Matin' ? '🌅 Matin' : '🌙 Soir'}</div>`;
+      lastGroup = it.group;
+    }
+    const on = !!checked[it.id];
+    html += `<div onclick="toggleChecklistItem('${it.id}')" style="display:flex;align-items:center;gap:10px;padding:8px 10px;margin-bottom:4px;background:var(--bg-card-2);border:1px solid ${on ? 'rgba(0,230,118,0.3)' : 'var(--border)'};border-radius:var(--r-sm);cursor:pointer;transition:all var(--t)">
+      <div style="width:18px;height:18px;border-radius:5px;border:2px solid ${on ? 'var(--emerald)' : 'var(--border-hi)'};background:${on ? 'var(--emerald)' : 'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;color:#031">${on ? '✓' : ''}</div>
+      <div style="font-size:0.62rem;line-height:1.3;${on ? 'color:var(--text-muted);text-decoration:line-through' : 'color:var(--text-primary)'}">${it.icon} ${it.label}</div>
+    </div>`;
+  });
+  cont.innerHTML = html;
+  const done = DAILY_CHECKLIST_ITEMS.filter(it => checked[it.id]).length;
+  const prog = document.getElementById('checklist-progress');
+  if (prog) {
+    prog.textContent = `${done}/${DAILY_CHECKLIST_ITEMS.length}`;
+    prog.className = `pill ${done === DAILY_CHECKLIST_ITEMS.length ? 'pill-green' : 'pill-cyan'}`;
+  }
+}
+
+function toggleChecklistItem(id) {
+  const today = _todayKey();
+  if (state.dailyChecklist.date !== today) state.dailyChecklist = { date: today, checked: {} };
+  state.dailyChecklist.checked[id] = !state.dailyChecklist.checked[id];
+  saveStateToDB();
+  renderChecklist();
+  const done = DAILY_CHECKLIST_ITEMS.filter(it => state.dailyChecklist.checked[it.id]).length;
+  if (done === DAILY_CHECKLIST_ITEMS.length) showToast('🎉 Rituel du jour complété !', 'ok');
+}
+
 function initSuperviseur() {
   if (state.approvals.length === 0) state.approvals = [...INITIAL_APPROVALS];
   state.notifications = [...INITIAL_NOTIFICATIONS];
   renderApprovals();
   renderNotifications();
+  renderChecklist();
   const feed = document.getElementById('activity-feed');
   if (feed) INITIAL_ACTIVITY.forEach(a => { const div=document.createElement('div'); div.className='activity-item'; div.innerHTML=`<div class="activity-icon">${a.icon}</div><div class="activity-detail"><div class="act-title">${a.title}</div><div class="act-time">${a.time}</div></div>`; feed.appendChild(div); });
   updateCOORing();
