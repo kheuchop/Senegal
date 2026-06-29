@@ -4658,6 +4658,9 @@ function saveStateToDB() {
   if (typeof SupaSync !== 'undefined' && typeof SupaSync.syncState === 'function') {
     SupaSync.syncState({ ...state, a14ApiKey: a14State.apiKey }).catch(e => console.warn('[Sync] syncState:', e.message));
   }
+
+  // Détection de problèmes → proposition d'alerte équipe Telegram (débouncée)
+  if (typeof scheduleMissionAlertCheck === 'function') scheduleMissionAlertCheck();
 }
 
 async function loadStateFromDB() {
@@ -5836,6 +5839,131 @@ function showToast(msg, type='info') {
 }
 
 /* ============================================================
+   ALERTES ÉQUIPE TELEGRAM — détection problèmes + confirmation
+   Le superviseur propose d'envoyer une alerte au groupe quand un
+   problème est détecté. Rien ne part sans confirmation de l'utilisateur.
+   ============================================================ */
+async function sendTelegramText(text) {
+  const { token, chatId } = getTelegramConfig();
+  if (!token || !chatId) throw new Error('Telegram non configuré');
+  const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, text })
+  });
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.description || `Telegram error ${res.status}`);
+  return data;
+}
+
+const teamAlertState = { queue: [], proposed: {}, showing: false };
+
+function _buildTeamAlertModal() {
+  let ov = document.getElementById('team-alert-overlay');
+  if (ov) return ov;
+  ov = document.createElement('div');
+  ov.id = 'team-alert-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9500;background:rgba(3,5,9,0.82);display:none;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML = `
+    <div style="background:var(--bg-card);border:1px solid var(--border-hi);border-radius:var(--r);max-width:420px;width:100%;padding:18px;box-shadow:var(--shadow)">
+      <div style="font-family:var(--font-display);font-size:0.8rem;font-weight:700;color:var(--amber);margin-bottom:6px">⚠️ ALERTER L'ÉQUIPE ?</div>
+      <div style="font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted);margin-bottom:10px">Problème détecté. Vérifie le message puis envoie-le au groupe Telegram, ou ignore.</div>
+      <textarea id="team-alert-text" class="input-field" style="min-height:90px;width:100%;font-size:0.62rem;line-height:1.5"></textarea>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+        <button class="btn btn-ghost" onclick="dismissTeamAlert()">Ignorer</button>
+        <button class="btn btn-primary" id="team-alert-send" onclick="confirmTeamAlert()"><div class="spinner"></div><span class="btn-text">📤 Envoyer au groupe</span></button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  return ov;
+}
+
+function showNextTeamAlert() {
+  const ov = _buildTeamAlertModal();
+  const msg = teamAlertState.queue.shift();
+  if (!msg) { teamAlertState.showing = false; ov.style.display = 'none'; return; }
+  teamAlertState.showing = true;
+  document.getElementById('team-alert-text').value = msg;
+  ov.style.display = 'flex';
+}
+
+function dismissTeamAlert() { showNextTeamAlert(); }
+
+async function confirmTeamAlert() {
+  const btn = document.getElementById('team-alert-send'); disableBtn(btn);
+  const text = (document.getElementById('team-alert-text').value || '').trim();
+  try {
+    await sendTelegramText('⚠️ ALERTE AUTOMATIQUE — MISSION SÉNÉGAL\n\n' + text);
+    addActivity('📱', `Alerte équipe envoyée : "${text.substring(0, 40)}…"`, now());
+    addNotification({ type: 'info', text: `📣 Alerte équipe Telegram envoyée`, time: now() });
+    showToast('✅ Alerte envoyée au groupe', 'ok');
+  } catch (e) {
+    showToast('❌ Telegram : ' + e.message, 'error');
+  }
+  enableBtn(btn);
+  showNextTeamAlert();
+}
+
+function queueTeamAlert(key, msg) {
+  if (teamAlertState.proposed[key]) return; // déjà proposé cette session
+  teamAlertState.proposed[key] = true;
+  teamAlertState.queue.push(msg);
+  if (!teamAlertState.showing) showNextTeamAlert();
+}
+
+function checkMissionAlerts() {
+  const { token, chatId } = getTelegramConfig();
+  if (!token || !chatId) return; // Telegram non configuré → aucune proposition
+
+  // 1. Dérive budgétaire — budget consommé ≥ 90%
+  const pctSpent = state.spent / MISSION.budget;
+  if (pctSpent >= 0.9) {
+    queueTeamAlert('budget90', `Budget critique : ${Math.round(pctSpent * 100)}% consommé (${fmtFCFA(state.spent)} sur ${fmtFCFA(MISSION.budget)}). Reste ${fmtFCFA(MISSION.budget - state.spent)}.`);
+  }
+
+  // 2. Activation Plan B (Risk Manager)
+  if (a17State.planBActive) {
+    queueTeamAlert('planb', `Plan B activé par le Risk Manager : un surcoût logistique a été injecté dans le budget pour rattraper le retard terrain.`);
+  }
+
+  // 3. Stock faible distribution (par point de vente, par édition)
+  a12State.points.forEach(p => {
+    const remStd = (p.allocStd || 0) - (p.venduStd || 0);
+    const remLuxe = (p.allocLuxe || 0) - (p.venduLuxe || 0);
+    if ((p.allocStd || 0) > 0 && remStd <= a12State.seuil) {
+      queueTeamAlert('stockstd_' + p.id, `Stock standard faible chez ${p.name}${p.ville ? ' (' + p.ville + ')' : ''} : ${remStd} exemplaire(s) restant(s).`);
+    }
+    if ((p.allocLuxe || 0) > 0 && remLuxe <= a12State.seuil) {
+      queueTeamAlert('stockluxe_' + p.id, `Stock luxe faible chez ${p.name}${p.ville ? ' (' + p.ville + ')' : ''} : ${remLuxe} exemplaire(s) numéroté(s) restant(s).`);
+    }
+  });
+
+  // 4. Autorisation en relance (Juridique)
+  a10State.auths.filter(a => a.status === 'relance').forEach(a => {
+    queueTeamAlert('relance_' + a.id, `Autorisation à relancer : ${a.site} — ${a.org} (réf. ${a.ref}). Statut : relance requise.`);
+  });
+
+  // 5. Durée mission dépassée
+  if (state.daysDone > MISSION.joursTerrain) {
+    queueTeamAlert('duree', `Durée terrain dépassée : ${state.daysDone} jours effectués pour ${MISSION.joursTerrain} jours prévus. Réévaluer le planning.`);
+  }
+
+  // 6. Mauvaise météo (régions chargées dans l'agent Météo)
+  Object.keys(a14State.live || {}).forEach(reg => {
+    const d = a14State.live[reg];
+    if (!d) return;
+    if (d.temp >= 40) queueTeamAlert('meteo_chaleur_' + reg, `Chaleur extrême à ${d.city} : ${d.temp}°C (ressenti ${d.feels}°C). Éviter 11h-16h, hydratation critique.`);
+    if (d.vent >= 40) queueTeamAlert('meteo_vent_' + reg, `Vent fort à ${d.city} : ${d.vent} km/h. Risque de sable, protéger les optiques.`);
+    if (d.vis < 3) queueTeamAlert('meteo_vis_' + reg, `Visibilité réduite à ${d.city} : ${d.vis} km (brume / harmattan).`);
+  });
+}
+
+let _missionAlertTimer = null;
+function scheduleMissionAlertCheck() {
+  clearTimeout(_missionAlertTimer);
+  _missionAlertTimer = setTimeout(() => { try { checkMissionAlerts(); } catch (e) { console.warn('[Alertes]', e.message); } }, 2500);
+}
+
+/* ============================================================
    APP INITIALIZATION
    ============================================================ */
 async function init() {
@@ -5974,6 +6102,9 @@ async function init() {
   const _statsGrid = _header?.querySelector('.stats-grid');
   if (_header) { _header.classList.add('scanning'); setTimeout(() => _header.classList.remove('scanning'), 1200); }
   if (_statsGrid) { _statsGrid.classList.add('booting'); setTimeout(() => _statsGrid.classList.remove('booting'), 900); }
+
+  // Vérification initiale des problèmes (relances, stock, durée…) une fois l'app prête
+  setTimeout(() => { if (typeof checkMissionAlerts === 'function') { try { checkMissionAlerts(); } catch (e) {} } }, 4000);
 }
 
 
@@ -9543,6 +9674,7 @@ async function a14Fetch(region, force) {
     a14State.lastFetch[region] = Date.now();
     a14State.loading = false;
     a14RenderHero(); a14RenderForecast(); a14RenderAlerts(); a14RenderWindows();
+    if (typeof scheduleMissionAlertCheck === 'function') scheduleMissionAlertCheck();
   } catch (err) {
     a14State.loading = false;
     console.warn('[Météo] échec fetch:', err.message);
