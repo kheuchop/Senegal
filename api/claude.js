@@ -60,16 +60,20 @@ export default async function handler(req, res) {
       ? system + HUMAN_WRITING_RULES
       : 'Tu es un assistant au service de la mission documentaire SÉNÉGAL V3.' + HUMAN_WRITING_RULES;
 
+    // Detect document/image content blocks for PDF support header
+    const hasDoc = messages.some(m => Array.isArray(m.content) && m.content.some(c => c.type === 'document' || c.type === 'image'));
+
     const upstream = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
+        ...(hasDoc ? { 'anthropic-beta': 'pdfs-2024-09-25' } : {}),
       },
       body: JSON.stringify({
         model:      model || 'claude-sonnet-4-6',
-        max_tokens: Math.min(Number(max_tokens) || 600, 2000),
+        max_tokens: Math.min(Number(max_tokens) || 600, hasDoc ? 4000 : 2000),
         system:     systemPrompt,
         messages,
       }),

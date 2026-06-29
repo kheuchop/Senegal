@@ -4130,6 +4130,22 @@ textarea.input-field { resize: vertical; min-height: 80px; }
            ===================================================== -->
       <div class="agent-panel" id="agent-achats">
         <div class="card">
+          <div class="card-title">Lecture Automatique — Devis PDF ou Photo</div>
+          <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted);margin-bottom:10px;line-height:1.6">Uploadez n'importe quelle facture ou devis (PDF, JPG, PNG) — Claude lit le document et pré-remplit les champs automatiquement.</div>
+          <input type="file" accept=".pdf,image/jpeg,image/png,image/webp" id="a15-pdf-input" style="display:none" onchange="a15ReadDevisPDF(this)">
+          <div style="border:2px dashed var(--border);border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:border-color var(--t)" onmouseover="this.style.borderColor='var(--border-hi)'" onmouseout="this.style.borderColor='var(--border)'" onclick="document.getElementById('a15-pdf-input').click()">
+            <div style="font-size:28px;margin-bottom:6px">📎</div>
+            <div style="font-size:0.62rem;color:var(--text-muted)">Cliquez pour sélectionner ou déposez un fichier</div>
+            <div style="font-size:0.5rem;color:var(--text-muted);margin-top:2px">PDF, JPG, PNG · Max 3 Mo · Toute devise acceptée</div>
+          </div>
+          <div id="a15-pdf-status" style="margin-top:8px"></div>
+          <div id="a15-pdf-preview" style="display:none;margin-top:10px">
+            <div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--cyan);margin-bottom:8px">✦ Informations extraites — vérifiez avant d'enregistrer</div>
+            <div id="a15-pdf-fields"></div>
+            <button class="btn btn-success btn-full" style="margin-top:8px" onclick="a15ConfirmFromPDF(event)"><div class="spinner"></div><span class="btn-text">✅ Confirmer et enregistrer</span></button>
+          </div>
+        </div>
+        <div class="card">
           <div class="card-title">Comparateur Devis Prestataires</div>
           <div class="a15-filter-row">
             <button class="a15-ftab a15-ftab-active" onclick="a15FilterCat('all',this)">Tous</button>
@@ -4141,7 +4157,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <div id="a15-devis-list"></div>
         </div>
         <div class="card">
-          <div class="card-title">Ajouter Devis Reçu</div>
+          <div class="card-title">Ajouter Devis Manuellement</div>
           <div class="input-group"><label class="input-label">Prestataire</label><input type="text" class="input-field" id="a15-prest-name" placeholder="ex: Imprimerie Graphi Plus" autocomplete="off"></div>
           <div class="input-group"><label class="input-label">Catégorie</label>
             <select class="input-field" id="a15-prest-cat">
@@ -4163,14 +4179,43 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <div class="a15-synth-grid" id="a15-synth-grid"></div>
         </div>
         <div class="card">
-          <div class="card-title">Générateur Argumentaire</div>
+          <div class="card-title">Argumentaire de Négociation — Claude</div>
           <div class="input-group"><label class="input-label">Prestataire cible</label><select class="input-field" id="a15-arg-select"></select></div>
-          <button class="btn btn-primary btn-full" onclick="a15GenArgumentaire(event)"><div class="spinner"></div><span class="btn-text">✍️ Générer Argumentaire</span></button>
+          <button class="btn btn-primary btn-full" onclick="a15GenArgumentaire(event)"><div class="spinner"></div><span class="btn-text">✦ Générer avec Claude</span></button>
         </div>
         <div class="card" id="a15-arg-card" style="display:none">
           <div class="card-title">Argumentaire de Négociation</div>
           <div class="a15-arg-output" id="a15-arg-output"></div>
           <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="a15CopyArg()">📋 Copier</button>
+        </div>
+        <div class="card">
+          <div class="card-title">Email de Relance Prestataire — Claude</div>
+          <div class="input-group"><label class="input-label">Prestataire</label><select class="input-field" id="a15-email-select"></select></div>
+          <div class="input-group"><label class="input-label">Ton</label>
+            <select class="input-field" id="a15-email-ton">
+              <option value="cordial">Cordial — premier contact</option>
+              <option value="ferme">Ferme — après désaccord sur prix</option>
+              <option value="urgent">Urgent — délai serré</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="a15GenEmailRelance(event)"><div class="spinner"></div><span class="btn-text">📧 Rédiger l'email</span></button>
+          <div id="a15-email-result" style="margin-top:10px"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Recommandation Multi-Devis — Claude</div>
+          <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted);margin-bottom:10px">Analyse comparative quand plusieurs devis existent dans la même catégorie.</div>
+          <div class="input-group"><label class="input-label">Catégorie à analyser</label>
+            <select class="input-field" id="a15-comp-cat">
+              <option value="impression">Impression</option>
+              <option value="transport">Transport</option>
+              <option value="hebergement">Hébergement</option>
+              <option value="pirogue">Pirogue</option>
+              <option value="guide">Guide</option>
+              <option value="autre">Autre</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="a15ComparerDevis(event)"><div class="spinner"></div><span class="btn-text">⚖️ Analyser avec Claude</span></button>
+          <div id="a15-comp-result" style="margin-top:10px"></div>
         </div>
       </div>
 
@@ -4195,11 +4240,28 @@ textarea.input-field { resize: vertical; min-height: 80px; }
               <span class="pill" style="border-color:var(--border);color:var(--text-muted)" id="a16-backers-pill">0 contributeurs</span>
               <span class="pill" style="border-color:var(--border);color:var(--text-muted)" id="a16-days-pill">45 jours restants</span>
             </div>
+            <div id="a16-projection"></div>
           </div>
         </div>
         <div class="card">
           <div class="card-title">Paliers de Contribution</div>
           <div id="a16-paliers-list"></div>
+          <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="a16ToggleAddPalier()">+ Créer un palier personnalisé</button>
+          <div id="a16-add-palier-card" style="display:none;margin-top:10px;border:1px solid var(--border);border-radius:8px;padding:12px">
+            <div style="display:grid;grid-template-columns:44px 1fr;gap:8px">
+              <input type="text" class="input-field" id="a16-np-icon" placeholder="📖" maxlength="2" style="text-align:center;font-size:18px;padding:6px 4px">
+              <input type="text" class="input-field" id="a16-np-name" placeholder="Nom du palier" autocomplete="off">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+              <div class="input-group" style="margin:0"><label class="input-label">Prix (FCFA)</label><input type="number" class="input-field" id="a16-np-price" min="1000" autocomplete="off"></div>
+              <div class="input-group" style="margin:0"><label class="input-label">Limite</label><input type="number" class="input-field" id="a16-np-limit" placeholder="50" min="1" autocomplete="off"></div>
+            </div>
+            <div class="input-group" style="margin-top:8px"><label class="input-label">Contrepartie / Description</label><input type="text" class="input-field" id="a16-np-desc" placeholder="ex: 1 exemplaire signé + accès galerie HD" autocomplete="off"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+              <button class="btn btn-success" onclick="a16SavePalier(event)"><div class="spinner"></div><span class="btn-text">💾 Enregistrer</span></button>
+              <button class="btn btn-ghost" onclick="a16ToggleAddPalier()">Annuler</button>
+            </div>
+          </div>
         </div>
         <div class="card">
           <div class="card-title">Enregistrer Contribution</div>
@@ -4225,21 +4287,38 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <div id="a16-backers-list"></div>
         </div>
         <div class="card">
-          <div class="card-title">Générateur Message Diaspora</div>
+          <div class="card-title">Message Diaspora — Claude</div>
           <div class="input-group"><label class="input-label">Réseau cible</label>
             <select class="input-field" id="a16-msg-reseau">
-              <option value="telegram">Telegram</option>
+              <option value="telegram">Telegram (groupe communautaire)</option>
               <option value="facebook">Facebook</option>
+              <option value="instagram">Instagram</option>
               <option value="twitter">X / Twitter</option>
-              <option value="email">Email</option>
+              <option value="email">Email newsletter</option>
+              <option value="whatsapp">WhatsApp diaspora</option>
             </select>
           </div>
-          <button class="btn btn-primary btn-full" onclick="a16GenMessage(event)"><div class="spinner"></div><span class="btn-text">📣 Générer Message</span></button>
+          <div class="input-group"><label class="input-label">Anecdote terrain (optionnel)</label>
+            <textarea class="input-field" id="a16-msg-anecdote" rows="2" placeholder="ex: Ce matin à Touba, un berger nous a guidés vers un site inconnu des cartes…" style="resize:none"></textarea>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="a16GenMessage(event)"><div class="spinner"></div><span class="btn-text">✦ Générer avec Claude</span></button>
         </div>
         <div class="card" id="a16-msg-card" style="display:none">
           <div class="card-title">Message Généré</div>
           <div class="a16-msg-output" id="a16-msg-output"></div>
           <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="a16CopyMsg()">📋 Copier</button>
+        </div>
+        <div class="card">
+          <div class="card-title">Email de Remerciement — Claude</div>
+          <div class="input-group"><label class="input-label">Contributeur</label><select class="input-field" id="a16-rem-select"></select></div>
+          <button class="btn btn-primary btn-full" onclick="a16GenRemerciement(event)"><div class="spinner"></div><span class="btn-text">💌 Générer le remerciement</span></button>
+          <div id="a16-rem-result" style="margin-top:10px"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Diagnostic Campagne — Claude</div>
+          <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted);margin-bottom:10px;line-height:1.6">Analyse l'état actuel et recommande des actions concrètes pour accélérer.</div>
+          <button class="btn btn-primary btn-full" onclick="a16AnalyseCampagne(event)"><div class="spinner"></div><span class="btn-text">✦ Analyser avec Claude</span></button>
+          <div id="a16-analyse-result" style="margin-top:10px"></div>
         </div>
       </div>
 
@@ -9556,21 +9635,37 @@ function a15RenderDevis() {
 function a15RenderSynth() {
   const g = document.getElementById('a15-synth-grid'); if (!g) return;
   const items = a15State.filter === 'all' ? a15State.devis : a15State.devis.filter(d => d.cat === a15State.filter);
-  const totalEst = items.reduce((s, d) => s + d.est, 0);
-  const totalReel = items.reduce((s, d) => s + d.reel, 0);
-  const economies = items.filter(d => d.est >= d.reel).reduce((s, d) => s + (d.est - d.reel), 0);
-  const depassements = items.filter(d => d.reel > d.est).reduce((s, d) => s + (d.reel - d.est), 0);
+  const totalEst  = items.reduce((s,d) => s+d.est, 0);
+  const totalReel = items.reduce((s,d) => s+d.reel, 0);
+  const economies     = items.filter(d => d.est>=d.reel).reduce((s,d) => s+(d.est-d.reel), 0);
+  const depassements  = items.filter(d => d.reel>d.est).reduce((s,d) => s+(d.reel-d.est), 0);
+  const allReel = a15State.devis.reduce((s,d) => s+d.reel, 0);
+  const pctBudget = MISSION.budget > 0 ? Math.round(allReel/MISSION.budget*100) : 0;
+  const margeRestante = MISSION.budget - allReel;
+  const barColor = pctBudget > 90 ? 'var(--red)' : pctBudget > 70 ? 'var(--amber)' : 'var(--emerald)';
   g.innerHTML = `
     <div class="a15-synth-box"><div class="a15-synth-label">Total estimé</div><div class="a15-synth-val" style="color:var(--cyan)">${(totalEst/1000000).toFixed(2)}M</div></div>
-    <div class="a15-synth-box"><div class="a15-synth-label">Total devis</div><div class="a15-synth-val" style="color:${totalReel > totalEst ? 'var(--red)':'var(--emerald)'}">${(totalReel/1000000).toFixed(2)}M</div></div>
+    <div class="a15-synth-box"><div class="a15-synth-label">Total devis</div><div class="a15-synth-val" style="color:${totalReel>totalEst?'var(--red)':'var(--emerald)'}">${(totalReel/1000000).toFixed(2)}M</div></div>
     <div class="a15-synth-box"><div class="a15-synth-label">Économies</div><div class="a15-synth-val" style="color:var(--emerald)">${(economies/1000).toFixed(0)}K</div></div>
-    <div class="a15-synth-box"><div class="a15-synth-label">Dépassements</div><div class="a15-synth-val" style="color:var(--red)">${(depassements/1000).toFixed(0)}K</div></div>`;
+    <div class="a15-synth-box"><div class="a15-synth-label">Dépassements</div><div class="a15-synth-val" style="color:var(--red)">${(depassements/1000).toFixed(0)}K</div></div>
+    <div class="a15-synth-box" style="grid-column:span 2">
+      <div class="a15-synth-label">Budget global — ${fmtFCFA(MISSION.budget)}</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+        <div class="a15-bar-track" style="flex:1;height:6px"><div class="a15-bar-fill est" style="width:${Math.min(pctBudget,100)}%;background:${barColor}"></div></div>
+        <span style="font-family:var(--font-mono);font-size:0.6rem;color:${barColor};font-weight:700">${pctBudget}%</span>
+      </div>
+      <div style="font-family:var(--font-mono);font-size:0.48rem;color:${margeRestante<0?'var(--red)':'var(--text-muted)'};margin-top:3px">
+        Devis engagés : ${fmtFCFA(allReel)} · Marge : ${fmtFCFA(margeRestante)}
+      </div>
+    </div>`;
 }
 
 function a15PopulateArgSelect() {
-  const sel = document.getElementById('a15-arg-select'); if (!sel) return;
-  sel.innerHTML = '';
-  a15State.devis.forEach(d => { const o = document.createElement('option'); o.value = d.id; o.textContent = d.nom; sel.appendChild(o); });
+  ['a15-arg-select','a15-email-select'].forEach(sid => {
+    const sel = document.getElementById(sid); if (!sel) return;
+    sel.innerHTML = '';
+    a15State.devis.forEach(d => { const o = document.createElement('option'); o.value = d.id; o.textContent = d.nom + ' — ' + fmtFCFA(d.reel); sel.appendChild(o); });
+  });
 }
 
 function a15AddDevis(evt) {
@@ -9593,46 +9688,165 @@ function a15AddDevis(evt) {
   setTimeout(() => enableBtn(btn), 400);
 }
 
-function a15GenArgumentaire(evt) {
+async function a15CallClaude(sys, txt, tok) {
+  try {
+    const r = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:tok||800, system:sys, messages:[{role:'user',content:txt}] }) });
+    const d = await r.json(); return d.content?.[0]?.text || '';
+  } catch(e) { return ''; }
+}
+async function a15CallClaudeJSON(sys, txt, tok) {
+  const raw = await a15CallClaude(sys, txt, tok);
+  try { return JSON.parse(raw); } catch(e) { const m=raw.match(/\{[\s\S]*\}/); try { return JSON.parse(m?.[0]||'{}'); } catch(e2) { return {}; } }
+}
+
+/* --- PDF / Image reader --- */
+const A15_PDF_STATE = { extracted: null };
+
+async function a15ReadDevisPDF(input) {
+  const file = input.files[0]; input.value = '';
+  if (!file) return;
+  if (file.size > 3 * 1024 * 1024) { showToast('Fichier trop volumineux (max 3 Mo)', 'warn'); return; }
+  const status = document.getElementById('a15-pdf-status');
+  const preview = document.getElementById('a15-pdf-preview');
+  if (status) status.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted)">Lecture du document en cours…</div>';
+  if (preview) preview.style.display = 'none';
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const base64 = e.target.result.split(',')[1];
+    const mt = file.type || 'application/pdf';
+    const contentBlock = mt === 'application/pdf'
+      ? { type:'document', source:{ type:'base64', media_type:'application/pdf', data:base64 } }
+      : { type:'image',    source:{ type:'base64', media_type:mt, data:base64 } };
+    try {
+      const r = await fetch('/api/claude', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 800,
+          system: 'Tu es assistant d\'extraction de données de factures et devis pour une mission documentaire au Sénégal.',
+          messages: [{ role:'user', content:[
+            contentBlock,
+            { type:'text', text:'Analyse ce devis/facture et extrais les informations. Réponds UNIQUEMENT en JSON valide:\n{"prestataire":"nom","categorie":"impression|transport|hebergement|pirogue|guide|autre","montant_fcfa":0,"montant_original":0,"devise_originale":"FCFA|EUR|USD|XOF|GBP","note":"conditions, délais, TVA, etc","confiance":"haute|moyenne|faible"}\nSi montant pas en FCFA : 1 EUR=655 FCFA, 1 USD=620 FCFA, XOF=FCFA. Mets le converti dans montant_fcfa.' }
+          ]}]
+        })
+      });
+      const d = await r.json();
+      const text = d.content?.[0]?.text || '';
+      let data; try { data = JSON.parse(text); } catch(e) { const m=text.match(/\{[\s\S]*\}/); try { data=JSON.parse(m?.[0]||'{}'); } catch(e2) { data={}; } }
+      if (!data.prestataire && !data.montant_fcfa) {
+        if (status) status.innerHTML = '<div style="color:var(--red);font-size:0.58rem">Impossible d\'extraire les données — vérifiez le fichier ou saisissez manuellement</div>';
+        return;
+      }
+      A15_PDF_STATE.extracted = data;
+      const cats = ['impression','transport','hebergement','pirogue','guide','autre'];
+      const fields = document.getElementById('a15-pdf-fields');
+      if (fields) {
+        fields.innerHTML = `
+          <div class="input-group"><label class="input-label">Prestataire</label><input type="text" class="input-field" id="a15-pdf-f-nom" value="${(data.prestataire||'').replace(/"/g,'&quot;')}" autocomplete="off"></div>
+          <div class="input-group"><label class="input-label">Catégorie</label><select class="input-field" id="a15-pdf-f-cat">${cats.map(c=>`<option value="${c}"${data.categorie===c?' selected':''}>${c}</option>`).join('')}</select></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="input-group" style="margin:0"><label class="input-label">Montant (FCFA)</label><input type="number" class="input-field" id="a15-pdf-f-reel" value="${data.montant_fcfa||0}" autocomplete="off"></div>
+            <div class="input-group" style="margin:0"><label class="input-label">Estimation</label><input type="number" class="input-field" id="a15-pdf-f-est" value="${data.montant_fcfa||0}" autocomplete="off"></div>
+          </div>
+          <div class="input-group"><label class="input-label">Note / Conditions</label><input type="text" class="input-field" id="a15-pdf-f-note" value="${(data.note||'').replace(/"/g,'&quot;')}" autocomplete="off"></div>
+          ${data.devise_originale && data.devise_originale !== 'FCFA' && data.devise_originale !== 'XOF' ? `<div style="font-family:var(--font-mono);font-size:0.5rem;color:var(--amber);margin-bottom:6px">⚠️ Converti depuis ${data.montant_original} ${data.devise_originale} — taux approximatif</div>` : ''}
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted)">Confiance extraction Claude : ${data.confiance||'?'}</div>`;
+      }
+      if (preview) preview.style.display = 'block';
+      if (status) status.innerHTML = '<div style="color:var(--emerald);font-size:0.58rem">✅ Document lu avec succès — vérifiez et confirmez</div>';
+    } catch(e) {
+      if (status) status.innerHTML = '<div style="color:var(--red);font-size:0.58rem">Erreur réseau — vérifiez la connexion</div>';
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function a15ConfirmFromPDF(evt) {
+  const btn = evt.currentTarget; disableBtn(btn);
+  const nom  = document.getElementById('a15-pdf-f-nom')?.value.trim();
+  const cat  = document.getElementById('a15-pdf-f-cat')?.value;
+  const reel = Math.round(parseFloat(document.getElementById('a15-pdf-f-reel')?.value) || 0);
+  const est  = Math.round(parseFloat(document.getElementById('a15-pdf-f-est')?.value)  || 0);
+  const note = document.getElementById('a15-pdf-f-note')?.value.trim();
+  if (!nom || reel <= 0) { showToast('Nom et montant requis', 'warn'); enableBtn(btn); return; }
+  a15State.devis.unshift({ id:'d_'+Date.now(), nom, cat, reel, est:est||reel, note });
+  a15RenderDevis(); a15RenderSynth(); saveStateToDB();
+  document.getElementById('a15-pdf-preview').style.display = 'none';
+  document.getElementById('a15-pdf-status').innerHTML = '';
+  addActivity('📎', `Devis lu (PDF/photo) : ${nom} — ${fmtFCFA(reel)}`, now());
+  showToast(`✅ ${nom} enregistré depuis le document`, 'ok');
+  setTimeout(() => enableBtn(btn), 400);
+}
+
+/* --- Argumentaire Claude --- */
+async function a15GenArgumentaire(evt) {
   const btn = evt.currentTarget; disableBtn(btn);
   const id = document.getElementById('a15-arg-select')?.value;
   const d = a15State.devis.find(x => x.id === id);
-  if (!d) { enableBtn(btn); return; }
+  if (!d) { showToast('Sélectionner un prestataire', 'warn'); enableBtn(btn); return; }
+  const card = document.getElementById('a15-arg-card');
+  const out  = document.getElementById('a15-arg-output');
+  if (card) card.style.display = 'block';
+  if (out)  out.textContent = 'Rédaction en cours…';
   const delta = d.est - d.reel;
-  setTimeout(() => {
-    const card = document.getElementById('a15-arg-card');
-    const out = document.getElementById('a15-arg-output');
-    if (card) card.style.display = 'block';
-    const arg = `ARGUMENTAIRE DE NÉGOCIATION
-Prestataire : ${d.nom}
-Catégorie : ${d.cat}
-Date : ${new Date().toLocaleDateString('fr-FR')}
-
-POSITION BUDGÉTAIRE
-Notre estimation initiale : ${fmtFCFA(d.est)}
-Devis reçu : ${fmtFCFA(d.reel)}
-Écart : ${delta >= 0 ? 'Économie de ' : 'Dépassement de '} ${fmtFCFA(Math.abs(delta))} (${Math.abs(Math.round(delta/d.est*100))}%)
-
-LEVIERS DE NÉGOCIATION
-${delta < 0 ? `• L'écart de ${fmtFCFA(Math.abs(delta))} représente un dépassement de ${Math.abs(Math.round(delta/d.est*100))}% de notre cadre budgétaire.
-• Nous sollicitons un alignement sur notre estimation : ${fmtFCFA(d.est)}.
-• En contrepartie : paiement en avance (30%) à la commande, référence pour 2 projets futurs.` : `• Votre devis est conforme à notre estimation initiale. Économie réalisée : ${fmtFCFA(delta)}.
-• Nous proposons de consolider notre partenariat sur la durée de la mission (${MISSION.joursTerrain} jours).`}
-• Volume de la mission : 32 sites, ${MISSION.km} km, budget global ${(MISSION.budget/1000000).toFixed(0)}M FCFA.
-• Délai de paiement : 15 jours après livraison conforme.
-
-OBJECTIF DE NÉGOCIATION
-Cible : ${fmtFCFA(Math.min(d.reel, d.est))} — Marge acceptable : ±5%
-
-${d.note ? 'CONDITIONS PARTICULIÈRES : ' + d.note : ''}`;
-    if (out) out.textContent = arg;
-    enableBtn(btn);
-  }, 700);
+  const pct = d.est > 0 ? Math.abs(Math.round(delta/d.est*100)) : 0;
+  const text = await a15CallClaude(
+    `Tu es négociateur expert pour missions documentaires en Afrique de l'Ouest. Tu connais les tarifs du marché sénégalais (imprimeurs Dakar, transporteurs 4x4, guides terrain, hôtels région). Génère un argumentaire structuré, en français, professionnel et persuasif.`,
+    `Prestataire : ${d.nom}. Catégorie : ${d.cat}. Notre estimation : ${fmtFCFA(d.est)}. Devis reçu : ${fmtFCFA(d.reel)}. Écart : ${delta>=0?'économie':'dépassement'} de ${fmtFCFA(Math.abs(delta))} (${pct}%). Note : ${d.note||'aucune'}. Mission : ${MISSION.sites} sites Sénégal, ${MISSION.joursTerrain}j terrain, budget global ${(MISSION.budget/1000000).toFixed(0)}M FCFA. Génère un argumentaire de négociation professionnel adapté à la catégorie "${d.cat}" au Sénégal.`,
+    900);
+  if (out) out.textContent = text || 'Erreur — vérifiez la clé API Claude';
+  enableBtn(btn);
 }
 
 function a15CopyArg() {
-  const text = document.getElementById('a15-arg-output')?.textContent || '';
-  navigator.clipboard?.writeText(text).then(() => showToast('📋 Argumentaire copié', 'ok'));
+  navigator.clipboard?.writeText(document.getElementById('a15-arg-output')?.textContent||'').then(()=>showToast('📋 Argumentaire copié','ok'));
+}
+
+/* --- Email relance --- */
+async function a15GenEmailRelance(evt) {
+  const btn = evt.currentTarget; disableBtn(btn);
+  const id  = document.getElementById('a15-email-select')?.value;
+  const ton = document.getElementById('a15-email-ton')?.value;
+  const d   = a15State.devis.find(x => x.id === id);
+  const out = document.getElementById('a15-email-result');
+  if (!d) { showToast('Sélectionner un prestataire', 'warn'); enableBtn(btn); return; }
+  if (out) out.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted)">Rédaction en cours…</div>';
+  const text = await a15CallClaude(
+    `Tu es chargé de négociation pour une mission documentaire photographique au Sénégal (budget 100M FCFA, 32 sites). Rédige des emails courts et efficaces.`,
+    `Prestataire : ${d.nom}. Catégorie : ${d.cat}. Estimation : ${fmtFCFA(d.est)}. Devis : ${fmtFCFA(d.reel)}. Écart : ${fmtFCFA(Math.abs(d.est-d.reel))} (${d.reel>d.est?'dépassement':'économie'}). Ton : ${ton}. Note : ${d.note||'aucune'}. Rédige un email de relance/négociation professionnel en français, prêt à envoyer.`,
+    700);
+  if (!out) { enableBtn(btn); return; }
+  if (!text) { out.innerHTML = '<div style="color:var(--red);font-size:0.6rem">Erreur — vérifiez la clé API Claude</div>'; enableBtn(btn); return; }
+  const enc = encodeURIComponent(text);
+  out.innerHTML = `<div style="background:var(--bg-input);border-radius:6px;padding:12px;font-size:0.6rem;line-height:1.7;white-space:pre-wrap;color:var(--text-1)">${text.replace(/</g,'&lt;')}</div>
+    <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="navigator.clipboard?.writeText(decodeURIComponent('${enc}')).then(()=>showToast('📋 Copié','ok'))">📋 Copier l'email</button>`;
+  enableBtn(btn);
+}
+
+/* --- Comparateur multi-devis --- */
+async function a15ComparerDevis(evt) {
+  const btn = evt.currentTarget; disableBtn(btn);
+  const cat  = document.getElementById('a15-comp-cat')?.value;
+  const out  = document.getElementById('a15-comp-result');
+  const items = a15State.devis.filter(d => d.cat === cat);
+  if (items.length < 2) { showToast('Il faut au moins 2 devis dans cette catégorie', 'warn'); enableBtn(btn); return; }
+  if (out) out.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted)">Analyse comparative en cours…</div>';
+  const devisStr = items.map(d => `• ${d.nom} : ${fmtFCFA(d.reel)} (estimé ${fmtFCFA(d.est)})${d.note?' – '+d.note:''}`).join('\n');
+  const data = await a15CallClaudeJSON(
+    `Tu es expert en sélection de prestataires pour missions photographiques en Afrique de l'Ouest. Réponds en JSON : {"recommande":"nom","raison":"...","points_attention":"...","economie_vs_reste":"...","alerte":""}`,
+    `Catégorie : ${cat}. Devis reçus :\n${devisStr}\nMission documentaire 32 sites Sénégal, ${MISSION.joursTerrain} jours terrain. Analyse comparative et recommande le meilleur prestataire (pas forcément le moins cher).`,
+    800);
+  if (!out) { enableBtn(btn); return; }
+  if (!data.recommande) { out.innerHTML = '<div style="color:var(--red);font-size:0.6rem">Erreur — vérifiez la clé API Claude</div>'; enableBtn(btn); return; }
+  out.innerHTML = `
+    <div style="background:rgba(80,220,100,0.07);border:1px solid rgba(80,220,100,0.25);border-radius:6px;padding:10px;margin-bottom:8px">
+      <div style="font-size:0.65rem;font-weight:600;color:var(--emerald);margin-bottom:4px">✅ Recommandé : ${data.recommande}</div>
+      <div style="font-size:0.6rem;line-height:1.6">${data.raison||''}</div>
+    </div>
+    ${data.points_attention ? `<div style="font-size:0.58rem;color:var(--amber);margin-bottom:6px">⚠️ ${data.points_attention}</div>` : ''}
+    ${data.economie_vs_reste ? `<div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted);margin-bottom:4px">${data.economie_vs_reste}</div>` : ''}
+    ${data.alerte ? `<div style="font-size:0.55rem;color:var(--red)">🚨 ${data.alerte}</div>` : ''}`;
+  enableBtn(btn);
 }
 
 function initAgent15() {
@@ -9657,36 +9871,6 @@ const a16State = {
   ]
 };
 
-function a16RenderPaliers() {
-  const list = document.getElementById('a16-paliers-list'); if (!list) return;
-  list.innerHTML = '';
-  a16State.paliers.forEach(p => {
-    const soldOut = p.count >= p.limit;
-    const div = document.createElement('div'); div.className = `a16-palier-item${soldOut ? ' sold-out' : ''}`;
-    div.innerHTML = `<div class="a16-palier-icon">${p.icon}</div>
-      <div class="a16-palier-info">
-        <div class="a16-palier-name">${p.name}${soldOut ? ' — COMPLET' : ''}</div>
-        <div class="a16-palier-desc">${p.desc} · Limité à ${p.limit} contributeurs</div>
-      </div>
-      <div class="a16-palier-price">
-        <div class="a16-pp-val">${p.price.toLocaleString('fr-FR')}</div>
-        <div class="a16-pp-backers">FCFA · ${p.count}/${p.limit}</div>
-      </div>`;
-    list.appendChild(div);
-  });
-  const sel = document.getElementById('a16-palier-select');
-  if (sel) { sel.innerHTML = '<option value="">— Palier libre —</option>'; a16State.paliers.forEach(p => { const o = document.createElement('option'); o.value = p.id; o.textContent = `${p.icon} ${p.name} — ${p.price.toLocaleString('fr-FR')} FCFA`; sel.appendChild(o); }); }
-}
-
-function a16UpdateJauge() {
-  const pct = Math.min(Math.round(a16State.raised / a16State.goal * 100), 100);
-  const fill = document.getElementById('a16-jauge-fill'); if (fill) fill.style.width = pct + '%';
-  const raisedEl = document.getElementById('a16-raised-val'); if (raisedEl) raisedEl.textContent = Math.round(a16State.raised).toLocaleString('fr-FR');
-  const pctPill = document.getElementById('a16-pct-pill'); if (pctPill) pctPill.textContent = pct + '%';
-  const backersPill = document.getElementById('a16-backers-pill'); if (backersPill) backersPill.textContent = `${a16State.backers.length} contributeur${a16State.backers.length > 1 ? 's' : ''}`;
-  const daysPill = document.getElementById('a16-days-pill'); if (daysPill) daysPill.textContent = `${a16State.daysLeft} jours restants`;
-}
-
 function a16AddContrib(evt) {
   const btn = evt.currentTarget; disableBtn(btn);
   const name = document.getElementById('a16-contrib-name')?.value.trim() || 'Anonyme';
@@ -9710,6 +9894,194 @@ function a16AddContrib(evt) {
   setTimeout(() => enableBtn(btn), 500);
 }
 
+function a16UpdateGoal(val) { a16State.goal = Math.round(parseFloat(val) || 25000000); a16UpdateJauge(); const el = document.getElementById('a16-goal-val'); if (el) el.textContent = a16State.goal.toLocaleString('fr-FR'); saveStateToDB(); }
+function a16UpdateDays(val) { a16State.daysLeft = parseInt(val) || 0; a16UpdateJauge(); saveStateToDB(); }
+
+/* --- Claude helpers --- */
+async function a16CallClaude(sys, txt, tok) {
+  try {
+    const r = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:tok||700, system:sys, messages:[{role:'user',content:txt}] }) });
+    const d = await r.json(); return d.content?.[0]?.text || '';
+  } catch(e) { return ''; }
+}
+async function a16CallClaudeJSON(sys, txt, tok) {
+  const raw = await a16CallClaude(sys, txt, tok);
+  try { return JSON.parse(raw); } catch(e) { const m=raw.match(/\{[\s\S]*\}/); try { return JSON.parse(m?.[0]||'{}'); } catch(e2) { return {}; } }
+}
+
+/* --- Projection objectif --- */
+function a16RenderProjection() {
+  const el = document.getElementById('a16-projection');
+  if (!el) return;
+  if (a16State.backers.length === 0 || a16State.daysLeft <= 0) { el.innerHTML = ''; return; }
+  const oldest = Math.min(...a16State.backers.map(b => b.ts));
+  const daysElapsed = Math.max(1, (Date.now() - oldest) / 86400000);
+  const ratePerDay  = a16State.raised / daysElapsed;
+  const projected   = a16State.raised + ratePerDay * a16State.daysLeft;
+  const ok = projected >= a16State.goal;
+  const neededPerDay = a16State.daysLeft > 0 ? (a16State.goal - a16State.raised) / a16State.daysLeft : 0;
+  el.innerHTML = `<div style="border:1px solid ${ok?'rgba(80,220,100,0.3)':'rgba(255,82,82,0.3)'};border-radius:6px;padding:8px;margin-top:10px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:0.58rem;color:${ok?'var(--emerald)':'var(--red)'}">${ok?'✅ Objectif atteignable':'⚠️ Rythme insuffisant'}</span>
+      <span style="font-family:var(--font-mono);font-size:0.55rem;color:${ok?'var(--emerald)':'var(--red)'}">~${fmtFCFA(Math.round(projected))}</span>
+    </div>
+    <div style="font-family:var(--font-mono);font-size:0.47rem;color:var(--text-muted);margin-top:3px">
+      Rythme : ${fmtFCFA(Math.round(ratePerDay))}/j · Nécessaire : ${fmtFCFA(Math.round(neededPerDay))}/j
+    </div>
+  </div>`;
+}
+
+/* --- Paliers personnalisables --- */
+function a16ToggleAddPalier() {
+  const c = document.getElementById('a16-add-palier-card');
+  if (c) c.style.display = c.style.display === 'none' ? 'block' : 'none';
+}
+
+function a16SavePalier(evt) {
+  const btn = evt.currentTarget; disableBtn(btn);
+  const icon  = document.getElementById('a16-np-icon')?.value.trim()  || '📖';
+  const name  = document.getElementById('a16-np-name')?.value.trim();
+  const price = parseInt(document.getElementById('a16-np-price')?.value) || 0;
+  const limit = parseInt(document.getElementById('a16-np-limit')?.value) || 50;
+  const desc  = document.getElementById('a16-np-desc')?.value.trim();
+  if (!name || price <= 0) { showToast('Nom et prix requis', 'warn'); enableBtn(btn); return; }
+  a16State.paliers.push({ id:'pal_'+Date.now(), icon, name, price, desc:desc||'', limit, count:0 });
+  a16RenderPaliers(); a16ToggleAddPalier(); saveStateToDB();
+  ['a16-np-name','a16-np-price','a16-np-limit','a16-np-desc'].forEach(id => { const e=document.getElementById(id); if(e)e.value=''; });
+  const ei = document.getElementById('a16-np-icon'); if (ei) ei.value = '';
+  showToast(`✅ Palier "${name}" créé`, 'ok');
+  setTimeout(() => enableBtn(btn), 400);
+}
+
+function a16DeletePalier(id) {
+  const p = a16State.paliers.find(x => x.id === id);
+  if (!p) return;
+  if (p.count > 0) { showToast(`Impossible — ${p.count} contribution(s) sur ce palier`, 'warn'); return; }
+  a16State.paliers = a16State.paliers.filter(x => x.id !== id);
+  a16RenderPaliers(); saveStateToDB();
+  showToast('🗑 Palier supprimé', 'ok');
+}
+
+/* --- Render paliers (updated with delete) --- */
+function a16RenderPaliers() {
+  const list = document.getElementById('a16-paliers-list'); if (!list) return;
+  list.innerHTML = '';
+  a16State.paliers.forEach(p => {
+    const soldOut = p.count >= p.limit;
+    const div = document.createElement('div'); div.className = `a16-palier-item${soldOut ? ' sold-out' : ''}`;
+    div.innerHTML = `<div class="a16-palier-icon">${p.icon}</div>
+      <div class="a16-palier-info">
+        <div class="a16-palier-name">${p.name}${soldOut ? ' — COMPLET' : ''}</div>
+        <div class="a16-palier-desc">${p.desc}${p.desc?' · ':''}Limité à ${p.limit} contributeurs</div>
+      </div>
+      <div class="a16-palier-price">
+        <div class="a16-pp-val">${p.price.toLocaleString('fr-FR')}</div>
+        <div class="a16-pp-backers">FCFA · ${p.count}/${p.limit}</div>
+      </div>
+      ${p.count===0 ? `<button onclick="a16DeletePalier('${p.id}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:4px;flex-shrink:0" title="Supprimer">🗑</button>` : ''}`;
+    list.appendChild(div);
+  });
+  const sel = document.getElementById('a16-palier-select');
+  if (sel) { sel.innerHTML = '<option value="">— Palier libre —</option>'; a16State.paliers.forEach(p => { const o=document.createElement('option'); o.value=p.id; o.textContent=`${p.icon} ${p.name} — ${p.price.toLocaleString('fr-FR')} FCFA`; sel.appendChild(o); }); }
+}
+
+/* --- Message Claude --- */
+async function a16GenMessage(evt) {
+  const btn = evt.currentTarget; disableBtn(btn);
+  const reseau   = document.getElementById('a16-msg-reseau')?.value;
+  const anecdote = document.getElementById('a16-msg-anecdote')?.value.trim();
+  const pct = Math.min(Math.round(a16State.raised / a16State.goal * 100), 100);
+  const card = document.getElementById('a16-msg-card');
+  const out  = document.getElementById('a16-msg-output');
+  if (card) card.style.display = 'block';
+  if (out)  out.textContent = 'Rédaction en cours…';
+  const reseauLabel = { telegram:'Telegram (groupe communautaire diaspora)', facebook:'Facebook', instagram:'Instagram (caption + hashtags)', twitter:'X/Twitter (280 caractères max)', email:'email newsletter', whatsapp:'WhatsApp diaspora (message direct)' };
+  const pays = [...new Set(a16State.backers.map(b => b.pays.split(',')[0].trim()))].filter(Boolean).slice(0,6).join(', ');
+  const text = await a16CallClaude(
+    `Tu es expert en mobilisation de la diaspora sénégalaise pour des projets culturels. Tu écris des messages authentiques, jamais des slogans creux. Tu ne cites jamais de plateformes de crowdfunding externes.`,
+    `Campagne SÉNÉGAL V3 — livre documentaire photographique trilingue, 224 pages, 2500 exemplaires (2000 Standard 50 000 FCFA + 500 Luxe numéroté 85 000 FCFA). Progression : ${pct}% atteint (${fmtFCFA(a16State.raised)} sur ${fmtFCFA(a16State.goal)}). ${a16State.backers.length} contributeurs${pays?' depuis '+pays:''}. ${a16State.daysLeft} jours restants.${anecdote?' Anecdote terrain à intégrer : '+anecdote:''} Réseau : ${reseauLabel[reseau]||reseau}. Rédige un message de campagne percutant et humain, adapté exactement à ce réseau. Lien : senegalthr.com`,
+    700);
+  if (out) out.textContent = text || 'Erreur — vérifiez la clé API Claude';
+  enableBtn(btn);
+}
+
+function a16CopyMsg() {
+  navigator.clipboard?.writeText(document.getElementById('a16-msg-output')?.textContent||'').then(()=>showToast('📋 Message copié','ok'));
+}
+
+/* --- Remerciement Claude --- */
+function a16PopulateRemSelect() {
+  const sel = document.getElementById('a16-rem-select'); if (!sel) return;
+  sel.innerHTML = a16State.backers.length === 0 ? '<option>Aucun contributeur</option>' : '';
+  a16State.backers.forEach(b => {
+    const o = document.createElement('option'); o.value = b.ts;
+    o.textContent = `${b.name} — ${b.palier} — ${b.pays}`;
+    sel.appendChild(o);
+  });
+}
+
+async function a16GenRemerciement(evt) {
+  const btn = evt.currentTarget; disableBtn(btn);
+  const ts = parseInt(document.getElementById('a16-rem-select')?.value);
+  const b  = a16State.backers.find(x => x.ts === ts) || a16State.backers[0];
+  const out = document.getElementById('a16-rem-result');
+  if (!b) { showToast('Aucun contributeur', 'warn'); enableBtn(btn); return; }
+  if (out) out.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted)">Rédaction en cours…</div>';
+  const text = await a16CallClaude(
+    `Tu écris de la correspondance sincère et chaleureuse pour une mission documentaire photographique sénégalaise. Jamais générique.`,
+    `Contributeur : ${b.name}. Pays : ${b.pays}. Palier : ${b.palier}. Montant : ${fmtFCFA(b.amount)}. Campagne SÉNÉGAL V3. Rédige un email de remerciement chaleureux et personnel (8-12 lignes max), adapté à la diaspora sénégalaise. Mentionne sa contribution spécifique.`,
+    500);
+  if (!out) { enableBtn(btn); return; }
+  if (!text) { out.innerHTML = '<div style="color:var(--red);font-size:0.6rem">Erreur — vérifiez la clé API Claude</div>'; enableBtn(btn); return; }
+  const enc = encodeURIComponent(text);
+  out.innerHTML = `<div style="background:var(--bg-input);border-radius:6px;padding:12px;font-size:0.6rem;line-height:1.7;white-space:pre-wrap;color:var(--text-1)">${text.replace(/</g,'&lt;')}</div>
+    <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="navigator.clipboard?.writeText(decodeURIComponent('${enc}')).then(()=>showToast('📋 Copié','ok'))">📋 Copier</button>`;
+  enableBtn(btn);
+}
+
+/* --- Analyse campagne Claude --- */
+async function a16AnalyseCampagne(evt) {
+  const btn = evt.currentTarget; disableBtn(btn);
+  const out = document.getElementById('a16-analyse-result');
+  if (out) out.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted)">Analyse en cours…</div>';
+  const pct = Math.min(Math.round(a16State.raised / a16State.goal * 100), 100);
+  const pays = [...new Set(a16State.backers.map(b=>b.pays.split(',')[0].trim()))].filter(Boolean).slice(0,8).join(', ');
+  const palierStats = a16State.paliers.map(p=>`${p.name} (${fmtFCFA(p.price)}): ${p.count}/${p.limit}`).join(', ');
+  const data = await a16CallClaudeJSON(
+    `Tu es expert en campagnes de financement participatif culturel francophone, notamment auprès de la diaspora africaine. Réponds en JSON : {"diagnostic":"...","taux_succes":"fort|moyen|faible","actions":[{"priorite":1,"titre":"...","detail":"..."}],"alerte":""}`,
+    `Campagne SÉNÉGAL V3, livre documentaire photographique. Objectif: ${fmtFCFA(a16State.goal)}. Levé: ${fmtFCFA(a16State.raised)} (${pct}%). Jours restants: ${a16State.daysLeft}. Contributeurs: ${a16State.backers.length}. Pays: ${pays||'aucun'}. Paliers: ${palierStats}. Analyse et propose 3-4 actions concrètes pour accélérer la campagne.`,
+    1000);
+  if (!out) { enableBtn(btn); return; }
+  if (!data.diagnostic) { out.innerHTML = '<div style="color:var(--red);font-size:0.6rem">Erreur — vérifiez la clé API Claude</div>'; enableBtn(btn); return; }
+  const tauxColor = { fort:'var(--emerald)', moyen:'var(--amber)', faible:'var(--red)' };
+  let html = `<div style="background:rgba(0,242,254,0.05);border:1px solid rgba(0,242,254,0.15);border-radius:6px;padding:10px;margin-bottom:10px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <span style="font-size:0.62rem;font-weight:600">Diagnostic</span>
+      <span class="pill" style="background:${tauxColor[data.taux_succes]||'var(--text-muted)'};color:#000;font-size:0.42rem;padding:2px 6px">${(data.taux_succes||'').toUpperCase()}</span>
+    </div>
+    <div style="font-size:0.6rem;line-height:1.6">${data.diagnostic}</div>
+  </div>`;
+  (data.actions||[]).forEach(a => {
+    html += `<div style="border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px">
+      <div style="font-size:0.63rem;font-weight:600;color:var(--cyan)">Action ${a.priorite} — ${a.titre}</div>
+      <div style="font-size:0.58rem;line-height:1.6;margin-top:4px">${a.detail}</div>
+    </div>`;
+  });
+  if (data.alerte) html += `<div style="font-size:0.55rem;color:var(--red)">⚠️ ${data.alerte}</div>`;
+  out.innerHTML = html;
+  enableBtn(btn);
+}
+
+function a16UpdateJauge() {
+  const pct = Math.min(Math.round(a16State.raised / a16State.goal * 100), 100);
+  const fill = document.getElementById('a16-jauge-fill'); if (fill) fill.style.width = pct + '%';
+  const raisedEl = document.getElementById('a16-raised-val'); if (raisedEl) raisedEl.textContent = Math.round(a16State.raised).toLocaleString('fr-FR');
+  const pctPill = document.getElementById('a16-pct-pill'); if (pctPill) pctPill.textContent = pct + '%';
+  const backersPill = document.getElementById('a16-backers-pill'); if (backersPill) backersPill.textContent = `${a16State.backers.length} contributeur${a16State.backers.length > 1 ? 's' : ''}`;
+  const daysPill = document.getElementById('a16-days-pill'); if (daysPill) daysPill.textContent = `${a16State.daysLeft} jours restants`;
+  a16RenderProjection();
+}
+
 function a16RenderBackers() {
   const card = document.getElementById('a16-backers-card');
   const list = document.getElementById('a16-backers-list');
@@ -9726,40 +10098,12 @@ function a16RenderBackers() {
       <div class="a16-backer-amt">${Math.round(b.amount).toLocaleString('fr-FR')}</div>`;
     list.appendChild(div);
   });
-}
-
-function a16UpdateGoal(val) { a16State.goal = Math.round(parseFloat(val) || 25000000); a16UpdateJauge(); const el = document.getElementById('a16-goal-val'); if (el) el.textContent = a16State.goal.toLocaleString('fr-FR'); saveStateToDB(); }
-function a16UpdateDays(val) { a16State.daysLeft = parseInt(val) || 0; a16UpdateJauge(); saveStateToDB(); }
-
-function a16GenMessage(evt) {
-  const btn = evt.currentTarget; disableBtn(btn);
-  const reseau = document.getElementById('a16-msg-reseau')?.value;
-  const pct = Math.min(Math.round(a16State.raised / a16State.goal * 100), 100);
-  setTimeout(() => {
-    const msgs = {
-      telegram: `📚 SÉNÉGAL 32, Livre d'Art Collector\n\n${a16State.raised > 0 ? `Nous avons déjà levé ${fmtFCFA(a16State.raised)} (${pct}%) grâce à ${a16State.backers.length} contributeur(s) de la diaspora !` : 'Notre campagne de financement participatif est lancée !'}\n\n🎯 Objectif : ${fmtFCFA(a16State.goal)}\n📅 ${a16State.daysLeft} jours restants\n\n32 sites photographiés en 87 jours de mission à travers tout le Sénégal. 500 exemplaires numérotés. Un livre qui restera.\n\nSouten-nous dès 5 000 FCFA 👉 documentaire-senegal.sn\n\nPartagez à vos proches ! 🇸🇳`,
-      facebook: `🇸🇳 SÉNÉGAL 32. Le documentaire photographique de notre génération.\n\n${pct}% de l'objectif atteint. ${a16State.backers.length} contributeurs ont déjà rejoint l'aventure depuis ${[...new Set(a16State.backers.map(b => b.pays.split(',')[0].trim()))].join(', ') || 'la diaspora mondiale'}.\n\nChaque contribution, même symbolique, fait avancer ce projet : 32 sites, 5 400 km parcourus, 100 millions FCFA investis dans la valorisation de notre patrimoine.\n\n👉 documentaire-senegal.sn\n\n#Sénégal #Diaspora #Livre #Patrimoine #Crowdfunding`,
-      twitter: `🇸🇳 SÉNÉGAL 32 | Livre d'art collector\n\n${pct}% atteint · ${a16State.backers.length} contributeurs · ${a16State.daysLeft}j restants\n\n32 sites · 5400km · 500 exemplaires numérotés\n\nSouten-nous 👉 documentaire-senegal.sn\n\n#Sénégal #Diaspora #Crowdfunding`,
-      email: `Objet : SÉNÉGAL 32, soutenez le premier grand livre documentaire sur le Sénégal\n\nChère communauté,\n\nNous vous invitons à rejoindre les ${a16State.backers.length} contributeurs qui ont déjà soutenu la Mission Documentaire Sénégal V3.\n\n🎯 Objectif : ${fmtFCFA(a16State.goal)}\n📊 Progression : ${pct}% (${fmtFCFA(a16State.raised)} levés)\n📅 ${a16State.daysLeft} jours restants\n\nCe projet, c'est 32 sites photographiés en 87 jours, environ 5 400 km parcourus, et un budget de 100 000 000 FCFA entièrement dédié à la valorisation du patrimoine sénégalais.\n\nChaque contribution donne droit à un exemplaire numéroté de notre édition collector limitée à 500 exemplaires.\n\n👉 Contribuer sur : documentaire-senegal.sn\n\nMerci pour votre soutien,\nL'équipe Mission Documentaire Sénégal`
-    };
-    const card = document.getElementById('a16-msg-card');
-    const out = document.getElementById('a16-msg-output');
-    if (card) card.style.display = 'block';
-    if (out) out.textContent = msgs[reseau] || msgs.telegram;
-    enableBtn(btn);
-  }, 600);
-}
-
-function a16CopyMsg() {
-  const text = document.getElementById('a16-msg-output')?.textContent || '';
-  navigator.clipboard?.writeText(text).then(() => showToast('📋 Message copié', 'ok'));
+  a16PopulateRemSelect();
 }
 
 function initAgent16() {
-  const goalInp = document.getElementById('a16-goal-input');
-  if (goalInp) goalInp.value = a16State.goal;
-  const daysInp = document.getElementById('a16-days-input');
-  if (daysInp) daysInp.value = a16State.daysLeft;
+  const goalInp = document.getElementById('a16-goal-input'); if (goalInp) goalInp.value = a16State.goal;
+  const daysInp = document.getElementById('a16-days-input'); if (daysInp) daysInp.value = a16State.daysLeft;
   a16RenderPaliers(); a16UpdateJauge(); a16RenderBackers();
 }
 
