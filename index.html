@@ -2168,7 +2168,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
     <button class="agent-tab" onclick="switchTab(5)"><span class="tab-num">06</span>Direction Art.<span class="stub-indicator"></span></button>
     <button class="agent-tab" onclick="switchTab(6)"><span class="tab-num">07</span>Rédacteur<span class="stub-indicator"></span></button>
     <button class="agent-tab" onclick="switchTab(7)"><span class="tab-num">08</span>Correcteur<span class="stub-indicator"></span></button>
-    <button class="agent-tab" onclick="switchTab(8)"><span class="tab-num">09</span>Commercial<span class="stub-indicator"></span></button>
+    <button class="agent-tab" onclick="switchTab(8)"><span class="tab-num">09</span>Commercial</button>
     <button class="agent-tab" onclick="switchTab(9)"><span class="tab-num">10</span>Juridique</button>
     <button class="agent-tab" onclick="switchTab(10)"><span class="tab-num">11</span>Logistique<span class="stub-indicator"></span></button>
     <button class="agent-tab" onclick="switchTab(11)"><span class="tab-num">12</span>Distribution<span class="stub-indicator"></span></button>
@@ -3513,7 +3513,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
               <option value="jeunesse">Impact éducatif / jeunesse</option>
             </select>
           </div>
-          <button class="btn btn-primary btn-full" onclick="a9GenerateDossier()">
+          <button class="btn btn-primary btn-full" onclick="a9GenerateDossier(this)">
             <div class="spinner"></div><span class="btn-text">📄 Générer Dossier d'Impact</span>
           </button>
         </div>
@@ -7726,6 +7726,23 @@ function initAgent8() {
    ============================================================ */
 const a9State = { sponsors: [], dossierOutput: null };
 
+const A9_COMMERCIAL_IDENTITY = `Tu es le responsable du développement et du mécénat de la Mission Documentaire SÉNÉGAL V3 — le plus grand livre photographique jamais réalisé sur le Sénégal. Tu rédiges des dossiers de financement percutants, crédibles et adaptés à chaque type de bailleur. Registre professionnel, concret, jamais grandiloquent. Pas de listes à puces dans les paragraphes de présentation (les puces sont autorisées uniquement pour les contreparties et modalités).`;
+
+async function a9CallClaude(sys, txt, tok) {
+  const res = await fetch('/api/claude', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens: tok||1400, system: A9_COMMERCIAL_IDENTITY + '\n\n' + sys, messages:[{role:'user',content:[{type:'text',text:txt}]}] })
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error?.message || data.hint || data.error || `HTTP ${res.status}`);
+  return data.content?.[0]?.text || '';
+}
+async function a9CallClaudeJSON(sys, txt, tok) {
+  const raw = await a9CallClaude(sys, txt, tok);
+  try { return JSON.parse(raw); }
+  catch { const m = raw.match(/\{[\s\S]*\}/); if (m) return JSON.parse(m[0]); throw new Error('Réponse non-JSON'); }
+}
+
 function a9ComputeTotals() {
   let mtac = 0, priv = 0;
   a9State.sponsors.forEach(s => {
@@ -7877,32 +7894,91 @@ Contreparties : mention diplomatique, distribution ambassades, exposition bilat�
   })
 };
 
-function a9GenerateDossier() {
-  const btn = event.currentTarget; disableBtn(btn);
+const A9_TARGET_LABELS = {
+  mtac:'Fonds Institutionnel MTAC (Ministère du Tourisme, de l\'Artisanat et de la Culture du Sénégal)',
+  entreprise:'Entreprise privée (mécénat / RSE)',
+  diaspora:'Diaspora sénégalaise (financement participatif)',
+  ong:'ONG / Fondation culturelle ou patrimoniale',
+  ambassade:'Ambassade / Coopération culturelle internationale'
+};
+const A9_ANGLE_LABELS = {
+  culture:'Rayonnement culturel national',
+  eco:'Retombées économiques et promotion du tourisme',
+  heritage:'Préservation du patrimoine',
+  visibilite:'Visibilité internationale du Sénégal',
+  jeunesse:'Impact éducatif et transmission à la jeunesse'
+};
+
+const A9_DOSSIER_KPIS = `<div class="a9-dos-kpi-row">
+  <div class="a9-dos-kpi"><div class="a9-dk-val">32</div><div class="a9-dk-label">Sites</div></div>
+  <div class="a9-dos-kpi"><div class="a9-dk-val">5 400</div><div class="a9-dk-label">km</div></div>
+  <div class="a9-dos-kpi"><div class="a9-dk-val">101j</div><div class="a9-dk-label">Mission</div></div>
+  <div class="a9-dos-kpi"><div class="a9-dk-val">500</div><div class="a9-dk-label">Ex. numérotés</div></div>
+  <div class="a9-dos-kpi"><div class="a9-dk-val">200p</div><div class="a9-dk-label">Livre</div></div>
+  <div class="a9-dos-kpi"><div class="a9-dk-val">8K</div><div class="a9-dk-label">Résolution</div></div>
+</div>`;
+
+function a9RenderDossier(tpl) {
+  const outputEl = document.getElementById('a9-dossier-output');
+  const badgeEl = document.getElementById('a9-dossier-title-badge');
+  if (badgeEl) badgeEl.textContent = tpl.title;
+  if (outputEl) {
+    outputEl.innerHTML = tpl.sections.map(s => `<div class="a9-dos-section"><div class="a9-dos-head">${escapeHtml(s.head)}</div><div class="a9-dos-body">${s.body === '__KPIS__' ? A9_DOSSIER_KPIS : escapeHtml(s.body).replace(/\n/g,'<br>')}</div></div>`).join('');
+  }
+  document.getElementById('a9-dossier-card').style.display = 'block';
+  a9State.dossierOutput = tpl;
+}
+
+async function a9GenerateDossier(btn) {
+  btn = btn || (typeof event !== 'undefined' ? event.currentTarget : null);
+  if (btn) disableBtn(btn);
   const target = document.getElementById('a9-dossier-target')?.value || 'mtac';
   const amt = Math.round(parseFloat(document.getElementById('a9-dossier-amount')?.value) || 5000000);
   const angle = document.getElementById('a9-dossier-angle')?.value || 'culture';
-  setTimeout(() => {
-    const tpl = (A9_DOSSIER_TEMPLATES[target] || A9_DOSSIER_TEMPLATES.mtac)(amt, angle);
-    const KPIS = `<div class="a9-dos-kpi-row">
-      <div class="a9-dos-kpi"><div class="a9-dk-val">32</div><div class="a9-dk-label">Sites</div></div>
-      <div class="a9-dos-kpi"><div class="a9-dk-val">5 400</div><div class="a9-dk-label">km</div></div>
-      <div class="a9-dos-kpi"><div class="a9-dk-val">101j</div><div class="a9-dk-label">Mission</div></div>
-      <div class="a9-dos-kpi"><div class="a9-dk-val">500</div><div class="a9-dk-label">Ex. numérotés</div></div>
-      <div class="a9-dos-kpi"><div class="a9-dk-val">200p</div><div class="a9-dk-label">Livre</div></div>
-      <div class="a9-dos-kpi"><div class="a9-dk-val">8K</div><div class="a9-dk-label">Résolution</div></div>
-    </div>`;
-    const outputEl = document.getElementById('a9-dossier-output');
-    const badgeEl = document.getElementById('a9-dossier-title-badge');
-    if (badgeEl) badgeEl.textContent = tpl.title;
-    if (outputEl) {
-      outputEl.innerHTML = tpl.sections.map(s => `<div class="a9-dos-section"><div class="a9-dos-head">${s.head}</div><div class="a9-dos-body">${s.body === '__KPIS__' ? KPIS : s.body.replace(/\n/g,'<br>')}</div></div>`).join('');
+
+  try {
+    const data = await a9CallClaudeJSON(
+      'Tu rédiges un dossier de financement structuré. Réponds UNIQUEMENT en JSON valide, sans texte autour.',
+      `Rédige un dossier d'impact pour solliciter un financement.
+
+Destinataire : ${A9_TARGET_LABELS[target] || target}
+Montant sollicité : ${amt.toLocaleString('fr-FR')} FCFA
+Argument principal à mettre en avant : ${A9_ANGLE_LABELS[angle] || angle}
+
+Contexte mission (chiffres réels, à intégrer naturellement) :
+- 32 sites photographiés sur tout le territoire sénégalais
+- 59 jours de terrain, 87 jours de mission au total, ~5 400 km
+- Livre d'art de 200 pages, 2 éditions : 2000 standards (50 000 FCFA) + 500 luxe numérotés (85 000 FCFA)
+- Budget global du projet : 100 000 000 FCFA
+- Livraison prévue 2027, dépôt légal BN Sénégal + ISBN international
+
+Produis un JSON de cette forme EXACTE :
+{"title":"titre court du dossier (3-5 mots, adapté au destinataire)","sections":[{"head":"TITRE SECTION EN MAJUSCULES","body":"texte du paragraphe"}]}
+
+Règles :
+- 5 à 6 sections au total.
+- Inclure exactement UNE section dont le "body" vaut littéralement "__KPIS__" (ce sera remplacé par un encart chiffré) — place-la en 2e position, head = "INDICATEURS D'IMPACT".
+- Une section doit détailler la demande de financement avec le montant et son pourcentage du budget global.
+- Une section doit lister des contreparties concrètes adaptées au destinataire (là, les puces "•" sont autorisées dans le body).
+- Adapte le ton : MTAC = institutionnel ; entreprise = ROI image de marque ; diaspora = émotion et fierté ; ONG = mémoire et patrimoine ; ambassade = coopération bilatérale.`,
+      1600
+    );
+    if (!data.sections || !Array.isArray(data.sections)) throw new Error('Format inattendu');
+    if (!data.sections.some(s => s.body === '__KPIS__')) {
+      data.sections.splice(1, 0, { head:"INDICATEURS D'IMPACT", body:'__KPIS__' });
     }
-    document.getElementById('a9-dossier-card').style.display = 'block';
-    a9State.dossierOutput = tpl;
-    addActivity('📄', `Dossier d'impact généré — ${tpl.title} · ${Math.round(amt/1000000)}M FCFA`, now());
-    enableBtn(btn);
-  }, 1000);
+    a9RenderDossier(data);
+    addActivity('📄', `Dossier d'impact (Claude) — ${data.title} · ${Math.round(amt/1000000)}M FCFA`, now());
+    showToast('✅ Dossier généré par Claude', 'ok');
+  } catch (e) {
+    // Repli sur les templates statiques si Claude indisponible (clé manquante, hors-ligne…)
+    const tpl = (A9_DOSSIER_TEMPLATES[target] || A9_DOSSIER_TEMPLATES.mtac)(amt, angle);
+    a9RenderDossier(tpl);
+    addActivity('📄', `Dossier d'impact (modèle) — ${tpl.title} · ${Math.round(amt/1000000)}M FCFA`, now());
+    showToast('Dossier généré depuis un modèle (Claude indisponible)', 'warn');
+  } finally {
+    if (btn) enableBtn(btn);
+  }
 }
 
 function a9CopyDossier() {
