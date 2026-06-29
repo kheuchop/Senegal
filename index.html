@@ -2319,7 +2319,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
               <svg width="12" height="12" fill="#2CA5E0" viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.820 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
               Telegram Bot
             </div>
-            <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px">Ajouter deux clés : <b>Bot Token</b> (de @BotFather) et <b>Chat ID</b> (id du groupe).</div>
+            <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px"><b>Bot Token</b> (de @BotFather) + <b>Chat ID</b> (groupe équipe). Optionnel : <b>Chat ID Direction</b> (groupe des 2 co-porteurs) — reçoit TOUT automatiquement, y compris finances et Risk Manager. La clé doit contenir le mot « direction » dans son nom.</div>
             <div id="vault-keys-telegram"></div>
             <button class="btn btn-ghost btn-sm btn-full" onclick="addKeyToCategory('telegram')" style="margin-top:6px">+ Ajouter clé</button>
           </div>
@@ -4741,9 +4741,16 @@ let webhookFlags = {};
 
 function getTelegramConfig() {
   const keys = state.vault.telegram || [];
-  const token  = (keys.find(k => k.name && k.name.toLowerCase().includes('token'))  || {}).value || null;
-  const chatId = (keys.find(k => k.name && (k.name.toLowerCase().includes('chat') || k.name.toLowerCase().includes('id'))) || {}).value || null;
-  return { token, chatId };
+  const token = (keys.find(k => k.name && k.name.toLowerCase().includes('token')) || {}).value || null;
+  // Chat ID Direction = clé dont le nom contient "direction" (groupe des 2 co-porteurs)
+  const chatIdDirection = (keys.find(k => k.name && k.name.toLowerCase().includes('direction')) || {}).value || null;
+  // Chat ID Équipe = clé "chat"/"id" qui n'est PAS la direction
+  const chatId = (keys.find(k => {
+    if (!k.name) return false;
+    const n = k.name.toLowerCase();
+    return (n.includes('chat') || n.includes('id')) && !n.includes('direction');
+  }) || {}).value || null;
+  return { token, chatId, chatIdDirection };
 }
 /* kept for Make.com webhook fallback — reads from telegram vault now */
 function getWebhookUrl() {
@@ -5843,8 +5850,8 @@ function showToast(msg, type='info') {
    Le superviseur propose d'envoyer une alerte au groupe quand un
    problème est détecté. Rien ne part sans confirmation de l'utilisateur.
    ============================================================ */
-async function sendTelegramText(text) {
-  const { token, chatId } = getTelegramConfig();
+async function sendTelegramTo(chatId, text) {
+  const { token } = getTelegramConfig();
   if (!token || !chatId) throw new Error('Telegram non configuré');
   const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -5855,7 +5862,39 @@ async function sendTelegramText(text) {
   return data;
 }
 
+// Envoi vers le groupe Équipe (utilisé par la fenêtre de confirmation)
+async function sendTelegramText(text) {
+  const { chatId } = getTelegramConfig();
+  return sendTelegramTo(chatId, text);
+}
+
 const teamAlertState = { queue: [], proposed: {}, showing: false };
+const directionSentKeys = {};
+
+/**
+ * Point d'entrée unique pour signaler un problème.
+ * - Groupe Direction (2 co-porteurs) : reçoit TOUT, automatiquement, sans confirmation.
+ * - Groupe Équipe : reçoit uniquement les alertes NON sensibles, avec confirmation.
+ * @param {string} key  identifiant unique (anti-doublon)
+ * @param {string} msg  message
+ * @param {boolean} sensitive  true = financier/risk → jamais vers l'équipe
+ */
+function raiseAlert(key, msg, sensitive) {
+  const cfg = getTelegramConfig();
+
+  // 1. Direction : automatique, tout, une seule fois par session
+  if (cfg.chatIdDirection && !directionSentKeys[key]) {
+    directionSentKeys[key] = true;
+    sendTelegramTo(cfg.chatIdDirection, '🔔 NOTIFICATION DIRECTION — MISSION SÉNÉGAL\n\n' + msg)
+      .then(() => addActivity('📨', `Notif direction : ${msg.substring(0, 40)}…`, now()))
+      .catch(e => console.warn('[Direction]', e.message));
+  }
+
+  // 2. Équipe : opérationnel uniquement, avec confirmation
+  if (!sensitive && cfg.chatId) {
+    queueTeamAlert(key, msg);
+  }
+}
 
 function _buildTeamAlertModal() {
   let ov = document.getElementById('team-alert-overlay');
@@ -5911,49 +5950,49 @@ function queueTeamAlert(key, msg) {
 }
 
 function checkMissionAlerts() {
-  const { token, chatId } = getTelegramConfig();
-  if (!token || !chatId) return; // Telegram non configuré → aucune proposition
+  const { token, chatId, chatIdDirection } = getTelegramConfig();
+  if (!token || (!chatId && !chatIdDirection)) return; // aucun groupe configuré
 
-  // 1. Dérive budgétaire — budget consommé ≥ 90%
+  // 1. Dérive budgétaire — SENSIBLE (direction uniquement)
   const pctSpent = state.spent / MISSION.budget;
   if (pctSpent >= 0.9) {
-    queueTeamAlert('budget90', `Budget critique : ${Math.round(pctSpent * 100)}% consommé (${fmtFCFA(state.spent)} sur ${fmtFCFA(MISSION.budget)}). Reste ${fmtFCFA(MISSION.budget - state.spent)}.`);
+    raiseAlert('budget90', `Budget critique : ${Math.round(pctSpent * 100)}% consommé (${fmtFCFA(state.spent)} sur ${fmtFCFA(MISSION.budget)}). Reste ${fmtFCFA(MISSION.budget - state.spent)}.`, true);
   }
 
-  // 2. Activation Plan B (Risk Manager)
+  // 2. Activation Plan B (Risk Manager) — SENSIBLE (direction uniquement)
   if (a17State.planBActive) {
-    queueTeamAlert('planb', `Plan B activé par le Risk Manager : un surcoût logistique a été injecté dans le budget pour rattraper le retard terrain.`);
+    raiseAlert('planb', `Plan B activé par le Risk Manager : un surcoût logistique a été injecté dans le budget pour rattraper le retard terrain.`, true);
   }
 
-  // 3. Stock faible distribution (par point de vente, par édition)
+  // 3. Stock faible distribution — opérationnel
   a12State.points.forEach(p => {
     const remStd = (p.allocStd || 0) - (p.venduStd || 0);
     const remLuxe = (p.allocLuxe || 0) - (p.venduLuxe || 0);
     if ((p.allocStd || 0) > 0 && remStd <= a12State.seuil) {
-      queueTeamAlert('stockstd_' + p.id, `Stock standard faible chez ${p.name}${p.ville ? ' (' + p.ville + ')' : ''} : ${remStd} exemplaire(s) restant(s).`);
+      raiseAlert('stockstd_' + p.id, `Stock standard faible chez ${p.name}${p.ville ? ' (' + p.ville + ')' : ''} : ${remStd} exemplaire(s) restant(s).`, false);
     }
     if ((p.allocLuxe || 0) > 0 && remLuxe <= a12State.seuil) {
-      queueTeamAlert('stockluxe_' + p.id, `Stock luxe faible chez ${p.name}${p.ville ? ' (' + p.ville + ')' : ''} : ${remLuxe} exemplaire(s) numéroté(s) restant(s).`);
+      raiseAlert('stockluxe_' + p.id, `Stock luxe faible chez ${p.name}${p.ville ? ' (' + p.ville + ')' : ''} : ${remLuxe} exemplaire(s) numéroté(s) restant(s).`, false);
     }
   });
 
-  // 4. Autorisation en relance (Juridique)
+  // 4. Autorisation en relance (Juridique) — opérationnel
   a10State.auths.filter(a => a.status === 'relance').forEach(a => {
-    queueTeamAlert('relance_' + a.id, `Autorisation à relancer : ${a.site} — ${a.org} (réf. ${a.ref}). Statut : relance requise.`);
+    raiseAlert('relance_' + a.id, `Autorisation à relancer : ${a.site} — ${a.org} (réf. ${a.ref}). Statut : relance requise.`, false);
   });
 
-  // 5. Durée mission dépassée
+  // 5. Durée mission dépassée — opérationnel
   if (state.daysDone > MISSION.joursTerrain) {
-    queueTeamAlert('duree', `Durée terrain dépassée : ${state.daysDone} jours effectués pour ${MISSION.joursTerrain} jours prévus. Réévaluer le planning.`);
+    raiseAlert('duree', `Durée terrain dépassée : ${state.daysDone} jours effectués pour ${MISSION.joursTerrain} jours prévus. Réévaluer le planning.`, false);
   }
 
-  // 6. Mauvaise météo (régions chargées dans l'agent Météo)
+  // 6. Mauvaise météo — opérationnel
   Object.keys(a14State.live || {}).forEach(reg => {
     const d = a14State.live[reg];
     if (!d) return;
-    if (d.temp >= 40) queueTeamAlert('meteo_chaleur_' + reg, `Chaleur extrême à ${d.city} : ${d.temp}°C (ressenti ${d.feels}°C). Éviter 11h-16h, hydratation critique.`);
-    if (d.vent >= 40) queueTeamAlert('meteo_vent_' + reg, `Vent fort à ${d.city} : ${d.vent} km/h. Risque de sable, protéger les optiques.`);
-    if (d.vis < 3) queueTeamAlert('meteo_vis_' + reg, `Visibilité réduite à ${d.city} : ${d.vis} km (brume / harmattan).`);
+    if (d.temp >= 40) raiseAlert('meteo_chaleur_' + reg, `Chaleur extrême à ${d.city} : ${d.temp}°C (ressenti ${d.feels}°C). Éviter 11h-16h, hydratation critique.`, false);
+    if (d.vent >= 40) raiseAlert('meteo_vent_' + reg, `Vent fort à ${d.city} : ${d.vent} km/h. Risque de sable, protéger les optiques.`, false);
+    if (d.vis < 3) raiseAlert('meteo_vis_' + reg, `Visibilité réduite à ${d.city} : ${d.vis} km (brume / harmattan).`, false);
   });
 }
 
