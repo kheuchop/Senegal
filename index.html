@@ -2267,6 +2267,15 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           </div>
         </div>
 
+        <!-- Gestion des Accès (Direction uniquement) -->
+        <div class="card" id="access-admin-card" style="display:none">
+          <div class="card-title">🔑 Gestion des Accès</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">Codes d'accès par rôle. Communiquez à chaque membre le code de son rôle. 4 à 8 chiffres, distincts.</div>
+          <div id="access-roles-list"></div>
+          <button class="btn btn-success btn-full" style="margin-top:8px" onclick="saveRolePins(event)"><div class="spinner"></div><span class="btn-text">💾 Enregistrer les codes</span></button>
+          <button class="btn btn-ghost btn-sm btn-full" style="margin-top:6px" onclick="lockRole()">🔒 Changer d'accès / Verrouiller</button>
+        </div>
+
       </div><!-- /agent-superviseur -->
 
       <!-- =====================================================
@@ -4564,7 +4573,35 @@ const state = {
   mapMarkers: [],
   mapFallback: false,
   dailyChecklist: { date: '', checked: {} },
+  rolePins: {},
 };
+
+/* ============================================================
+   ACCÈS PAR RÔLE — chaque rôle a un code PIN et un ensemble d'agents.
+   Indices d'onglets : 0 Superviseur · 1 Coffre · 2 CM · 3 Financier ·
+   4 Coordination · 5 Direction Art · 6 Rédacteur · 7 Correcteur ·
+   8 Commercial · 9 Juridique · 10 Logistique · 11 Distribution ·
+   12 Numérique · 13 Météo · 14 Achats · 15 Crowdfunding · 16 Risk Mgr
+   ============================================================ */
+const ACCESS_ROLES = {
+  direction:     { label: 'Direction (accès complet)', defaultPin: '9999', tabs: 'all' },
+  communication: { label: 'Communication / CM',        defaultPin: '1111', tabs: [2, 5, 12] },
+  finance:       { label: 'Finance',                   defaultPin: '2222', tabs: [3, 8, 11, 14, 15] },
+  terrain:       { label: 'Terrain',                   defaultPin: '3333', tabs: [4, 10, 13] },
+  editorial:     { label: 'Éditorial',                 defaultPin: '4444', tabs: [5, 6, 7] },
+  juridique:     { label: 'Juridique',                 defaultPin: '5555', tabs: [9] },
+};
+
+function getRolePins() {
+  const pins = {};
+  Object.keys(ACCESS_ROLES).forEach(k => { pins[k] = (state.rolePins && state.rolePins[k]) || ACCESS_ROLES[k].defaultPin; });
+  return pins;
+}
+function getAllowedTabs(role) {
+  const r = ACCESS_ROLES[role];
+  if (!r || r.tabs === 'all') return null; // null = tous les agents
+  return r.tabs;
+}
 
 /* ============================================================
    SÉCURITÉ — Échappement HTML (anti-XSS stocké)
@@ -4660,6 +4697,7 @@ function saveStateToDB() {
       a16Paliers:     a16State.paliers,
       approvals:      state.approvals,
       dailyChecklist: state.dailyChecklist,
+      rolePins:       state.rolePins,
     }
   }).catch(e => console.error('[DB] saveState échoué:', e));
 
@@ -4707,6 +4745,7 @@ async function loadStateFromDB() {
     if (Array.isArray(d.a16Paliers))   a16State.paliers       = d.a16Paliers;
     if (Array.isArray(d.approvals))    state.approvals        = d.approvals;
     if (d.dailyChecklist && typeof d.dailyChecklist === 'object') state.dailyChecklist = { date: d.dailyChecklist.date || '', checked: d.dailyChecklist.checked || {} };
+    if (d.rolePins && typeof d.rolePins === 'object') state.rolePins = d.rolePins;
   }
 }
 
@@ -4974,6 +5013,11 @@ function updateMapPulse(siteId, active) {
    ============================================================ */
 const TAB_COUNT = 18;
 function switchTab(idx) {
+  // Contrôle d'accès par rôle : bloque les onglets non autorisés
+  if (window.currentRole) {
+    const allowed = getAllowedTabs(window.currentRole);
+    if (allowed && !allowed.includes(idx)) return;
+  }
   state.currentTab = idx;
   document.getElementById('agents-slider').style.transform = `translate3d(${-idx * 100}vw, 0, 0)`;
   document.querySelectorAll('.agent-tab').forEach((t,i) => t.classList.toggle('active', i === idx));
@@ -6072,6 +6116,118 @@ function scheduleMissionAlertCheck() {
 }
 
 /* ============================================================
+   ACCÈS PAR RÔLE — porte d'entrée PIN + filtrage des onglets
+   ============================================================ */
+function _buildRoleGate() {
+  let ov = document.getElementById('role-gate');
+  if (ov) return ov;
+  ov = document.createElement('div');
+  ov.id = 'role-gate';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9800;background:var(--bg-deep);display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center';
+  ov.innerHTML = `
+    <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:900;letter-spacing:0.15em;background:var(--grad-cyan);-webkit-background-clip:text;-webkit-text-fill-color:transparent">CODE D'ACCÈS</div>
+    <div style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-secondary);max-width:300px;line-height:1.6">Entrez le code d'accès de votre rôle pour ouvrir votre espace de travail.</div>
+    <input id="role-gate-input" type="password" inputmode="numeric" maxlength="8" placeholder="••••" style="width:200px;text-align:center;font-size:1.4rem;letter-spacing:0.4em;padding:12px;background:var(--bg-input);border:1px solid var(--border-hi);border-radius:var(--r-sm);color:var(--text-primary);font-family:var(--font-mono)">
+    <button class="btn btn-primary" style="width:200px" onclick="submitRolePin()">Déverrouiller</button>
+    <div id="role-gate-error" style="color:var(--red);font-family:var(--font-mono);font-size:0.55rem;display:none"></div>`;
+  document.body.appendChild(ov);
+  const inp = ov.querySelector('#role-gate-input');
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') submitRolePin(); });
+  return ov;
+}
+
+function showRoleGate() {
+  const ov = _buildRoleGate();
+  ov.style.display = 'flex';
+  setTimeout(() => document.getElementById('role-gate-input')?.focus(), 150);
+}
+
+function submitRolePin() {
+  const inp = document.getElementById('role-gate-input');
+  const err = document.getElementById('role-gate-error');
+  const val = (inp.value || '').trim();
+  const pins = getRolePins();
+  const role = Object.keys(pins).find(k => pins[k] === val);
+  if (!role) {
+    if (err) { err.textContent = 'Code incorrect'; err.style.display = 'block'; }
+    inp.value = '';
+    return;
+  }
+  localStorage.setItem('missionRole', role);
+  applyRoleAccess(role);
+  const ov = document.getElementById('role-gate');
+  if (ov) ov.style.display = 'none';
+  if (err) err.style.display = 'none';
+  showToast(`Accès « ${ACCESS_ROLES[role].label} » activé`, 'ok');
+}
+
+function applyRoleAccess(role) {
+  window.currentRole = role;
+  const allowed = getAllowedTabs(role); // null = tous
+  document.querySelectorAll('[onclick^="switchTab"]').forEach(btn => {
+    const m = (btn.getAttribute('onclick') || '').match(/switchTab\((\d+)\)/);
+    if (!m) return;
+    const idx = parseInt(m[1], 10);
+    btn.style.display = (!allowed || allowed.includes(idx)) ? '' : 'none';
+  });
+  // Si l'onglet courant n'est pas autorisé, basculer vers le premier autorisé
+  if (allowed && !allowed.includes(state.currentTab)) switchTab(allowed[0]);
+  // Panneau admin visible uniquement pour la Direction
+  const adminCard = document.getElementById('access-admin-card');
+  if (adminCard) adminCard.style.display = (role === 'direction') ? 'block' : 'none';
+  if (role === 'direction' && typeof renderAccessAdmin === 'function') renderAccessAdmin();
+}
+
+function initRoleAccess() {
+  const saved = localStorage.getItem('missionRole');
+  if (saved && ACCESS_ROLES[saved]) applyRoleAccess(saved);
+  else showRoleGate();
+}
+
+function lockRole() {
+  localStorage.removeItem('missionRole');
+  location.reload();
+}
+
+/* Panneau Direction : gestion des codes d'accès */
+function renderAccessAdmin() {
+  const list = document.getElementById('access-roles-list');
+  if (!list) return;
+  const pins = getRolePins();
+  list.innerHTML = Object.keys(ACCESS_ROLES).map(k => {
+    const r = ACCESS_ROLES[k];
+    const agents = r.tabs === 'all' ? 'Tous les agents' : r.tabs.map(i => AGENT_NAMES[i]).join(', ');
+    return `<div style="padding:8px 10px;margin-bottom:6px;background:var(--bg-card-2);border:1px solid var(--border);border-radius:var(--r-sm)">
+      <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+        <span style="font-size:0.62rem;font-weight:600">${r.label}</span>
+        <input type="text" inputmode="numeric" maxlength="8" value="${pins[k]}" id="rolepin-${k}" style="width:90px;text-align:center;font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.2em;padding:5px;background:var(--bg-input);border:1px solid var(--border-hi);border-radius:var(--r-xs);color:var(--cyan)">
+      </div>
+      <div style="font-family:var(--font-mono);font-size:0.45rem;color:var(--text-muted);margin-top:3px">${agents}</div>
+    </div>`;
+  }).join('');
+}
+
+function saveRolePins(evt) {
+  const btn = evt && evt.currentTarget; if (btn) disableBtn(btn);
+  const newPins = {};
+  let valid = true;
+  Object.keys(ACCESS_ROLES).forEach(k => {
+    const v = (document.getElementById('rolepin-' + k)?.value || '').trim();
+    if (!/^\d{4,8}$/.test(v)) valid = false;
+    newPins[k] = v;
+  });
+  if (!valid) { showToast('Chaque code doit faire 4 à 8 chiffres', 'warn'); if (btn) enableBtn(btn); return; }
+  const uniq = new Set(Object.values(newPins));
+  if (uniq.size !== Object.keys(newPins).length) { showToast('Deux rôles ont le même code — ils doivent être distincts', 'warn'); if (btn) enableBtn(btn); return; }
+  state.rolePins = newPins;
+  saveStateToDB();
+  showToast('🔑 Codes d\'accès enregistrés', 'ok');
+  if (btn) setTimeout(() => enableBtn(btn), 400);
+}
+
+const AGENT_NAMES = ['Superviseur','Coffre-Fort','CM Réseaux','Financier','Coordination','Direction Art.','Rédacteur','Correcteur','Commercial','Juridique','Logistique','Distribution','Numérique','Météo','Achats','Crowdfunding','Risk Mgr'];
+
+/* ============================================================
    APP INITIALIZATION
    ============================================================ */
 async function init() {
@@ -6113,6 +6269,11 @@ async function init() {
           saveStateToDB();
           if (typeof renderVaultKeys === 'function') renderVaultKeys();
           showToast('🔐 Coffre-Fort restauré depuis le cloud', 'info');
+        }
+        // Codes d'accès par rôle : restaure si aucun code local
+        if (cloud.rolePins && typeof cloud.rolePins === 'object' && (!state.rolePins || Object.keys(state.rolePins).length === 0)) {
+          state.rolePins = cloud.rolePins;
+          saveStateToDB();
         }
       }
     } catch (e) { console.warn('[Sync] fetchState:', e.message); }
@@ -6213,6 +6374,9 @@ async function init() {
 
   // Vérification initiale des problèmes (relances, stock, durée…) une fois l'app prête
   setTimeout(() => { if (typeof checkMissionAlerts === 'function') { try { checkMissionAlerts(); } catch (e) {} } }, 4000);
+
+  // Contrôle d'accès par rôle (après que l'app soit prête)
+  if (typeof initRoleAccess === 'function') initRoleAccess();
 }
 
 
@@ -10830,6 +10994,7 @@ async function handleLogin() {
 
     document.getElementById('auth-wall').classList.add('hidden');
     showToast('Accès autorisé. Bienvenue Commandant.', 'success');
+    if (typeof initRoleAccess === 'function') initRoleAccess();
 
   } catch (err) {
     const msg = err?.message || String(err) || 'Erreur inconnue';

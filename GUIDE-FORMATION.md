@@ -279,14 +279,28 @@ La **check-list du jour** (onglet Superviseur) reprend ce rituel avec des cases 
 
 ---
 
-## 8. À VENIR — ACCÈS PAR RÔLE
+## 8. ACCÈS PAR RÔLE (CODES PIN)
 
-Prochaine étape : chaque membre aura un **accès restreint à son métier** :
-- Le CM ne verra que l'agent CM
-- Le financier ne verra que l'agent Financier
-- Etc.
+Chaque membre entre un **code d'accès** à l'ouverture. Ce code débloque uniquement les agents de son métier. Les autres onglets sont masqués.
 
-Les porteurs du projet garderont l'accès complet. Cette section sera mise à jour quand la fonctionnalité sera en place.
+| Rôle | Agents accessibles |
+|---|---|
+| 👑 **Direction** (co-porteurs) | Tous les 17 agents + gestion des accès |
+| 📣 **Communication / CM** | CM Réseaux · Direction Artistique · Numérique |
+| 💰 **Finance** | Financier · Commercial · Distribution · Achats · Crowdfunding |
+| 📷 **Terrain** | Coordination · Logistique · Météo |
+| ✍️ **Éditorial** | Rédacteur · Correcteur · Direction Artistique |
+| ⚖️ **Juridique** | Juridique |
+
+**Codes par défaut** (à changer dès la première utilisation) :
+- Direction : `9999` · Communication : `1111` · Finance : `2222`
+- Terrain : `3333` · Éditorial : `4444` · Juridique : `5555`
+
+**Gestion des codes :** la Direction dispose d'un panneau **« 🔑 Gestion des Accès »** dans le Superviseur pour modifier les codes de chaque rôle (sauvegardés dans le cloud). Communiquez à chaque membre le code de son rôle uniquement.
+
+**Changer d'accès / verrouiller :** bouton « 🔒 Changer d'accès » (panneau Gestion des Accès). Pour réinitialiser sur l'appareil d'un membre, effacer les données du site et ressaisir le code.
+
+> Le code est mémorisé sur l'appareil : le membre ne le ressaisit pas à chaque ouverture.
 
 ---
 
