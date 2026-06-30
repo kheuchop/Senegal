@@ -291,10 +291,11 @@ Chaque membre entre un **code d'accès** à l'ouverture. Ce code débloque uniqu
 | 📷 **Terrain** | Coordination · Logistique · Météo |
 | ✍️ **Éditorial** | Rédacteur · Correcteur · Direction Artistique |
 | ⚖️ **Juridique** | Juridique |
+| 🎥 **Photo / Vidéo** | Coordination · Direction Artistique · Logistique · Météo |
 
 **Codes par défaut** (à changer dès la première utilisation) :
 - Direction : `9999` · Communication : `1111` · Finance : `2222`
-- Terrain : `3333` · Éditorial : `4444` · Juridique : `5555`
+- Terrain : `3333` · Éditorial : `4444` · Juridique : `5555` · Photo/Vidéo : `6666`
 
 **Gestion des codes :** la Direction dispose d'un panneau **« 🔑 Gestion des Accès »** dans le Superviseur pour modifier les codes de chaque rôle (sauvegardés dans le cloud). Communiquez à chaque membre le code de son rôle uniquement.
 
