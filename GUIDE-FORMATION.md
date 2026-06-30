@@ -65,6 +65,8 @@ C'est le cœur du système. Trois niveaux :
 
 Les agents sont regroupés ici par métier pour faciliter la formation.
 
+> 📖 Pour le **mode d'emploi détaillé écran par écran** de chaque agent (boutons, champs, upload de photos, maquette du livre…), voir le document séparé **MANUEL-AGENTS.md**. La présente section donne la vue d'ensemble.
+
 ### 🧭 PILOTAGE
 
 #### 01 · Superviseur (COO) — le tableau de bord
