@@ -303,6 +303,10 @@ Chaque membre entre un **code d'accès** à l'ouverture. Ce code débloque uniqu
 
 > Le code est mémorisé sur l'appareil : le membre ne le ressaisit pas à chaque ouverture.
 
+**Tableau de bord Superviseur — version allégée :** tous les rôles voient le Superviseur, mais les membres non-Direction n'y voient que la **progression mission** (sites/jours/km, sans budget), la **check-list du jour** et leur navigation. Sont masqués pour eux : budget, file d'approbations, diffusion Telegram, gestion des accès.
+
+**Barre budget (en-tête) :** visible uniquement pour la **Direction** et la **Finance**. Les autres rôles ne voient jamais les chiffres financiers.
+
 ---
 
 *Document de formation — Mission CTRL Sénégal V3. À mettre à jour au fil des évolutions de l'app.*

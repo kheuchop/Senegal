@@ -2151,7 +2151,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
         <div class="stat-label">~km</div>
       </div>
     </div>
-    <div class="budget-bar-row">
+    <div class="budget-bar-row" id="header-budget-row">
       <div class="budget-label">BUDGET</div>
       <div class="budget-track"><div class="budget-fill" id="budget-fill-bar"></div></div>
       <div class="budget-val" id="budget-remaining-header">100M FCFA</div>
@@ -2226,25 +2226,25 @@ textarea.input-field { resize: vertical; min-height: 80px; }
         </div>
 
         <!-- Pending Approvals -->
-        <div class="card">
+        <div class="card" id="coo-approvals-card">
           <div class="card-title">File d'Approbations <span class="pill pill-amber" style="margin-left:auto;font-size:0.5rem" id="approval-count">3 en attente</span></div>
           <div id="approval-list"></div>
         </div>
 
         <!-- Notifications Critiques -->
-        <div class="card">
+        <div class="card" id="coo-notifications-card">
           <div class="card-title">Notifications Critiques</div>
           <div id="notifications-list"></div>
         </div>
 
         <!-- Activité Récente -->
-        <div class="card">
+        <div class="card" id="coo-journal-card">
           <div class="card-title">Journal d'Activité</div>
           <div id="activity-feed"></div>
         </div>
 
         <!-- Telegram Broadcast -->
-        <div class="card">
+        <div class="card" id="coo-telegram-card">
           <div class="card-title">Diffusion Telegram</div>
           <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">Envoie un message au groupe équipe via le bot Telegram. Configurer Token + Chat ID dans le Coffre-Fort.</div>
           <div class="input-group">
@@ -4603,6 +4603,11 @@ function getAllowedTabs(role) {
   if (!r || r.tabs === 'all') return null; // null = tous les agents
   return r.tabs;
 }
+function isTabAllowed(role, idx) {
+  if (idx === 0) return true; // Superviseur accessible à tous (vue filtrée selon le rôle)
+  const allowed = getAllowedTabs(role);
+  return !allowed || allowed.includes(idx);
+}
 
 /* ============================================================
    SÉCURITÉ — Échappement HTML (anti-XSS stocké)
@@ -5015,10 +5020,7 @@ function updateMapPulse(siteId, active) {
 const TAB_COUNT = 18;
 function switchTab(idx) {
   // Contrôle d'accès par rôle : bloque les onglets non autorisés
-  if (window.currentRole) {
-    const allowed = getAllowedTabs(window.currentRole);
-    if (allowed && !allowed.includes(idx)) return;
-  }
+  if (window.currentRole && !isTabAllowed(window.currentRole, idx)) return;
   state.currentTab = idx;
   document.getElementById('agents-slider').style.transform = `translate3d(${-idx * 100}vw, 0, 0)`;
   document.querySelectorAll('.agent-tab').forEach((t,i) => t.classList.toggle('active', i === idx));
@@ -6169,14 +6171,27 @@ function applyRoleAccess(role) {
     const m = (btn.getAttribute('onclick') || '').match(/switchTab\((\d+)\)/);
     if (!m) return;
     const idx = parseInt(m[1], 10);
-    btn.style.display = (!allowed || allowed.includes(idx)) ? '' : 'none';
+    btn.style.display = isTabAllowed(role, idx) ? '' : 'none';
   });
-  // Si l'onglet courant n'est pas autorisé, basculer vers le premier autorisé
-  if (allowed && !allowed.includes(state.currentTab)) switchTab(allowed[0]);
+  // Si l'onglet courant n'est pas autorisé, basculer vers le premier agent métier
+  if (allowed && !isTabAllowed(role, state.currentTab)) switchTab(allowed[0]);
+
+  // Vue Superviseur : version allégée pour les non-Direction
+  const isDir = role === 'direction';
+  ['coo-approvals-card', 'coo-notifications-card', 'coo-journal-card', 'coo-telegram-card'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = isDir ? '' : 'none';
+  });
+  const budgetPill = document.getElementById('coo-budget-pct');
+  if (budgetPill) budgetPill.style.display = isDir ? '' : 'none';
+
+  // Barre budget en-tête : Direction + Finance uniquement
+  const headerBudget = document.getElementById('header-budget-row');
+  if (headerBudget) headerBudget.style.display = (role === 'direction' || role === 'finance') ? '' : 'none';
+
   // Panneau admin visible uniquement pour la Direction
   const adminCard = document.getElementById('access-admin-card');
-  if (adminCard) adminCard.style.display = (role === 'direction') ? 'block' : 'none';
-  if (role === 'direction' && typeof renderAccessAdmin === 'function') renderAccessAdmin();
+  if (adminCard) adminCard.style.display = isDir ? 'block' : 'none';
+  if (isDir && typeof renderAccessAdmin === 'function') renderAccessAdmin();
 }
 
 function initRoleAccess() {
