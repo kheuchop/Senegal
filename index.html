@@ -877,8 +877,8 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 #agent-map { padding: 0; }
 #map-container {
   width: 100%;
-  height: calc(100dvh - var(--header-h) - 42px - var(--tab-h) - var(--safe-bottom) - 48px);
-  min-height: 224px;
+  height: calc(100dvh - var(--header-h) - 42px - var(--tab-h) - var(--safe-bottom) - 120px);
+  min-height: 240px;
   position: relative;
 }
 #leaflet-map { width: 100%; height: 100%; }
@@ -4397,7 +4397,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
       <!-- =====================================================
            MAP PANEL (index 17)
            ===================================================== -->
-      <div class="agent-panel" id="agent-map" style="padding:0;overflow:hidden">
+      <div class="agent-panel" id="agent-map" style="padding:0;overflow-y:auto;overflow-x:hidden">
         <div id="map-container">
           <div id="leaflet-map"></div>
           <div id="map-fallback">
@@ -8484,44 +8484,44 @@ function a9LaunchSourcing(btn) {
 const a10State = {
   filter: 'all',
   auths: [
-    /* ZONE A — DAKAR & PÉRIPHÉRIE */
-    { id:'a10_1',  site:'Île de Gorée',                           org:'OLAG / Mairie de Gorée',                        status:'encours', ref:'AUTH-ZA-01-2026', date:'—', contact:'mairie.goree@dakar.sn' },
-    { id:'a10_2',  site:'Monument de la Renaissance Africaine',   org:'Présidence de la République du Sénégal',        status:'encours', ref:'AUTH-ZA-02-2026', date:'—', contact:'presidence@gouv.sn' },
-    { id:'a10_3',  site:'IFAN — Musée Théodore Monod',           org:'Université Cheikh Anta Diop — Direction IFAN',   status:'encours', ref:'AUTH-ZA-03-2026', date:'—', contact:'ifan@ucad.edu.sn' },
-    { id:'a10_4',  site:'Plage de Yoff',                          org:'Mairie de Yoff / Lébous',                       status:'encours', ref:'AUTH-ZA-04-2026', date:'—', contact:'mairie.yoff@dakar.sn' },
-    { id:'a10_5',  site:'Lac Rose — Lac Retba',                   org:'Mairie de Rufisque / Gestionnaire Réserve',     status:'encours', ref:'AUTH-ZA-05-2026', date:'—', contact:'rufisque@gouvernement.sn' },
-    { id:'a10_6',  site:'Petite Côte — Saly Portudal',           org:'SAPCO Sénégal',                                 status:'encours', ref:'AUTH-ZA-06-2026', date:'—', contact:'info@sapco.sn' },
-    { id:'a10_7',  site:'MCN + Village des Arts',                 org:'Ministère de la Culture / Direction MCN',       status:'encours', ref:'AUTH-ZA-07-2026', date:'—', contact:'culture@gouv.sn' },
-    { id:'a10_8',  site:'Village Artisanal de Soumbédioune',      org:'Mairie de Dakar — Marché de l\'Artisanat',      status:'encours', ref:'AUTH-ZA-08-2026', date:'—', contact:'mairie.dakar@gouv.sn' },
-    { id:'a10_9',  site:'Mosquée Massalikul Djinaan',             org:'Dahira Mouride — Bureau Communication',         status:'encours', ref:'AUTH-ZA-09-2026', date:'—', contact:'communication@massalikul.sn' },
-    { id:'a10_10', site:'Port Autonome de Dakar',                 org:'Direction Générale PAD',                        status:'encours', ref:'AUTH-ZA-10-2026', date:'—', contact:'dg@portdakar.sn' },
-    /* ZONE B — SAINT-LOUIS */
-    { id:'a10_11', site:'Saint-Louis — Ville UNESCO',             org:'Mairie de Saint-Louis / Commission UNESCO',     status:'encours', ref:'AUTH-ZB-11-2026', date:'—', contact:'mairie@saint-louis.sn' },
-    { id:'a10_12', site:'Parc National des Oiseaux du Djoudj',    org:'DPNS — Direction des Parcs Nationaux',          status:'encours', ref:'AUTH-ZB-12-2026', date:'—', contact:'dpns@environnement.sn' },
-    { id:'a10_13', site:'Langue de Barbarie',                     org:'Mairie de Saint-Louis — Service Culturel',      status:'encours', ref:'AUTH-ZB-13-2026', date:'—', contact:'culture@saint-louis.sn' },
-    { id:'a10_14', site:'Delta du Saloum — Mangroves & Bolongs',  org:'DPNS / Réserve Biosphère UNESCO',               status:'encours', ref:'AUTH-ZB-14-2026', date:'—', contact:'dpns@environnement.sn' },
-    { id:'a10_15', site:'Touba — Grande Mosquée',                 org:'Khalife Général des Mourides',                  status:'encours', ref:'AUTH-ZB-15-2026', date:'—', contact:'—' },
-    /* ZONE C — CASAMANCE */
-    { id:'a10_16', site:'Ziguinchor — Casamance',                 org:'Mairie de Ziguinchor / Gouvernance',            status:'encours', ref:'AUTH-ZC-16-2026', date:'—', contact:'mairie.ziguinchor@gouv.sn' },
-    { id:'a10_17', site:'Cap Skirring',                           org:'Mairie d\'Oussouye / SAPCO',                    status:'encours', ref:'AUTH-ZC-17-2026', date:'—', contact:'oussouye@gouvernement.sn' },
-    { id:'a10_18', site:'Forêt de Cabrousse',                     org:'Eaux et Forêts / DREEC Ziguinchor',             status:'encours', ref:'AUTH-ZC-18-2026', date:'—', contact:'dreec.ziguinchor@environnement.sn' },
-    { id:'a10_19', site:'Île de Karabane',                        org:'Mairie d\'Oussouye / Chefs de Village',         status:'encours', ref:'AUTH-ZC-19-2026', date:'—', contact:'oussouye@gouvernement.sn' },
-    { id:'a10_20', site:'Kafountine — Littoral',                  org:'Mairie de Kafountine',                          status:'encours', ref:'AUTH-ZC-20-2026', date:'—', contact:'kafountine@gouvernement.sn' },
-    /* ZONE D — EST & SUD-EST */
-    { id:'a10_21', site:'Tambacounda',                            org:'Mairie de Tambacounda / Gouverneur',            status:'encours', ref:'AUTH-ZD-21-2026', date:'—', contact:'mairie.tamba@gouv.sn' },
-    { id:'a10_22', site:'Parc Niokolo-Koba (UNESCO)',             org:'DPNS — Direction des Parcs Nationaux',          status:'encours', ref:'AUTH-ZD-22-2026', date:'—', contact:'dpns@environnement.sn' },
-    { id:'a10_23', site:'Kédougou',                               org:'Mairie de Kédougou / DREEC',                    status:'encours', ref:'AUTH-ZD-23-2026', date:'—', contact:'kedougou@gouvernement.sn' },
-    { id:'a10_24', site:'Pays Bassari (UNESCO)',                   org:'Ministère de la Culture / UNESCO Dakar',        status:'encours', ref:'AUTH-ZD-24-2026', date:'—', contact:'culture@gouv.sn' },
-    { id:'a10_25', site:'Gorges de la Falémé',                    org:'Mairie de Saraya / DREEC',                      status:'encours', ref:'AUTH-ZD-25-2026', date:'—', contact:'saraya@gouvernement.sn' },
-    /* ZONE E — CENTRE */
-    { id:'a10_26', site:'Manufacture de Tapisseries de Thiès',    org:'Direction Manufacture Nationale Tapisseries',   status:'encours', ref:'AUTH-ZE-26-2026', date:'—', contact:'tapisseries.thies@culture.sn' },
-    { id:'a10_27', site:'Kaolack — Grand Marché',                 org:'Mairie de Kaolack — Service Commerce',          status:'encours', ref:'AUTH-ZE-27-2026', date:'—', contact:'mairie.kaolack@gouv.sn' },
-    { id:'a10_28', site:'Réserve de Bandia',                      org:'Réserve de Bandia SA — Direction',              status:'encours', ref:'AUTH-ZE-28-2026', date:'—', contact:'contact@reservedebandia.com' },
-    { id:'a10_29', site:'Diourbel — Sanctuaire Baye Fall',        org:'Dahira Baye Fall / Mairie de Diourbel',         status:'encours', ref:'AUTH-ZE-29-2026', date:'—', contact:'mairie.diourbel@gouv.sn' },
-    /* ZONE F — NORD */
-    { id:'a10_30', site:'Louga — Terroir Sahélien',               org:'Mairie de Louga / Gouverneur',                  status:'encours', ref:'AUTH-ZF-30-2026', date:'—', contact:'mairie.louga@gouv.sn' },
-    { id:'a10_31', site:'Matam — Fouta Toro',                     org:'Mairie de Matam / Chefs Coutumiers',            status:'encours', ref:'AUTH-ZF-31-2026', date:'—', contact:'matam@gouvernement.sn' },
-    { id:'a10_32', site:'Podor — Fort Saint-Louis',               org:'Mairie de Podor / Direction Patrimoine',        status:'encours', ref:'AUTH-ZF-32-2026', date:'—', contact:'podor@gouvernement.sn' },
+    /* ZONE A — DAKAR & PÉRIPHÉRIE (12 sites) */
+    { id:'a10_1',  site:'Île de Gorée (UNESCO 1978)',                  org:'OLAG / Mairie de Gorée',                          status:'encours', ref:'AUTH-ZA-01-2027', date:'—', contact:'mairie.goree@dakar.sn' },
+    { id:'a10_2',  site:'Musée Historique du Sénégal',                 org:'Direction du Patrimoine Culturel (Gorée)',        status:'encours', ref:'AUTH-ZA-02-2027', date:'—', contact:'patrimoine@culture.gouv.sn' },
+    { id:'a10_3',  site:'Musée des Civilisations Noires',              org:'Ministère de la Culture — Direction MCN',         status:'encours', ref:'AUTH-ZA-03-2027', date:'—', contact:'mcn@culture.gouv.sn' },
+    { id:'a10_4',  site:'Village des Arts de Dakar',                   org:'Ministère de la Culture — Village des Arts',      status:'encours', ref:'AUTH-ZA-04-2027', date:'—', contact:'villagedesarts@culture.gouv.sn' },
+    { id:'a10_5',  site:'Marché Kermel et galeries du Plateau',        org:'Mairie de Dakar-Plateau',                         status:'encours', ref:'AUTH-ZA-05-2027', date:'—', contact:'plateau@mairiededakar.sn' },
+    { id:'a10_6',  site:'Monument de la Renaissance Africaine',        org:'Société de Gestion du Monument / Présidence',     status:'encours', ref:'AUTH-ZA-06-2027', date:'—', contact:'monument@gouv.sn' },
+    { id:'a10_7',  site:'Île de Ngor et Plages de Yoff',              org:'Mairie de Ngor — Yoff / Lébous',                  status:'encours', ref:'AUTH-ZA-07-2027', date:'—', contact:'mairie.ngor@dakar.sn' },
+    { id:'a10_8',  site:'CICAD Diamniadio et Gare TER',               org:'APIX / SETER (Gare TER)',                         status:'encours', ref:'AUTH-ZA-08-2027', date:'—', contact:'info@apix.sn' },
+    { id:'a10_9',  site:'Almadies et Phare des Mamelles',             org:'Marine Nationale / Mairie des Almadies',          status:'encours', ref:'AUTH-ZA-09-2027', date:'—', contact:'almadies@dakar.sn' },
+    { id:'a10_10', site:'Mosquée Massalikul Djinaan',                 org:'Dahira Mouride — Bureau Communication',           status:'encours', ref:'AUTH-ZA-10-2027', date:'—', contact:'communication@massalikul.sn' },
+    { id:'a10_11', site:'Port Autonome de Dakar',                     org:'Direction Générale PAD',                          status:'encours', ref:'AUTH-ZA-11-2027', date:'—', contact:'dg@portdakar.sn' },
+    { id:'a10_12', site:'Vieux Rufisque et Stade du Sénégal',         org:'Mairie de Rufisque / SOGIP (Stade)',              status:'encours', ref:'AUTH-ZA-12-2027', date:'—', contact:'rufisque@gouv.sn' },
+    /* ZONE B — SAINT-LOUIS, PATRIMOINE & ÉCOSYSTÈMES (6 sites) */
+    { id:'a10_13', site:'Ville historique de Saint-Louis (UNESCO 2000)', org:'Mairie de Saint-Louis / Commission UNESCO',    status:'encours', ref:'AUTH-ZB-13-2027', date:'—', contact:'mairie@saint-louis.sn' },
+    { id:'a10_14', site:'Pont Faidherbe et Langue de Barbarie',       org:'Mairie de Saint-Louis — Direction des Routes',    status:'encours', ref:'AUTH-ZB-14-2027', date:'—', contact:'mairie@saint-louis.sn' },
+    { id:'a10_15', site:'Parc National des Oiseaux du Djoudj (UNESCO 1981)', org:'DPN — Direction des Parcs Nationaux',      status:'encours', ref:'AUTH-ZB-15-2027', date:'—', contact:'dpn@environnement.gouv.sn' },
+    { id:'a10_16', site:'Quartiers historiques coloniaux de Saint-Louis', org:'Mairie de Saint-Louis — Service Patrimoine',  status:'encours', ref:'AUTH-ZB-16-2027', date:'—', contact:'patrimoine@saint-louis.sn' },
+    { id:'a10_17', site:'Pêche traditionnelle de Guet Ndar',          org:'Mairie de Saint-Louis / Communauté Guet Ndar',    status:'encours', ref:'AUTH-ZB-17-2027', date:'—', contact:'mairie@saint-louis.sn' },
+    { id:'a10_18', site:'Podor et Fort colonial du fleuve Sénégal',   org:'Mairie de Podor / Direction Patrimoine',          status:'encours', ref:'AUTH-ZB-18-2027', date:'—', contact:'podor@gouvernement.sn' },
+    /* ZONE C — THIÈS & LOUGA, PAYSAGES (4 sites) */
+    { id:'a10_19', site:'Lac Rose (Retba) — Liste Indicative UNESCO', org:'Mairie de Rufisque / Gestionnaire Réserve',       status:'encours', ref:'AUTH-ZC-19-2027', date:'—', contact:'rufisque@gouv.sn' },
+    { id:'a10_20', site:'Désert de Lompoul et Bivouac',              org:'Mairie de Kébémer / Opérateur Lompoul',           status:'encours', ref:'AUTH-ZC-20-2027', date:'—', contact:'lompoul@gouvernement.sn' },
+    { id:'a10_21', site:'Manufacture Nationale de Tapisseries de Thiès', org:'Direction Manufacture Nationale Tapisseries',  status:'encours', ref:'AUTH-ZC-21-2027', date:'—', contact:'tapisseries.thies@culture.sn' },
+    { id:'a10_22', site:'Réserve de Bandia',                          org:'Réserve de Bandia SA — Direction',                status:'encours', ref:'AUTH-ZC-22-2027', date:'—', contact:'contact@reservedebandia.com' },
+    /* ZONE D — FATICK & DELTA DU SALOUM (4 sites) */
+    { id:'a10_23', site:'Delta du Saloum — Réserve de Biosphère (UNESCO 2011)', org:'DPN / Réserve de Biosphère UNESCO',     status:'encours', ref:'AUTH-ZD-23-2027', date:'—', contact:'dpn@environnement.gouv.sn' },
+    { id:'a10_24', site:'Joal-Fadiouth et Île aux Coquillages',      org:'Mairie de Joal-Fadiouth',                         status:'encours', ref:'AUTH-ZD-24-2027', date:'—', contact:'joalfadiouth@gouvernement.sn' },
+    { id:'a10_25', site:'Lodges et Écolodges du Saloum',             org:'Opérateurs écolodges / SAPCO',                    status:'encours', ref:'AUTH-ZD-25-2027', date:'—', contact:'info@sapco.sn' },
+    { id:'a10_26', site:'Mangroves et Bolongs',                       org:'DPN / Réserve de Biosphère',                      status:'encours', ref:'AUTH-ZD-26-2027', date:'—', contact:'dpn@environnement.gouv.sn' },
+    /* ZONE E — CENTRE & EST, SPIRITUALITÉ & BASSARI (4 sites) */
+    { id:'a10_27', site:'Grande Mosquée de Touba',                   org:'Khalife Général des Mourides',                    status:'encours', ref:'AUTH-ZE-27-2027', date:'—', contact:'—' },
+    { id:'a10_28', site:'Medina Baye Kaolack et Tivaouane',          org:'Khalife Medina Baye / Tidianes de Tivaouane',     status:'encours', ref:'AUTH-ZE-28-2027', date:'—', contact:'—' },
+    { id:'a10_29', site:'Mégalithes de Sine Ngayène (UNESCO 2006)',  org:'Direction du Patrimoine Culturel / UNESCO Dakar', status:'encours', ref:'AUTH-ZE-29-2027', date:'—', contact:'patrimoine@culture.gouv.sn' },
+    { id:'a10_30', site:'Pays Bassari et Villages Bédik (UNESCO 2012)', org:'Ministère de la Culture / Guide Bassari habilité', status:'encours', ref:'AUTH-ZE-30-2027', date:'—', contact:'culture@gouv.sn' },
+    /* ZONE F — CASAMANCE (2 sites) */
+    { id:'a10_31', site:'Ziguinchor et Forêts sacrées Diola',        org:'Mairie de Ziguinchor / Communauté Diola',         status:'encours', ref:'AUTH-ZF-31-2027', date:'—', contact:'mairie.ziguinchor@gouv.sn' },
+    { id:'a10_32', site:'Île de Carabane et Cap Skirring',           org:'Mairie d\'Oussouye / Chefs de Village',           status:'encours', ref:'AUTH-ZF-32-2027', date:'—', contact:'oussouye@gouvernement.sn' },
   ],
   journal: [],
   currentRelanceId: null
