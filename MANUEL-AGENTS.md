@@ -80,7 +80,7 @@ Le cœur du suivi terrain.
 2. **⏸ Pause** si besoin.
 3. En fin de journée, **✅ Valider Jour** (incrémente les jours faits).
 
-**Planning Mission :** liste des 59 jours de terrain avec leur statut.
+**Planning Mission :** liste des 54 jours de terrain avec leur statut.
 
 **Journal de Terrain (chaque soir) :**
 1. Renseigner **Site visité**, **Conditions terrain**, **Note de terrain**, **Prises validées (nb)**.

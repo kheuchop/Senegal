@@ -878,7 +878,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 #map-container {
   width: 100%;
   height: calc(100dvh - var(--header-h) - 42px - var(--tab-h) - var(--safe-bottom) - 48px);
-  min-height: 200px;
+  min-height: 224px;
   position: relative;
 }
 #leaflet-map { width: 100%; height: 100%; }
@@ -2113,7 +2113,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 <!-- Splash Screen -->
 <div id="splash">
   <div class="splash-logo">MISSION CTRL</div>
-  <div class="splash-sub">Sénégal Documentary · V3 · 2024</div>
+  <div class="splash-sub">Sénégal Documentary · V3 · 2027</div>
   <div class="splash-bar"></div>
   <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted);letter-spacing:0.12em" id="splash-status">Initialisation système…</div>
 </div>
@@ -2560,7 +2560,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
             <input type="number" class="input-field print-rate-input" id="print-rate-input" value="150" min="1" autocomplete="off" oninput="updatePrintRate(this.value)">
           </div>
           <div style="margin-top:8px;font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted)">
-            Estimation tirage 500 ex. × 200p : <span id="print-estimate" style="color:var(--amber);font-weight:600">15 000 000 FCFA</span>
+            Estimation tirage 500 ex. × 224p : <span id="print-estimate" style="color:var(--amber);font-weight:600">15 000 000 FCFA</span>
           </div>
         </div>
 
@@ -2684,9 +2684,9 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           </div>
         </div>
 
-        <!-- A5: Planning 59 jours -->
+        <!-- A5: Planning 54 jours -->
         <div class="card">
-          <div class="card-title">Planning Mission — 59 Jours Terrain</div>
+          <div class="card-title">Planning Mission — 54 Jours Terrain</div>
           <div class="a5-plan-filter">
             <button class="a5-filter-btn active" onclick="a5FilterPlan('all',this)">Tous</button>
             <button class="a5-filter-btn" onclick="a5FilterPlan('done',this)">✅ Faits</button>
@@ -4347,7 +4347,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <div class="a17-status-hero" id="a17-status-hero">
             <div class="a17-mode-badge" id="a17-mode-badge">⬡ NOMINAL</div>
             <div class="a17-delta-display" id="a17-delta-display">Δ +0h</div>
-            <div class="a17-delta-sub" id="a17-delta-sub">En phase avec le planning — 59 jours terrain</div>
+            <div class="a17-delta-sub" id="a17-delta-sub">En phase avec le planning — 54 jours terrain</div>
           </div>
           <div class="a17-kpi-row">
             <div class="a17-kpi-box"><div class="a17-kpi-val" id="a17-k-done">0</div><div class="a17-kpi-label">J. Effectués</div></div>
@@ -4498,41 +4498,49 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 /* ============================================================
    MISSION DATA & CONSTANTS
    ============================================================ */
-const MISSION = { sites: 32, joursTerrain: 59, joursRepos: 28, joursTotal: 87, km: 5400, budget: 100000000, startYear: 2027 };
+const MISSION = { sites: 32, joursTerrain: 54, joursRepos: 28, joursTotal: 82, km: 10800, budget: 100000000, startYear: 2027 };
 
+// SITES — conformes au Plan de Trajet officiel V4.1 (32 sites, 6 zones, 54 jours terrain)
+// Jours par zone : A=15 · B=10 · C=6 · D=7 · E=10 · F=6 (total 54). Coordonnées approximatives.
 const SITES = [
-  { id:1, zone:'A', name:'Île de Gorée', coords:[14.6680,-17.3991], days:2, km:4 },
-  { id:2, zone:'A', name:'Monument Renaissance Africaine', coords:[14.7312,-17.4947], days:1, km:15 },
-  { id:3, zone:'A', name:'IFAN — Musée de l\'IFAN', coords:[14.6891,-17.4413], days:1, km:8 },
-  { id:4, zone:'A', name:'Plage de Yoff', coords:[14.7683,-17.5083], days:1, km:22 },
-  { id:5, zone:'A', name:'Lac Rose — Lac Retba', coords:[14.8333,-17.2333], days:2, km:45 },
-  { id:6, zone:'A', name:'Petite Côte — Saly Portudal', coords:[14.4500,-17.0167], days:2, km:85 },
-  { id:7, zone:'A', name:'Musée des Civilisations Noires + Village des Arts', coords:[14.7068,-17.4552], days:2, km:5 },
-  { id:8, zone:'A', name:'Village Artisanal de Soumbédioune', coords:[14.6900,-17.4700], days:1, km:7 },
-  { id:9, zone:'A', name:'Mosquée Massalikul Djinaan', coords:[14.6931,-17.4449], days:2, km:6 },
-  { id:10, zone:'A', name:'Port Autonome de Dakar', coords:[14.6822,-17.4260], days:2, km:3 },
-  { id:11, zone:'B', name:'Saint-Louis — Ville UNESCO', coords:[16.0333,-16.5000], days:3, km:265 },
-  { id:12, zone:'B', name:'Parc National des Oiseaux du Djoudj', coords:[16.5167,-16.1500], days:2, km:320 },
-  { id:13, zone:'B', name:'Langue de Barbarie', coords:[15.9500,-16.4833], days:1, km:250 },
-  { id:14, zone:'B', name:'Parc du Delta du Saloum — Mangroves & Bolongs', coords:[13.7833,-16.7167], days:4, km:140 },
-  { id:15, zone:'B', name:'Touba — Grande Mosquée', coords:[14.8500,-15.8833], days:2, km:195 },
-  { id:16, zone:'C', name:'Ziguinchor — Casamance', coords:[12.5667,-16.2667], days:2, km:460 },
-  { id:17, zone:'C', name:'Cap Skirring', coords:[12.3833,-16.7333], days:2, km:510 },
-  { id:18, zone:'C', name:'Forêt de Cabrousse', coords:[12.4500,-16.6000], days:2, km:490 },
-  { id:19, zone:'C', name:'Île de Karabane', coords:[12.5500,-16.7000], days:1, km:505 },
-  { id:20, zone:'C', name:'Kafountine — Littoral', coords:[12.9167,-16.7333], days:2, km:430 },
-  { id:21, zone:'D', name:'Tambacounda', coords:[13.7667,-13.6667], days:2, km:460 },
-  { id:22, zone:'D', name:'Parc Niokolo-Koba (UNESCO)', coords:[12.9167,-13.0833], days:3, km:590 },
-  { id:23, zone:'D', name:'Kédougou', coords:[12.5500,-12.1833], days:2, km:690 },
-  { id:24, zone:'D', name:'Pays Bassari (UNESCO)', coords:[12.5000,-12.3333], days:2, km:670 },
-  { id:25, zone:'D', name:'Gorges de la Falémé', coords:[13.0000,-11.8000], days:2, km:720 },
-  { id:26, zone:'E', name:'Manufacture de Tapisseries de Thiès', coords:[14.7833,-16.9167], days:2, km:75 },
-  { id:27, zone:'E', name:'Kaolack — Grand Marché', coords:[14.1500,-16.0667], days:1, km:195 },
-  { id:28, zone:'E', name:'Fatick — Réserve de Bandia', coords:[14.3333,-16.4000], days:2, km:155 },
-  { id:29, zone:'E', name:'Diourbel — Sanctuaire Baye Fall', coords:[14.6500,-16.2333], days:1, km:145 },
-  { id:30, zone:'F', name:'Louga — Terroir Sahelien', coords:[15.6167,-16.2333], days:1, km:205 },
-  { id:31, zone:'F', name:'Matam — Fouta Toro', coords:[15.6500,-13.2500], days:2, km:680 },
-  { id:32, zone:'F', name:'Podor — Fort Saint-Louis', coords:[16.6500,-14.9500], days:2, km:390 },
+  // ZONE A — Dakar et Périphérie (12 sites, 15j)
+  { id:1,  zone:'A', name:'Île de Gorée (UNESCO 1978)', coords:[14.6672,-17.3989], days:2, km:4 },
+  { id:2,  zone:'A', name:'Musée Historique du Sénégal', coords:[14.6665,-17.3998], days:1, km:4 },
+  { id:3,  zone:'A', name:'Musée des Civilisations Noires', coords:[14.6730,-17.4360], days:2, km:3 },
+  { id:4,  zone:'A', name:'Village des Arts de Dakar', coords:[14.7280,-17.4660], days:1, km:8 },
+  { id:5,  zone:'A', name:'Marché Kermel et galeries du Plateau', coords:[14.6772,-17.4283], days:1, km:2 },
+  { id:6,  zone:'A', name:'Monument de la Renaissance Africaine', coords:[14.7206,-17.4906], days:2, km:12 },
+  { id:7,  zone:'A', name:'Île de Ngor et Plages de Yoff', coords:[14.7530,-17.5130], days:1, km:18 },
+  { id:8,  zone:'A', name:'CICAD Diamniadio et Gare TER', coords:[14.7280,-17.1840], days:1, km:35 },
+  { id:9,  zone:'A', name:'Almadies et Phare des Mamelles', coords:[14.7440,-17.5230], days:1, km:20 },
+  { id:10, zone:'A', name:'Mosquée Massalikul Djinaan', coords:[14.7250,-17.4560], days:1, km:7 },
+  { id:11, zone:'A', name:'Port Autonome de Dakar', coords:[14.6760,-17.4180], days:1, km:3 },
+  { id:12, zone:'A', name:'Vieux Rufisque et Stade du Sénégal', coords:[14.7167,-17.2730], days:1, km:25 },
+  // ZONE B — Saint-Louis, Patrimoine et Écosystèmes (6 sites, 10j)
+  { id:13, zone:'B', name:'Ville historique de Saint-Louis (UNESCO 2000)', coords:[16.0179,-16.4896], days:3, km:264 },
+  { id:14, zone:'B', name:'Pont Faidherbe et Langue de Barbarie', coords:[15.9900,-16.5100], days:1, km:264 },
+  { id:15, zone:'B', name:'Parc National des Oiseaux du Djoudj (UNESCO 1981)', coords:[16.4167,-16.2333], days:2, km:300 },
+  { id:16, zone:'B', name:'Quartiers historiques coloniaux de Saint-Louis', coords:[16.0260,-16.4980], days:1, km:264 },
+  { id:17, zone:'B', name:'Pêche traditionnelle de Guet Ndar', coords:[15.9930,-16.5130], days:1, km:265 },
+  { id:18, zone:'B', name:'Podor et Fort colonial du fleuve Sénégal', coords:[16.6500,-14.9667], days:2, km:440 },
+  // ZONE C — Thiès et Louga, Paysages et Expériences (4 sites, 6j)
+  { id:19, zone:'C', name:'Lac Rose (Retba) — Liste Indicative UNESCO', coords:[14.8389,-17.2356], days:2, km:35 },
+  { id:20, zone:'C', name:'Désert de Lompoul et Bivouac', coords:[15.4500,-16.6900], days:2, km:145 },
+  { id:21, zone:'C', name:'Manufacture Nationale de Tapisseries de Thiès', coords:[14.7889,-16.9256], days:1, km:70 },
+  { id:22, zone:'C', name:'Réserve de Bandia', coords:[14.5833,-17.0167], days:1, km:65 },
+  // ZONE D — Fatick et Delta du Saloum, Écotourisme (4 sites, 7j)
+  { id:23, zone:'D', name:'Delta du Saloum — Réserve de Biosphère (UNESCO 2011)', coords:[13.8000,-16.7500], days:3, km:150 },
+  { id:24, zone:'D', name:'Joal-Fadiouth et Île aux Coquillages', coords:[14.1667,-16.8333], days:2, km:110 },
+  { id:25, zone:'D', name:'Lodges et Écolodges du Saloum', coords:[14.0500,-16.7500], days:1, km:140 },
+  { id:26, zone:'D', name:'Mangroves et Bolongs', coords:[13.8500,-16.7800], days:1, km:150 },
+  // ZONE E — Centre et Est, Spiritualité et Pays Bassari (4 sites, 10j)
+  { id:27, zone:'E', name:'Grande Mosquée de Touba', coords:[14.8667,-15.8833], days:3, km:194 },
+  { id:28, zone:'E', name:'Medina Baye Kaolack et Tivaouane', coords:[14.1490,-16.0728], days:2, km:192 },
+  { id:29, zone:'E', name:'Mégalithes de Sine Ngayène (UNESCO 2006)', coords:[13.6900,-15.5300], days:2, km:250 },
+  { id:30, zone:'E', name:'Pays Bassari et Villages Bédik (UNESCO 2012)', coords:[12.5500,-12.1833], days:3, km:690 },
+  // ZONE F — Casamance, accès vol intérieur (2 sites, 6j)
+  { id:31, zone:'F', name:'Ziguinchor et Forêts sacrées Diola', coords:[12.5681,-16.2719], days:3, km:460 },
+  { id:32, zone:'F', name:'Île de Carabane et Cap Skirring', coords:[12.3833,-16.7500], days:3, km:510 },
 ];
 const OFFSHORE = [
   { id:'S1', name:'Sangomar — Zone Pétrolière', coords:[13.9000,-17.4500] },
@@ -5133,7 +5141,7 @@ const INITIAL_APPROVALS = [];
 const INITIAL_NOTIFICATIONS = [
   { type:'info', text:'🚀 Mission Control initialisé — Démarrage prévu Janvier 2027', time:'Aujourd\'hui' },
   { type:'ok', text:'✅ Base de données Supabase connectée — sync active', time:'Aujourd\'hui' },
-  { type:'info', text:'📋 32 sites chargés — 59 jours terrain planifiés sur 6 zones', time:'Aujourd\'hui' },
+  { type:'info', text:'📋 32 sites chargés — 54 jours terrain planifiés sur 6 zones', time:'Aujourd\'hui' },
 ];
 const INITIAL_ACTIVITY = [
   { icon:'🎯', title:'Mission documentaire Sénégal V3 — Initialisation système', time:'Aujourd\'hui' },
@@ -5431,25 +5439,25 @@ function selectPlatform(plat, el) {
 const CM_TEMPLATES = {
   tiktok: (site, tone, extra) => {
     const hooks = { inspiring:`✨ Le Sénégal t'appelle. ${site.name}.`, informative:`📍 Site ${site.id}, ${site.name}`, exciting:`🔥 ON EST ICI → ${site.name} !`, cultural:`🌍 Découverte : ${site.name}`, promotional:`🎥 EXCLUSIF : Coulisses tournage à ${site.name}` };
-    const bodies = { inspiring:`Un lieu qui suspend le temps.\nChaque pierre, chaque lumière raconte une histoire vieille de siècles. Zone ${site.zone}, à ${site.km}km de Dakar.\n\nCe documentaire, c'est pour VOUS. 🎬`, informative:`Zone ${site.zone} de notre mission documentaire. ${site.days} jour${site.days>1?'s':''} de tournage pour capturer l'essence de ce lieu exceptionnel.\n📏 Distance parcourue : ~${site.km} km`, exciting:`WOOOW ! 🤩\nOn vient de poser le matériel à ${site.name} et les images sont FOLLES.\n32 sites, 5400km, 87 jours de mission — on NE LÂCHE RIEN !`, cultural:`${site.name} — Zone ${site.zone}\n\nUn patrimoine inestimable au cœur du Sénégal. Notre équipe documentaire y passe ${site.days} jour${site.days>1?'s':''} pour en capturer chaque détail.\n🎥 Bientôt dans votre livre collector.`, promotional:`🚨 RÉSERVEZ VOTRE EXEMPLAIRE MAINTENANT 🚨\n\nCe livre documentaire sur le Sénégal sera UNIQUE. 32 sites, 100M FCFA de production.\nOn tourne à ${site.name} — et c'est MAGNIFIQUE.` };
+    const bodies = { inspiring:`Un lieu qui suspend le temps.\nChaque pierre, chaque lumière raconte une histoire vieille de siècles. Zone ${site.zone}, à ${site.km}km de Dakar.\n\nCe documentaire, c'est pour VOUS. 🎬`, informative:`Zone ${site.zone} de notre mission documentaire. ${site.days} jour${site.days>1?'s':''} de tournage pour capturer l'essence de ce lieu exceptionnel.\n📏 Distance parcourue : ~${site.km} km`, exciting:`WOOOW ! 🤩\nOn vient de poser le matériel à ${site.name} et les images sont FOLLES.\n32 sites, 10800km, 82 jours de mission — on NE LÂCHE RIEN !`, cultural:`${site.name} — Zone ${site.zone}\n\nUn patrimoine inestimable au cœur du Sénégal. Notre équipe documentaire y passe ${site.days} jour${site.days>1?'s':''} pour en capturer chaque détail.\n🎥 Bientôt dans votre livre collector.`, promotional:`🚨 RÉSERVEZ VOTRE EXEMPLAIRE MAINTENANT 🚨\n\nCe livre documentaire sur le Sénégal sera UNIQUE. 32 sites, 100M FCFA de production.\nOn tourne à ${site.name} — et c'est MAGNIFIQUE.` };
     const tags = `#Sénégal #${site.name.replace(/\s+/g,'').replace(/[^\w]/g,'')} #Documentaire #Afrique #ZoneA #Photography #Africa #Documentary #WestAfrica #BeautifulAfrica`;
     return { text: `${hooks[tone]}\n\n${bodies[tone]}`, hashtags: tags, meta: `Format : Vertical · 15-60s · Sous-titres FR recommandés · Musique afrobeat conseillée` };
   },
   youtube: (site, tone, duration) => {
     const dur = duration || 'medium';
-    const titles = { inspiring:`${site.name} — Quand le Sénégal vous coupe le souffle | Documentaire 4K`, informative:`[DOCUMENTAIRE] ${site.name} : Zone ${site.zone} | Mission Photographique Sénégal`, exciting:`INCROYABLE ! 32 sites en 87 jours — On était à ${site.name} 🔥`, cultural:`${site.name} — Histoire & Patrimoine du Sénégal | Série Documentaire`, promotional:`${site.name} : Le livre qui va changer votre regard sur l'Afrique` };
+    const titles = { inspiring:`${site.name} — Quand le Sénégal vous coupe le souffle | Documentaire 4K`, informative:`[DOCUMENTAIRE] ${site.name} : Zone ${site.zone} | Mission Photographique Sénégal`, exciting:`INCROYABLE ! 32 sites en 82 jours — On était à ${site.name} 🔥`, cultural:`${site.name} — Histoire & Patrimoine du Sénégal | Série Documentaire`, promotional:`${site.name} : Le livre qui va changer votre regard sur l'Afrique` };
     const descs = `🎬 DESCRIPTION\nCette vidéo fait partie de notre série documentaire sur les 32 sites emblématiques du Sénégal.\n\nSite ${site.id} sur 32 — Zone ${site.zone}\n📍 ${site.name}\n🗺️ Coordonnées : ${site.coords[0].toFixed(4)}°N / ${Math.abs(site.coords[1]).toFixed(4)}°W\n⏱ ${site.days} jour${site.days>1?'s':''} de tournage\n🚗 ~${site.km}km depuis Dakar\n\n${dur==='short'?'🎯 Format court — Highlights & Best-of':''}${dur==='medium'?'📽 Format documentaire web — Histoire complète du site':''}${dur==='long'?'🎬 Documentaire complet — Récit immersif et archives':''}`;
     const timestamps = dur !== 'short' ? '\n\n⏰ CHAPITRES\n00:00 Introduction\n01:30 Contexte historique\n04:00 Tournage sur site\n${dur==="long"?"08:00 Témoignages & interviews\n15:00 Conclusion":""}\n' : '';
     return { title: titles[tone], text: descs + timestamps, hashtags: `#${site.name.replace(/\s+/g,'')} #Sénégal #Documentaire #Africa4K #Patrimoine`, meta: `Durée recommandée : ${dur==='short'?'< 5 min':dur==='medium'?'5-20 min':'20-60 min'} · Catégorie : Voyage & Événements · Langue : Français` };
   },
   linkedin: (site, tone) => {
-    const texts = { inspiring:`Après ${site.km}km parcourus pour atteindre ${site.name}, je comprends mieux pourquoi ce pays mérite un documentaire de cette envergure.\n\nSite ${site.id}/32 de notre mission photographique nationale. Zone ${site.zone}. ${site.days} jour${site.days>1?'s':''} d'immersion.\n\n🎯 Notre mission : rendre accessible le patrimoine sénégalais à travers un livre documentaire produit avec un budget de 100M FCFA.\n\nL'Afrique mérite des récits à la hauteur de sa beauté.\n\n#Leadership #Afrique #Documentaire #Patrimoine #Sénégal`, informative:`📊 Point d'avancement — Mission Documentaire Sénégal V3\n\n✅ Site ${site.id} : ${site.name} (Zone ${site.zone})\n📍 ${site.coords[0].toFixed(4)}°N\n⏱ ${site.days} jour${site.days>1?'s':''} terrain\n🚗 ${site.km}km depuis Dakar\n\nÉtat global mission :\n• 32 sites · 59j terrain · 87j total\n• ~5 400 km à parcourir\n• Budget : 100 000 000 FCFA\n\n#Gestion de Projet #Documentary #Sénégal`, exciting:'', cultural:`🌍 Héritage Culturel — ${site.name}\n\nSite Zone ${site.zone} de notre série documentaire sur le Sénégal.\n\nCe n'est pas qu'un lieu — c'est une mémoire vivante. Notre équipe y a passé ${site.days} jour${site.days>1?'s':''} pour en capturer chaque nuance.\n\nLe documentaire sort en 2027. Réservez votre exemplaire.\n\n#Culture #Afrique #Heritage #Sénégal`, promotional:`🎥 Nous recherchons des partenaires pour notre documentaire sur les 32 sites emblématiques du Sénégal.\n\nSite en cours : ${site.name} — Zone ${site.zone}\n\nOpportunités :\n• Sponsoring institutionnel\n• Placement de marque\n• Co-production\n• Distribution internationale\n\nContactez notre équipe.\n\n#Sponsoring #Partenariat #Sénégal #Investissement` };
+    const texts = { inspiring:`Après ${site.km}km parcourus pour atteindre ${site.name}, je comprends mieux pourquoi ce pays mérite un documentaire de cette envergure.\n\nSite ${site.id}/32 de notre mission photographique nationale. Zone ${site.zone}. ${site.days} jour${site.days>1?'s':''} d'immersion.\n\n🎯 Notre mission : rendre accessible le patrimoine sénégalais à travers un livre documentaire produit avec un budget de 100M FCFA.\n\nL'Afrique mérite des récits à la hauteur de sa beauté.\n\n#Leadership #Afrique #Documentaire #Patrimoine #Sénégal`, informative:`📊 Point d'avancement — Mission Documentaire Sénégal V3\n\n✅ Site ${site.id} : ${site.name} (Zone ${site.zone})\n📍 ${site.coords[0].toFixed(4)}°N\n⏱ ${site.days} jour${site.days>1?'s':''} terrain\n🚗 ${site.km}km depuis Dakar\n\nÉtat global mission :\n• 32 sites · 54j terrain · 82j total\n• ~10 800 km à parcourir\n• Budget : 100 000 000 FCFA\n\n#Gestion de Projet #Documentary #Sénégal`, exciting:'', cultural:`🌍 Héritage Culturel — ${site.name}\n\nSite Zone ${site.zone} de notre série documentaire sur le Sénégal.\n\nCe n'est pas qu'un lieu — c'est une mémoire vivante. Notre équipe y a passé ${site.days} jour${site.days>1?'s':''} pour en capturer chaque nuance.\n\nLe documentaire sort en 2027. Réservez votre exemplaire.\n\n#Culture #Afrique #Heritage #Sénégal`, promotional:`🎥 Nous recherchons des partenaires pour notre documentaire sur les 32 sites emblématiques du Sénégal.\n\nSite en cours : ${site.name} — Zone ${site.zone}\n\nOpportunités :\n• Sponsoring institutionnel\n• Placement de marque\n• Co-production\n• Distribution internationale\n\nContactez notre équipe.\n\n#Sponsoring #Partenariat #Sénégal #Investissement` };
     const t = texts[tone] || texts['informative'];
     return { text: t, hashtags: '', meta: `Réseau professionnel · Format recommandé : 1200-2000 caractères · Image haute résolution conseillée` };
   },
   facebook: (site, tone) => {
     const texts = {
-      inspiring: `Je suis debout depuis 5h pour être à ${site.name} au lever du soleil.\n\nZone ${site.zone}. Site ${site.id} sur 32. Et franchement, ça valait chaque kilomètre parcouru.\n\nOn tourne un documentaire sur le Sénégal. 32 sites. 59 jours terrain. Un livre qui sera collector.\n\nSi tu veux suivre l'aventure, partage ce post. 🙏`,
+      inspiring: `Je suis debout depuis 5h pour être à ${site.name} au lever du soleil.\n\nZone ${site.zone}. Site ${site.id} sur 32. Et franchement, ça valait chaque kilomètre parcouru.\n\nOn tourne un documentaire sur le Sénégal. 32 sites. 54 jours terrain. Un livre qui sera collector.\n\nSi tu veux suivre l'aventure, partage ce post. 🙏`,
       informative: `📍 Mise à jour mission : ${site.name}\n\nSite ${site.id}/32 · Zone ${site.zone} · ${site.km}km de Dakar · ${site.days} jour${site.days>1?'s':''} sur place\n\nOn avance. Chaque site est un chapitre. Chaque photo une preuve que ce pays mérite mieux qu'une brochure touristique.\n\nLe livre sort en 2027. Laissez "intéressé" en commentaire 👇`,
       exciting: `ON EST À ${site.name.toUpperCase()} ET C'EST INCROYABLE 🔥\n\nSite ${site.id} sur 32. Zone ${site.zone}. ${site.km}km. ${site.days} jour${site.days>1?'s':''}.\n\nOn ne s'arrête pas.\n\nTagguez quelqu'un qui doit voir ça 👇`,
       cultural: `${site.name}, Zone ${site.zone}\n\nIl y a des endroits qui te changent. Pas de façon dramatique. Juste... tu repars différent.\n\n${site.days} jour${site.days>1?'s':''} sur place. ${site.km}km depuis Dakar. Et des images qu'on n'oubliera pas.\n\nCe documentaire, c'est pour garder vivante cette mémoire. 🇸🇳`,
@@ -5925,7 +5933,7 @@ function renderTransactions() {
 function updatePrintRate(val) {
   const rate = Math.round(parseFloat(val) || 150);
   state.printRate = rate;
-  const est = Math.round(500 * 200 * rate);
+  const est = Math.round(500 * 224 * rate);
   const estEl = document.getElementById('print-estimate');
   if (estEl) estEl.textContent = fmtFCFA(est);
 }
@@ -6130,8 +6138,8 @@ function _buildRoleGate() {
   ov.innerHTML = `
     <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:900;letter-spacing:0.15em;background:var(--grad-cyan);-webkit-background-clip:text;-webkit-text-fill-color:transparent">CODE D'ACCÈS</div>
     <div style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-secondary);max-width:300px;line-height:1.6">Entrez le code d'accès de votre rôle pour ouvrir votre espace de travail.</div>
-    <input id="role-gate-input" type="password" inputmode="numeric" maxlength="8" placeholder="••••" style="width:200px;text-align:center;font-size:1.4rem;letter-spacing:0.4em;padding:12px;background:var(--bg-input);border:1px solid var(--border-hi);border-radius:var(--r-sm);color:var(--text-primary);font-family:var(--font-mono)">
-    <button class="btn btn-primary" style="width:200px" onclick="submitRolePin()">Déverrouiller</button>
+    <input id="role-gate-input" type="password" inputmode="numeric" maxlength="8" placeholder="••••" style="width:224px;text-align:center;font-size:1.4rem;letter-spacing:0.4em;padding:12px;background:var(--bg-input);border:1px solid var(--border-hi);border-radius:var(--r-sm);color:var(--text-primary);font-family:var(--font-mono)">
+    <button class="btn btn-primary" style="width:224px" onclick="submitRolePin()">Déverrouiller</button>
     <div id="role-gate-error" style="color:var(--red);font-family:var(--font-mono);font-size:0.55rem;display:none"></div>`;
   document.body.appendChild(ov);
   const inp = ov.querySelector('#role-gate-input');
@@ -6788,7 +6796,7 @@ function a6GetBriefText() {
 
 const A6_DA_IDENTITY = `Agis en tant que Directeur Artistique de renommée internationale, expert en infographie et en édition de "beaux-livres" (photographie haut de gamme, culture, art). Tu possèdes le niveau d'exigence des plus grandes maisons d'édition de luxe, combiné à l'œil photographique de National Geographic.
 
-Tu supervises la direction visuelle, graphique et éditoriale du projet : « Sénégal, Terre d'Histoire et de Rencontres ». Ouvrage de prestige, fruit d'une mission de documentation sur 32 sites au Sénégal, 59 jours de terrain. Format : 210×280mm, 224 pages, 500 exemplaires numérotés.
+Tu supervises la direction visuelle, graphique et éditoriale du projet : « Sénégal, Terre d'Histoire et de Rencontres ». Ouvrage de prestige, fruit d'une mission de documentation sur 32 sites au Sénégal, 54 jours de terrain. Format : 210×280mm, 224 pages, 500 exemplaires numérotés.
 
 CONTRAINTE FONDAMENTALE — TRILINGUE : Le livre est intégralement trilingue Français / English / عربية (arabe). TOUTES les légendes, captions, textes de pages, introductions, ouvertures de chapitres, 4e de couverture et notes de terrain doivent être produits dans les TROIS langues simultanément, avec le même soin et la même qualité littéraire dans chaque langue. L'arabe est en direction droite-gauche, registre soutenu.
 
@@ -7158,7 +7166,7 @@ function a6BuildDefaultPages() {
   pages.push(mk({ type:'page_titre',   siteName:'Page titre' }));
   pages.push(mk({ type:'copyright',    siteName:'Copyright & Crédits photographiques' }));
   pages.push(mk({ type:'avantpropos',  siteName:'Avant-propos' }));
-  pages.push(mk({ type:'introduction', siteName:'Introduction — 59 jours au Sénégal' }));
+  pages.push(mk({ type:'introduction', siteName:'Introduction — 54 jours au Sénégal' }));
   pages.push(mk({ type:'carte',        siteName:'Carte · 32 sites documentaires' }));
   pages.push(mk({ type:'editorial',    siteName:'Note éditoriale & Direction artistique' }));
   pages.push(mk({ type:'sommaire',     siteName:'Sommaire' }));
@@ -7433,7 +7441,7 @@ async function a6GenMaquette(btn) {
   const gallery = a6State.bookGallery.length > 0 ? `\nPhotos déjà sélectionnées pour le livre : ${a6State.bookGallery.map(e=>e.site).join(', ')}.` : '';
   const equip = a6GetEquipmentContext();
   const sitesList = SITES.map(s => `#${s.id} [Zone ${s.zone}] ${s.name}`).join(', ');
-  const prompt = `Mission documentaire SÉNÉGAL V3 : 32 sites, 59 jours, livre collector.\nSites : ${sitesList}\nFormat livre : 210×280mm, ${pages} pages, impression offset luxe.\nLangue(s) : ${langLabel}.${sponsorLine}${gallery}${equip}\n\nConçois la maquette structurée du livre. Chaque section = un objet JSON.\nJSON :\n{"titre_livre":"...","accroche":"phrase de couverture","sections":[{"pages":"p.1-2","type":"couverture|page_titre|intro|chapitre|pleine_page|double_page|portfolio|legendes|sponsor|colophon|quatrieme","titre":"...","contenu":"description du contenu","note_da":"conseil pour le DA"}],"notes_generales":"conseils globaux"}`;
+  const prompt = `Mission documentaire SÉNÉGAL V3 : 32 sites, 54 jours, livre collector.\nSites : ${sitesList}\nFormat livre : 210×280mm, ${pages} pages, impression offset luxe.\nLangue(s) : ${langLabel}.${sponsorLine}${gallery}${equip}\n\nConçois la maquette structurée du livre. Chaque section = un objet JSON.\nJSON :\n{"titre_livre":"...","accroche":"phrase de couverture","sections":[{"pages":"p.1-2","type":"couverture|page_titre|intro|chapitre|pleine_page|double_page|portfolio|legendes|sponsor|colophon|quatrieme","titre":"...","contenu":"description du contenu","note_da":"conseil pour le DA"}],"notes_generales":"conseils globaux"}`;
   try {
     const data = await a6CallClaude(
       'Tu es directeur artistique et maquettiste expert en livres de photographie documentaire de luxe.',
@@ -7483,7 +7491,7 @@ async function a6GenEquipmentRecs(btn, mode) {
   const zones = [...new Set(SITES.map(s => s.zone))].join(', ');
   const types = 'urbain, rural, côtier, désertique, patrimoine, marché';
   const sitesSummary = SITES.map(s => `${s.name} [Zone ${s.zone}]`).join(', ');
-  const basePrompt = `Mission : SÉNÉGAL V3, 32 sites documentaires, 59 jours de terrain.\nZones géographiques : ${zones}.\nTypes de terrains : ${types}.\nSites : ${sitesSummary}.\nObjectif : livre collector luxe + contenus réseaux sociaux + vidéo documentaire.`;
+  const basePrompt = `Mission : SÉNÉGAL V3, 32 sites documentaires, 54 jours de terrain.\nZones géographiques : ${zones}.\nTypes de terrains : ${types}.\nSites : ${sitesSummary}.\nObjectif : livre collector luxe + contenus réseaux sociaux + vidéo documentaire.`;
   const modePrompt = mode === 'optimize' && existing
     ? `\n\nParc existant : ${existing}.\n\nAnalyse ce parc et recommande ce qu'il manque ou ce qui devrait être remplacé pour couvrir optimalement les 32 sites. JSON :\n{"categories":[{"nom":"...","items":[{"nom":"...","priorite":"essentiel|recommande|optionnel","justification":"pourquoi pour cette mission"}]}],"priorite_absolue":"les 3 achats les plus urgents","budget_estime":"fourchette en EUR"}`
     : `\n\nSans contrainte de parc existant. Recommande le kit matériel idéal pour couvrir les 32 sites en photo + vidéo documentaire luxe. JSON :\n{"categories":[{"nom":"...","items":[{"nom":"...","priorite":"essentiel|recommande|optionnel","justification":"pourquoi pour cette mission"}]}],"kit_minimal":"liste des absolus","budget_estime":"fourchette en EUR","conseil":"conseil terrain le plus important"}`;
@@ -8263,7 +8271,7 @@ const A9_DOSSIER_TEMPLATES = {
   mtac: (amt, angle) => ({
     title: 'Fonds MTAC',
     sections: [
-      { head:"PRÉSENTATION DU PROJET", body:`La Mission Documentaire Sénégal V3 constitue le projet photographique le plus ambitieux jamais entrepris sur le territoire national. 32 sites répartis sur l'ensemble du territoire, 59 jours de terrain, 87 jours de mission totale, ~5 400 km parcourus — un inventaire exhaustif du patrimoine sénégalais destiné à une édition d'art de 200 pages tirée à 500 exemplaires numérotés.` },
+      { head:"PRÉSENTATION DU PROJET", body:`La Mission Documentaire Sénégal V3 constitue le projet photographique le plus ambitieux jamais entrepris sur le territoire national. 32 sites répartis sur l'ensemble du territoire, 54 jours de terrain, 82 jours de mission totale, ~10 800 km parcourus — un inventaire exhaustif du patrimoine sénégalais destiné à une édition d'art de 224 pages tirée à 500 exemplaires numérotés.` },
       { head:"INDICATEURS D'IMPACT", body:"__KPIS__" },
       { head:"DEMANDE DE FINANCEMENT", body:`Montant sollicité auprès du Fonds MTAC : ${Math.round(amt).toLocaleString('fr-FR')} FCFA.
 
@@ -8274,7 +8282,7 @@ Budget global du projet : 100 000 000 FCFA — dont ${Math.round(amt/1000000)}M 
 • 50 exemplaires numérotés dédicacés remis au Ministère
 • Exposition itinérante dans les institutions culturelles partenaires
 • Droits de diffusion numérique pour les établissements scolaires` },
-      { head:"CALENDRIER D'EXÉCUTION", body:`Phase terrain : 59 jours · Phase édition : 6 mois · Livraison finale : 2027
+      { head:"CALENDRIER D'EXÉCUTION", body:`Phase terrain : 54 jours · Phase édition : 6 mois · Livraison finale : 2027
 Dépôt légal BN du Sénégal · ISBN international · Distribution : Sénégal, France, diaspora mondiale` }
     ]
   }),
@@ -8339,10 +8347,10 @@ const A9_ANGLE_LABELS = {
 
 const A9_DOSSIER_KPIS = `<div class="a9-dos-kpi-row">
   <div class="a9-dos-kpi"><div class="a9-dk-val">32</div><div class="a9-dk-label">Sites</div></div>
-  <div class="a9-dos-kpi"><div class="a9-dk-val">5 400</div><div class="a9-dk-label">km</div></div>
-  <div class="a9-dos-kpi"><div class="a9-dk-val">101j</div><div class="a9-dk-label">Mission</div></div>
+  <div class="a9-dos-kpi"><div class="a9-dk-val">10 800</div><div class="a9-dk-label">km</div></div>
+  <div class="a9-dos-kpi"><div class="a9-dk-val">82j</div><div class="a9-dk-label">Mission</div></div>
   <div class="a9-dos-kpi"><div class="a9-dk-val">500</div><div class="a9-dk-label">Ex. numérotés</div></div>
-  <div class="a9-dos-kpi"><div class="a9-dk-val">200p</div><div class="a9-dk-label">Livre</div></div>
+  <div class="a9-dos-kpi"><div class="a9-dk-val">224p</div><div class="a9-dk-label">Livre</div></div>
   <div class="a9-dos-kpi"><div class="a9-dk-val">8K</div><div class="a9-dk-label">Résolution</div></div>
 </div>`;
 
@@ -8375,8 +8383,8 @@ Argument principal à mettre en avant : ${A9_ANGLE_LABELS[angle] || angle}
 
 Contexte mission (chiffres réels, à intégrer naturellement) :
 - 32 sites photographiés sur tout le territoire sénégalais
-- 59 jours de terrain, 87 jours de mission au total, ~5 400 km
-- Livre d'art de 200 pages, 2 éditions : 2000 standards (50 000 FCFA) + 500 luxe numérotés (85 000 FCFA)
+- 54 jours de terrain, 82 jours de mission au total, ~10 800 km
+- Livre d'art de 224 pages, 2 éditions : 2000 standards (50 000 FCFA) + 500 luxe numérotés (85 000 FCFA)
 - Budget global du projet : 100 000 000 FCFA
 - Livraison prévue 2027, dépôt légal BN Sénégal + ISBN international
 
@@ -8576,7 +8584,7 @@ Dans le cadre de notre Mission Documentaire Sénégal V3, notre équipe souhaite
 
 Ce projet, doté d'un budget de 100 000 000 FCFA, vise la production d'un livre d'art de référence en 500 exemplaires numérotés, valorisant le patrimoine sénégalais à l'international.
 
-Nous restons à votre entière disposition pour tout renseignement complémentaire et vous prions de bien vouloir traiter cette demande en priorité, notre calendrier terrain étant fixé sur 59 jours.
+Nous restons à votre entière disposition pour tout renseignement complémentaire et vous prions de bien vouloir traiter cette demande en priorité, notre calendrier terrain étant fixé sur 54 jours.
 
 Dans l'attente de votre retour, veuillez agréer, Madame, Monsieur, l'expression de nos salutations distinguées.
 
@@ -8973,7 +8981,7 @@ function initAgent11() {
 }
 
 /* ── A11 : Claude helpers ── */
-const A11_LOGISTICS_IDENTITY = `Tu es coordinateur logistique expert en missions photographiques documentaires terrain. Tu maîtrises les équipements photo/vidéo professionnels, les contraintes terrain au Sénégal (chaleur, humidité, sable, lumière tropicale), et l'optimisation de la couverture photographique. Mission : SÉNÉGAL V3, 32 sites, 59 jours.`;
+const A11_LOGISTICS_IDENTITY = `Tu es coordinateur logistique expert en missions photographiques documentaires terrain. Tu maîtrises les équipements photo/vidéo professionnels, les contraintes terrain au Sénégal (chaleur, humidité, sable, lumière tropicale), et l'optimisation de la couverture photographique. Mission : SÉNÉGAL V3, 32 sites, 54 jours.`;
 
 async function a11CallClaude(sys, txt, tok) {
   const res = await fetch('/api/claude', {
@@ -10648,7 +10656,7 @@ const a17State = {
   planBActive: false,
   log: [],
   risks: [
-    { level:'critical', name:'Dérive temporelle terrain', desc:'Retard accumulé > 72h sur le planning des 59 jours.', mitigation:'Plan B : fusion sites proches + puisage jours repos.' },
+    { level:'critical', name:'Dérive temporelle terrain', desc:'Retard accumulé > 72h sur le planning des 54 jours.', mitigation:'Plan B : fusion sites proches + puisage jours repos.' },
     { level:'high',     name:'Budget API Cloud dépassé', desc:'Synchronisation backups > estimation : +15% potentiel.', mitigation:'Compression RAW + sync différée off-peak.' },
     { level:'high',     name:'Harmattan Zone Nord',       desc:'Vents de sable Tambacounda/Saint-Louis — réduction visibilité.', mitigation:'Reporter tournage ou basculer sur sites intérieurs.' },
     { level:'medium',   name:'Panne matériel drone',      desc:'DJI Mavic 3 en maintenance — perte vues aériennes.', mitigation:'Redéploiement DJI Mini 4 + adaptation brief DA.' },
