@@ -2514,10 +2514,12 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 
         <!-- Action Bar — visible après génération -->
         <div class="cm-action-bar" id="cm-action-bar" style="display:none">
+          <button class="btn btn-primary btn-full btn-sm" style="margin-bottom:8px" onclick="cmSharePost()">📲 Partager le post (photo + texte)</button>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="cmDownloadKit()">⬇️ Télécharger</button>
             <button class="btn btn-ghost btn-sm" onclick="cmOpenSocial()">🔗 Ouvrir <span id="cm-plat-label">Instagram</span></button>
-            <button class="btn btn-ghost btn-sm" onclick="cmSendToMake()">📤 Envoyer à Make.com</button>
           </div>
+          <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="cmSendToMake()">📤 Envoyer à Make.com (publication auto)</button>
           <div class="cm-make-status" id="cm-make-status"></div>
         </div>
 
@@ -5605,6 +5607,73 @@ function cmShowActionBar(plat, content) {
   bar.style.display = 'block';
   const statusEl = document.getElementById('cm-make-status');
   if (statusEl) statusEl.textContent = '';
+}
+
+/* --- Export / Partage du post généré (photo + texte) --- */
+function _cmCaptionText(c) {
+  let txt = '';
+  if (c.title) txt += c.title + '\n\n';
+  txt += (c.text || '');
+  if (c.hashtags) txt += '\n\n' + c.hashtags;
+  return txt.trim();
+}
+function _cmPhotoFile() {
+  if (!cmPhotoBase64) return null;
+  try {
+    const ext = (cmPhotoMime || '').includes('png') ? 'png' : 'jpg';
+    const bin = atob(cmPhotoBase64);
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new File([arr], `senegal-post.${ext}`, { type: cmPhotoMime || 'image/jpeg' });
+  } catch (e) { return null; }
+}
+async function cmSharePost() {
+  const gen = cmCurrentGeneration;
+  if (!gen) { showToast('Générez d\'abord un contenu', 'warn'); return; }
+  const txt = _cmCaptionText(gen.content);
+  const file = _cmPhotoFile();
+  // Partage natif (idéal sur mobile : ouvre Instagram, X, WhatsApp… avec photo + légende)
+  if (navigator.share) {
+    try {
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], text: txt });
+        return;
+      }
+      await navigator.share({ text: txt });
+      return;
+    } catch (e) {
+      if (e && e.name === 'AbortError') return; // annulé par l'utilisateur
+    }
+  }
+  // Repli (ordinateur sans partage natif) : téléchargement
+  cmDownloadKit();
+}
+function cmDownloadKit() {
+  const gen = cmCurrentGeneration;
+  if (!gen) { showToast('Générez d\'abord un contenu', 'warn'); return; }
+  const txt = _cmCaptionText(gen.content);
+  const stamp = new Date().toISOString().slice(0, 10);
+  const base = `senegal-${gen.plat}-${stamp}`;
+  // 1) Fichier texte (légende + hashtags)
+  const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+  const turl = URL.createObjectURL(blob);
+  const a1 = document.createElement('a'); a1.href = turl; a1.download = `${base}.txt`;
+  document.body.appendChild(a1); a1.click(); a1.remove();
+  setTimeout(() => URL.revokeObjectURL(turl), 1000);
+  // 2) Photo (si une photo est chargée)
+  const file = _cmPhotoFile();
+  if (file) {
+    const iurl = URL.createObjectURL(file);
+    setTimeout(() => {
+      const a2 = document.createElement('a'); a2.href = iurl; a2.download = file.name;
+      document.body.appendChild(a2); a2.click(); a2.remove();
+      setTimeout(() => URL.revokeObjectURL(iurl), 1000);
+    }, 400); // léger décalage pour éviter le blocage du 2e téléchargement
+    showToast('⬇️ Photo + texte téléchargés · légende copiée', 'ok');
+  } else {
+    showToast('⬇️ Texte téléchargé (aucune photo chargée) · légende copiée', 'ok');
+  }
+  navigator.clipboard?.writeText(txt).catch(() => {});
 }
 
 function getVaultValue(name) {
