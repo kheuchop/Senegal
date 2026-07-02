@@ -2824,6 +2824,17 @@ textarea.input-field { resize: vertical; min-height: 80px; }
               <div class="spinner"></div><span class="btn-text">🎲 Varier</span>
             </button>
           </div>
+          <button class="btn btn-success btn-sm btn-full" style="margin-top:8px" onclick="a6GenerateImage(this)">
+            <div class="spinner"></div><span class="btn-text">🎨 Générer l'image (maquette · gratuit)</span>
+          </button>
+          <div id="a6-image-output" style="display:none;margin-top:12px">
+            <img id="a6-image-preview" alt="Maquette IA du site" style="width:100%;border-radius:var(--r-sm);border:1px solid var(--border);display:block">
+            <div style="font-family:var(--font-mono);font-size:0.46rem;color:var(--text-muted);text-align:center;margin-top:6px;line-height:1.5">⚠️ Image IA — maquette / prévisualisation uniquement, ce n'est PAS une vraie photo du site</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+              <button class="btn btn-ghost btn-sm" onclick="a6RegenImage(this)"><div class="spinner"></div><span class="btn-text">🎲 Autre version</span></button>
+              <button class="btn btn-primary btn-sm" onclick="a6DownloadImage()">⬇️ Télécharger</button>
+            </div>
+          </div>
         </div>
 
         <!-- A6: Charte Colorimétrique -->
@@ -6876,6 +6887,40 @@ function a6VariatePrompt() {
   document.getElementById('a6-prompt-output').textContent = newPrompt;
   a6State.currentPrompt = newPrompt;
   setTimeout(() => enableBtn(btn), 500);
+}
+
+/* --- Génération d'image (maquette) via Pollinations.ai — gratuit, sans clé --- */
+let a6ImageUrl = null;
+function a6GenerateImage(btn, reseed) {
+  const prompt = a6State.currentPrompt;
+  if (!prompt) { showToast('Générez d\'abord un prompt', 'warn'); enableBtn(btn); return; }
+  disableBtn(btn);
+  const seed = reseed ? Math.floor(Math.random() * 1e6) : 42;
+  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=768&nologo=true&model=flux&seed=${seed}`;
+  a6ImageUrl = url;
+  const out = document.getElementById('a6-image-output');
+  const img = document.getElementById('a6-image-preview');
+  out.style.display = 'block';
+  showToast('🎨 Génération en cours (10-25 s)…', 'info');
+  img.onload  = () => { enableBtn(btn); showToast('✅ Maquette générée', 'ok'); };
+  img.onerror = () => { enableBtn(btn); showToast('Échec de génération — réessayez', 'error'); };
+  img.src = url;
+}
+function a6RegenImage(btn) { a6GenerateImage(btn, true); }
+async function a6DownloadImage() {
+  if (!a6ImageUrl) return;
+  try {
+    const res = await fetch(a6ImageUrl);
+    const blob = await res.blob();
+    const u = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = u; a.download = `maquette-senegal-${Date.now()}.jpg`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(u), 1000);
+    showToast('⬇️ Maquette téléchargée', 'ok');
+  } catch (e) {
+    window.open(a6ImageUrl, '_blank', 'noopener');
+    showToast('Ouverture de l\'image — enregistrez-la manuellement', 'info');
+  }
 }
 
 function a6CopyBrief(type) {
