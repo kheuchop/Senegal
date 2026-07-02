@@ -5627,26 +5627,41 @@ function _cmPhotoFile() {
     return new File([arr], `senegal-post.${ext}`, { type: cmPhotoMime || 'image/jpeg' });
   } catch (e) { return null; }
 }
+function _cmDownloadImage(file) {
+  const iurl = URL.createObjectURL(file);
+  const a = document.createElement('a'); a.href = iurl; a.download = file.name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(iurl), 1000);
+}
 async function cmSharePost() {
   const gen = cmCurrentGeneration;
   if (!gen) { showToast('Générez d\'abord un contenu', 'warn'); return; }
-  const txt = _cmCaptionText(gen.content);
+  const txt  = _cmCaptionText(gen.content);
+  const plat = gen.plat;
   const file = _cmPhotoFile();
-  // Partage natif (idéal sur mobile : ouvre Instagram, X, WhatsApp… avec photo + légende)
-  if (navigator.share) {
-    try {
-      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], text: txt });
-        return;
-      }
-      await navigator.share({ text: txt });
-      return;
-    } catch (e) {
-      if (e && e.name === 'AbortError') return; // annulé par l'utilisateur
-    }
+  const platLabel = { tiktok:'TikTok', youtube:'YouTube', linkedin:'LinkedIn', instagram:'Instagram', facebook:'Facebook', twitter:'X' }[plat] || plat;
+  // La légende est toujours copiée (prête à coller partout)
+  try { await navigator.clipboard.writeText(txt); } catch (e) {}
+
+  // X : ouverture directe du composer, texte déjà pré-rempli (la photo se joint à la main)
+  if (plat === 'twitter') {
+    if (file) _cmDownloadImage(file);
+    window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(txt), '_blank', 'noopener');
+    showToast(file ? 'X ouvert · texte pré-rempli · ajoutez la photo téléchargée' : 'X ouvert · texte pré-rempli', 'ok');
+    return;
   }
-  // Repli (ordinateur sans partage natif) : téléchargement
-  cmDownloadKit();
+
+  // Réseaux « image d'abord » (Instagram, TikTok, Facebook, LinkedIn, YouTube) :
+  // sur mobile, le partage natif transfère la photo directement au réseau choisi.
+  if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], text: txt }); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+
+  // Repli (ordinateur / pas de partage natif) : on ouvre le réseau + photo téléchargée + légende copiée
+  if (file) _cmDownloadImage(file);
+  cmOpenSocial();
+  showToast(`Légende copiée${file ? ' + photo téléchargée' : ''} · collez-les dans ${platLabel}`, 'ok');
 }
 function cmDownloadKit() {
   const gen = cmCurrentGeneration;
