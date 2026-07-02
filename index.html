@@ -5305,15 +5305,29 @@ function addActivity(icon, title, time) {
   if (feed.children.length > 8) feed.removeChild(feed.lastChild);
 }
 /* --- Check-list du jour (rituel de mission) --- */
+// roles : postes concernés par la tâche. La Direction voit toutes les tâches.
 const DAILY_CHECKLIST_ITEMS = [
-  { id: 'meteo',      icon: '🌅', group: 'Matin', label: 'Vérifier la météo + golden hours du site' },
-  { id: 'autoris',    icon: '⚖️', group: 'Matin', label: 'Vérifier les autorisations du/des sites du jour' },
-  { id: 'checkout',   icon: '📤', group: 'Matin', label: 'Check-out du matériel emporté' },
-  { id: 'backups',    icon: '📥', group: 'Soir',  label: 'Check-in matériel + valider les backups cartes' },
-  { id: 'jours',      icon: '📆', group: 'Soir',  label: 'Mettre à jour jours faits / sites faits' },
-  { id: 'depenses',   icon: '💰', group: 'Soir',  label: 'Saisir les dépenses du jour' },
-  { id: 'juridique',  icon: '📝', group: 'Soir',  label: 'Mettre à jour les autorisations qui ont bougé' },
+  // ── Matin ──
+  { id: 'meteo',      icon: '🌅', group: 'Matin', label: 'Vérifier la météo + golden hours du site',            roles: ['terrain','photovideo'] },
+  { id: 'planjour',   icon: '🗺️', group: 'Matin', label: 'Confirmer le planning et l\'itinéraire du jour',       roles: ['terrain'] },
+  { id: 'autoris',    icon: '⚖️', group: 'Matin', label: 'Vérifier les autorisations du/des sites du jour',      roles: ['juridique','terrain'] },
+  { id: 'checkout',   icon: '📤', group: 'Matin', label: 'Check-out du matériel emporté',                        roles: ['terrain','photovideo'] },
+  // ── Soir ──
+  { id: 'backups',    icon: '📥', group: 'Soir',  label: 'Check-in matériel + valider les backups cartes',       roles: ['terrain','photovideo'] },
+  { id: 'tri',        icon: '🖼️', group: 'Soir',  label: 'Trier et sauvegarder les photos/vidéos du jour',       roles: ['photovideo'] },
+  { id: 'jours',      icon: '📆', group: 'Soir',  label: 'Mettre à jour jours faits / sites faits',              roles: ['terrain'] },
+  { id: 'depenses',   icon: '💰', group: 'Soir',  label: 'Saisir les dépenses du jour',                          roles: ['finance'] },
+  { id: 'juridique',  icon: '📝', group: 'Soir',  label: 'Mettre à jour les autorisations qui ont bougé',        roles: ['juridique'] },
+  { id: 'notes',      icon: '✍️', group: 'Soir',  label: 'Rédiger les notes de terrain du jour (pour le livre)', roles: ['editorial','terrain'] },
+  { id: 'poste',      icon: '📱', group: 'Soir',  label: 'Préparer / publier le contenu réseaux du jour',        roles: ['communication'] },
 ];
+
+// Renvoie les tâches du poste connecté (la Direction voit tout ; tâche sans roles = visible par tous)
+function _checklistItems() {
+  const role = localStorage.getItem('missionRole') || 'direction';
+  if (role === 'direction') return DAILY_CHECKLIST_ITEMS;
+  return DAILY_CHECKLIST_ITEMS.filter(it => !it.roles || it.roles.includes(role));
+}
 
 function _todayKey() {
   const d = new Date();
@@ -5330,9 +5344,14 @@ function renderChecklist() {
     saveStateToDB();
   }
   const checked = state.dailyChecklist.checked || {};
+  const items = _checklistItems();
   let html = '';
   let lastGroup = '';
-  DAILY_CHECKLIST_ITEMS.forEach(it => {
+  if (items.length === 0) {
+    cont.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted);text-align:center;padding:12px">Aucune tâche assignée à votre poste aujourd\'hui.</div>';
+    return;
+  }
+  items.forEach(it => {
     if (it.group !== lastGroup) {
       html += `<div style="font-family:var(--font-mono);font-size:0.45rem;letter-spacing:0.1em;color:var(--text-muted);text-transform:uppercase;margin:8px 0 4px">${it.group === 'Matin' ? '🌅 Matin' : '🌙 Soir'}</div>`;
       lastGroup = it.group;
@@ -5344,11 +5363,11 @@ function renderChecklist() {
     </div>`;
   });
   cont.innerHTML = html;
-  const done = DAILY_CHECKLIST_ITEMS.filter(it => checked[it.id]).length;
+  const done = items.filter(it => checked[it.id]).length;
   const prog = document.getElementById('checklist-progress');
   if (prog) {
-    prog.textContent = `${done}/${DAILY_CHECKLIST_ITEMS.length}`;
-    prog.className = `pill ${done === DAILY_CHECKLIST_ITEMS.length ? 'pill-green' : 'pill-cyan'}`;
+    prog.textContent = `${done}/${items.length}`;
+    prog.className = `pill ${done === items.length ? 'pill-green' : 'pill-cyan'}`;
   }
 }
 
@@ -5358,8 +5377,9 @@ function toggleChecklistItem(id) {
   state.dailyChecklist.checked[id] = !state.dailyChecklist.checked[id];
   saveStateToDB();
   renderChecklist();
-  const done = DAILY_CHECKLIST_ITEMS.filter(it => state.dailyChecklist.checked[it.id]).length;
-  if (done === DAILY_CHECKLIST_ITEMS.length) showToast('🎉 Rituel du jour complété !', 'ok');
+  const items = _checklistItems();
+  const done = items.filter(it => state.dailyChecklist.checked[it.id]).length;
+  if (items.length && done === items.length) showToast('🎉 Rituel du jour complété !', 'ok');
 }
 
 function initSuperviseur() {
@@ -6441,6 +6461,9 @@ function applyRoleAccess(role) {
   const adminCard = document.getElementById('access-admin-card');
   if (adminCard) adminCard.style.display = isDir ? 'block' : 'none';
   if (isDir && typeof renderAccessAdmin === 'function') renderAccessAdmin();
+
+  // Rafraîchit la checklist du jour selon le poste (chacun voit ses tâches)
+  if (typeof renderChecklist === 'function') renderChecklist();
 }
 
 function initRoleAccess() {
