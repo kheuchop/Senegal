@@ -4515,46 +4515,47 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 const MISSION = { sites: 32, joursTerrain: 54, joursRepos: 28, joursTotal: 82, km: 10800, budget: 100000000, startYear: 2027 };
 
 // SITES — conformes au Plan de Trajet officiel V4.1 (32 sites, 6 zones, 54 jours terrain)
-// Jours par zone : A=15 · B=10 · C=6 · D=7 · E=10 · F=6 (total 54). Coordonnées approximatives.
+// Jours par zone : A=15 · B=10 · C=6 · D=7 · E=10 · F=6 (total 54).
+// Coordonnées vérifiées via sources publiques (Wikipedia/Wikidata/OSM), juillet 2026.
 const SITES = [
   // ZONE A — Dakar et Périphérie (12 sites, 15j)
   { id:1,  zone:'A', name:'Île de Gorée (UNESCO 1978)', coords:[14.6672,-17.3989], days:2, km:4 },
-  { id:2,  zone:'A', name:'Musée Historique du Sénégal', coords:[14.6665,-17.3998], days:1, km:4 },
-  { id:3,  zone:'A', name:'Musée des Civilisations Noires', coords:[14.6730,-17.4360], days:2, km:3 },
-  { id:4,  zone:'A', name:'Village des Arts de Dakar', coords:[14.7280,-17.4660], days:1, km:8 },
-  { id:5,  zone:'A', name:'Marché Kermel et galeries du Plateau', coords:[14.6772,-17.4283], days:1, km:2 },
-  { id:6,  zone:'A', name:'Monument de la Renaissance Africaine', coords:[14.7206,-17.4906], days:2, km:12 },
-  { id:7,  zone:'A', name:'Île de Ngor et Plages de Yoff', coords:[14.7530,-17.5130], days:1, km:18 },
+  { id:2,  zone:'A', name:'Musée Historique du Sénégal', coords:[14.6709,-17.3996], days:1, km:4 },
+  { id:3,  zone:'A', name:'Musée des Civilisations Noires', coords:[14.6775,-17.4351], days:2, km:3 },
+  { id:4,  zone:'A', name:'Village des Arts de Dakar', coords:[14.7464,-17.4573], days:1, km:8 },
+  { id:5,  zone:'A', name:'Marché Kermel et galeries du Plateau', coords:[14.6708,-17.4286], days:1, km:2 },
+  { id:6,  zone:'A', name:'Monument de la Renaissance Africaine', coords:[14.7221,-17.4950], days:2, km:12 },
+  { id:7,  zone:'A', name:'Île de Ngor et Plages de Yoff', coords:[14.7561,-17.5137], days:1, km:18 },
   { id:8,  zone:'A', name:'CICAD Diamniadio et Gare TER', coords:[14.7280,-17.1840], days:1, km:35 },
-  { id:9,  zone:'A', name:'Almadies et Phare des Mamelles', coords:[14.7440,-17.5230], days:1, km:20 },
+  { id:9,  zone:'A', name:'Almadies et Phare des Mamelles', coords:[14.7236,-17.5017], days:1, km:20 },
   { id:10, zone:'A', name:'Mosquée Massalikul Djinaan', coords:[14.7009,-17.4493], days:1, km:7 },
-  { id:11, zone:'A', name:'Port Autonome de Dakar', coords:[14.6760,-17.4180], days:1, km:3 },
-  { id:12, zone:'A', name:'Vieux Rufisque et Stade du Sénégal', coords:[14.7167,-17.2730], days:1, km:25 },
+  { id:11, zone:'A', name:'Port Autonome de Dakar', coords:[14.6806,-17.4278], days:1, km:3 },
+  { id:12, zone:'A', name:'Vieux Rufisque et Stade du Sénégal', coords:[14.7167,-17.2667], days:1, km:25 },
   // ZONE B — Saint-Louis, Patrimoine et Écosystèmes (6 sites, 10j)
   { id:13, zone:'B', name:'Ville historique de Saint-Louis (UNESCO 2000)', coords:[16.0179,-16.4896], days:3, km:264 },
-  { id:14, zone:'B', name:'Pont Faidherbe et Langue de Barbarie', coords:[15.9900,-16.5100], days:1, km:264 },
-  { id:15, zone:'B', name:'Parc National des Oiseaux du Djoudj (UNESCO 1981)', coords:[16.4167,-16.2333], days:2, km:300 },
+  { id:14, zone:'B', name:'Pont Faidherbe et Langue de Barbarie', coords:[16.0258,-16.5013], days:1, km:264 },
+  { id:15, zone:'B', name:'Parc National des Oiseaux du Djoudj (UNESCO 1981)', coords:[16.3590,-16.2744], days:2, km:300 },
   { id:16, zone:'B', name:'Quartiers historiques coloniaux de Saint-Louis', coords:[16.0260,-16.4980], days:1, km:264 },
-  { id:17, zone:'B', name:'Pêche traditionnelle de Guet Ndar', coords:[15.9930,-16.5130], days:1, km:265 },
-  { id:18, zone:'B', name:'Podor et Fort colonial du fleuve Sénégal', coords:[16.6500,-14.9667], days:2, km:440 },
+  { id:17, zone:'B', name:'Pêche traditionnelle de Guet Ndar', coords:[16.0226,-16.5085], days:1, km:265 },
+  { id:18, zone:'B', name:'Podor et Fort colonial du fleuve Sénégal', coords:[16.6558,-14.9597], days:2, km:440 },
   // ZONE C — Thiès et Louga, Paysages et Expériences (4 sites, 6j)
-  { id:19, zone:'C', name:'Lac Rose (Retba) — Liste Indicative UNESCO', coords:[14.8389,-17.2356], days:2, km:35 },
-  { id:20, zone:'C', name:'Désert de Lompoul et Bivouac', coords:[15.4500,-16.6900], days:2, km:145 },
+  { id:19, zone:'C', name:'Lac Rose (Retba) — Liste Indicative UNESCO', coords:[14.8380,-17.2246], days:2, km:35 },
+  { id:20, zone:'C', name:'Désert de Lompoul et Bivouac', coords:[15.4599,-16.6830], days:2, km:145 },
   { id:21, zone:'C', name:'Manufacture Nationale de Tapisseries de Thiès', coords:[14.7889,-16.9256], days:1, km:70 },
-  { id:22, zone:'C', name:'Réserve de Bandia', coords:[14.5833,-17.0167], days:1, km:65 },
+  { id:22, zone:'C', name:'Réserve de Bandia', coords:[14.5595,-17.0090], days:1, km:65 },
   // ZONE D — Fatick et Delta du Saloum, Écotourisme (4 sites, 7j)
   { id:23, zone:'D', name:'Delta du Saloum — Réserve de Biosphère (UNESCO 2011)', coords:[13.8000,-16.7500], days:3, km:150 },
-  { id:24, zone:'D', name:'Joal-Fadiouth et Île aux Coquillages', coords:[14.1667,-16.8333], days:2, km:110 },
+  { id:24, zone:'D', name:'Joal-Fadiouth et Île aux Coquillages', coords:[14.1546,-16.8327], days:2, km:110 },
   { id:25, zone:'D', name:'Lodges et Écolodges du Saloum', coords:[14.0500,-16.7500], days:1, km:140 },
   { id:26, zone:'D', name:'Mangroves et Bolongs', coords:[13.8500,-16.7800], days:1, km:150 },
   // ZONE E — Centre et Est, Spiritualité et Pays Bassari (4 sites, 10j)
-  { id:27, zone:'E', name:'Grande Mosquée de Touba', coords:[14.8667,-15.8833], days:3, km:194 },
-  { id:28, zone:'E', name:'Medina Baye Kaolack et Tivaouane', coords:[14.1490,-16.0728], days:2, km:192 },
-  { id:29, zone:'E', name:'Mégalithes de Sine Ngayène (UNESCO 2006)', coords:[13.6900,-15.5300], days:2, km:250 },
-  { id:30, zone:'E', name:'Pays Bassari et Villages Bédik (UNESCO 2012)', coords:[12.5500,-12.1833], days:3, km:690 },
+  { id:27, zone:'E', name:'Grande Mosquée de Touba', coords:[14.8632,-15.8758], days:3, km:194 },
+  { id:28, zone:'E', name:'Medina Baye Kaolack et Tivaouane', coords:[14.1639,-16.0619], days:2, km:192 },
+  { id:29, zone:'E', name:'Mégalithes de Sine Ngayène (UNESCO 2006)', coords:[13.6883,-15.5203], days:2, km:250 },
+  { id:30, zone:'E', name:'Pays Bassari et Villages Bédik (UNESCO 2012)', coords:[12.5579,-12.1743], days:3, km:690 },
   // ZONE F — Casamance, accès vol intérieur (2 sites, 6j)
   { id:31, zone:'F', name:'Ziguinchor et Forêts sacrées Diola', coords:[12.5681,-16.2719], days:3, km:460 },
-  { id:32, zone:'F', name:'Île de Carabane et Cap Skirring', coords:[12.3833,-16.7500], days:3, km:510 },
+  { id:32, zone:'F', name:'Île de Carabane et Cap Skirring', coords:[12.3956,-16.7472], days:3, km:510 },
 ];
 const OFFSHORE = [
   { id:'S1', name:'Sangomar — Zone Pétrolière', coords:[13.9000,-17.4500] },
