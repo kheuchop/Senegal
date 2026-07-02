@@ -5664,20 +5664,22 @@ async function cmSendToMake() {
 function vaultPrePopulateSocial() {
   if (!state.vault.social) state.vault.social = [];
   const defaults = [
-    { name:'INSTAGRAM_URL',    value:'https://instagram.com/VOTRE_COMPTE' },
-    { name:'FACEBOOK_URL',     value:'https://facebook.com/VOTRE_PAGE' },
-    { name:'X_URL',            value:'https://x.com/VOTRE_COMPTE' },
-    { name:'TIKTOK_URL',       value:'https://tiktok.com/@VOTRE_COMPTE' },
-    { name:'YOUTUBE_URL',      value:'https://youtube.com/@VOTRE_CHAINE' },
-    { name:'LINKEDIN_URL',     value:'https://linkedin.com/company/VOTRE_ORG' },
+    { name:'INSTAGRAM_URL',    value:'https://www.instagram.com/thrsenegal' },
+    { name:'FACEBOOK_URL',     value:'https://www.facebook.com/share/1EruqjjDYB/' },
+    { name:'X_URL',            value:'https://x.com/Senegalthr' },
+    { name:'TIKTOK_URL',       value:'https://www.tiktok.com/@sngal.thr' },
+    { name:'YOUTUBE_URL',      value:'https://youtube.com/@senegalthr' },
+    { name:'LINKEDIN_URL',     value:'https://www.linkedin.com/in/sénégal-terre-d’histoire-et-de-rencontres-53131341b?utm_source=share_via&utm_content=profile&utm_medium=member_android' },
     { name:'MAKE_CM_WEBHOOK',  value:'' },
   ];
-  // Ajoute uniquement les clés manquantes — ne touche jamais aux valeurs déjà saisies
-  let added = false;
+  // Ajoute les clés manquantes ; met à jour les valeurs encore à l'état de placeholder (VOTRE_)
+  let changed = false;
   defaults.forEach(d => {
-    if (!state.vault.social.some(k => k.name === d.name)) { state.vault.social.push(d); added = true; }
+    const existing = state.vault.social.find(k => k.name === d.name);
+    if (!existing) { state.vault.social.push({ ...d }); changed = true; }
+    else if (d.value && (!existing.value || existing.value.includes('VOTRE_'))) { existing.value = d.value; changed = true; }
   });
-  if (added) saveStateToDB();
+  if (changed) saveStateToDB();
 }
 
 /* ============================================================
