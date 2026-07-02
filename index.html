@@ -704,6 +704,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 }
 #agent-cm .plat-tab.active-tiktok { border-color: #ee1d52; color: #ee1d52; background: rgba(238,29,82,0.08); }
 #agent-cm .plat-tab.active-youtube { border-color: #ff0000; color: #ff0000; background: rgba(255,0,0,0.08); }
+#agent-cm .plat-tab.active-twitter { border-color: #e7e9ea; color: #e7e9ea; background: rgba(231,233,234,0.10); }
 #agent-cm .plat-tab.active-linkedin { border-color: #0077b5; color: #4fc3f7; background: rgba(0,119,181,0.08); }
 #agent-cm .plat-tab.active-instagram {
   border-color: #e1306c; color: #e1306c;
@@ -2439,6 +2440,10 @@ textarea.input-field { resize: vertical; min-height: 80px; }
             <button class="plat-tab" data-plat="facebook" onclick="selectPlatform('facebook',this)">
               <svg width="14" height="14" fill="#1877f2" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
               Facebook
+            </button>
+            <button class="plat-tab" data-plat="twitter" onclick="selectPlatform('twitter',this)">
+              <svg width="14" height="14" fill="#e7e9ea" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              X
             </button>
           </div>
         </div>
@@ -5474,7 +5479,7 @@ function selectPlatform(plat, el) {
   state.currentPlatform = plat;
   document.querySelectorAll('.plat-tab').forEach(t => { t.className = 'plat-tab'; });
   el.classList.add(`active-${plat}`);
-  document.getElementById('preview-plat-badge').textContent = plat.charAt(0).toUpperCase() + plat.slice(1);
+  document.getElementById('preview-plat-badge').textContent = plat === 'twitter' ? 'X' : plat.charAt(0).toUpperCase() + plat.slice(1);
   document.getElementById('yt-specific').style.display = plat === 'youtube' ? 'block' : 'none';
   document.getElementById('content-preview').innerHTML = '<div class="preview-empty">Sélectionner un site et générer le contenu…</div>';
   document.getElementById('copy-btn').style.display = 'none';
@@ -5511,6 +5516,19 @@ const CM_TEMPLATES = {
   instagram: (site, tone) => {
     const captions = { inspiring:`✨ ${site.name}\n\nCertains endroits ne se décrivent pas. Ils se ressentent.\n\nZone ${site.zone} · Site ${site.id} sur 32\n${site.coords[0].toFixed(4)}°N · ${site.days}j de tournage\n\nCe documentaire est pour vous 🎬\n\n📖 Lien en bio pour précommander`, informative:`📍 ${site.name}\n\n🗺 Zone ${site.zone} · Site ${site.id}/32\n📏 ${site.km}km de Dakar\n⏱ ${site.days} jour${site.days>1?'s':''} sur place\n\nNotre équipe capture l'essence de chaque lieu pour un livre documentaire exceptionnel sur le Sénégal.\n\n📖 32 sites · 100M FCFA · 2027`, exciting:`🔥🔥🔥 ${site.name.toUpperCase()}\n\nON EST LÀ ET C'EST INSANE 🎥\n\nZone ${site.zone} · ${site.km}km · ${site.days}j\n32 SITES. 5400KM. UN LIVRE. 💥\n\nSave this post si tu veux être notifié !\n#VenirVite`, cultural:`🌍 ${site.name}\n\nUne page de l'histoire de l'Afrique de l'Ouest.\nZone ${site.zone}, à ${site.km}km de Dakar.\n\nNotre documentaire raconte ces histoires que le monde doit connaître.\n\n📖 Réservation ouverte — lien en bio`, promotional:`🎬 TOURNAGE EN COURS 📸\n\n${site.name} — Zone ${site.zone}\n\nDevenez les premiers à tenir entre vos mains le documentaire photographique le plus ambitieux jamais réalisé sur le Sénégal.\n\n👉 Lien de précommande en bio\n🔔 Activez les notifications !` };
     return { text: captions[tone] || captions['informative'], hashtags: `#Sénégal #Dakar #Afrique #${site.zone==='A'?'Dakar':site.zone==='C'?'Casamance':site.zone==='D'?'Kédougou':'Sénégal'} #Documentary #Photography #AfriqueOuest #${site.name.replace(/[^\w]/g,'')} #WestAfrica #NatGeoAfrica #DiscoverAfrica`, meta: `Format : Carré 1080×1080 ou Portrait 4:5 · Premier commentaire : hashtags secondaires` };
+  },
+  twitter: (site, tone) => {
+    const posts = {
+      inspiring:`${site.name}. Zone ${site.zone}.\nCertains lieux ne se racontent pas — ils se vivent. On y était, caméra au poing. 🎬🇸🇳`,
+      informative:`📍 ${site.name} — Zone ${site.zone} · site ${site.id}/32\n${site.days}j de tournage · ~${site.km} km depuis Dakar.\nMission documentaire Sénégal.`,
+      exciting:`ON EST À ${site.name.toUpperCase()} 🔥\n32 sites · 54j de terrain · un livre collector. On ne lâche rien. 🇸🇳🎥`,
+      cultural:`${site.name}, Zone ${site.zone}.\nUn pan du patrimoine sénégalais qu'on documente pour qu'il reste. 🇸🇳`,
+      promotional:`🎬 Tournage à ${site.name}.\nLivre documentaire Sénégal — 32 sites, édition collector. Précommandes ouvertes.`
+    };
+    const text = posts[tone] || posts['informative'];
+    const tags = `#Sénégal #${site.name.replace(/\s+/g,'').replace(/[^\w]/g,'')} #Africa`;
+    const full = `${text}\n${tags}`;
+    return { text, hashtags: tags, meta: `X (ex-Twitter) · 280 car. max · ${full.length}/280 · 1 visuel conseillé` };
   }
 };
 
@@ -5532,9 +5550,10 @@ function generateContent() {
     else if (plat === 'youtube') content = CM_TEMPLATES.youtube(site, tone, duration);
     else if (plat === 'linkedin') content = CM_TEMPLATES.linkedin(site, tone);
     else if (plat === 'facebook') content = CM_TEMPLATES.facebook(site, tone);
+    else if (plat === 'twitter') content = CM_TEMPLATES.twitter(site, tone);
     else content = CM_TEMPLATES.instagram(site, tone);
     preview.className = 'preview-box';
-    const platColors = { tiktok:'#ee1d52', youtube:'#ff0000', linkedin:'#4fc3f7', instagram:'#e1306c', facebook:'#1877f2' };
+    const platColors = { tiktok:'#ee1d52', youtube:'#ff0000', linkedin:'#4fc3f7', instagram:'#e1306c', facebook:'#1877f2', twitter:'#e7e9ea' };
     preview.innerHTML = `<div class="preview-platform-badge" style="color:${platColors[plat]}">▶ ${plat.toUpperCase()} · ${site.name}</div><div class="preview-text">${(content.title ? `<strong>${content.title}</strong>\n\n` : '') + content.text}</div>${content.hashtags ? `<div class="preview-hashtags">${content.hashtags}</div>` : ''}<div class="preview-meta">${content.meta}</div>`;
     document.getElementById('copy-btn').style.display = 'inline-flex';
     cmShowActionBar(plat, content);
@@ -5580,7 +5599,7 @@ function cmShowActionBar(plat, content) {
   cmCurrentGeneration = { plat, content };
   const bar = document.getElementById('cm-action-bar');
   if (!bar) return;
-  const platNames = { tiktok:'TikTok', youtube:'YouTube', linkedin:'LinkedIn', instagram:'Instagram', facebook:'Facebook' };
+  const platNames = { tiktok:'TikTok', youtube:'YouTube', linkedin:'LinkedIn', instagram:'Instagram', facebook:'Facebook', twitter:'X' };
   const label = document.getElementById('cm-plat-label');
   if (label) label.textContent = platNames[plat] || plat;
   bar.style.display = 'block';
@@ -5600,7 +5619,7 @@ function getVaultValue(name) {
 function cmOpenSocial() {
   const plat = cmCurrentGeneration?.plat;
   if (!plat) return;
-  const keyMap = { tiktok:'TIKTOK_URL', youtube:'YOUTUBE_URL', linkedin:'LINKEDIN_URL', instagram:'INSTAGRAM_URL', facebook:'FACEBOOK_URL' };
+  const keyMap = { tiktok:'TIKTOK_URL', youtube:'YOUTUBE_URL', linkedin:'LINKEDIN_URL', instagram:'INSTAGRAM_URL', facebook:'FACEBOOK_URL', twitter:'X_URL' };
   const url = getVaultValue(keyMap[plat]);
   if (!url) {
     showToast('URL non configurée — ouvrez le Vault (A2) et complétez la section Réseaux Sociaux', 'warn');
@@ -5644,17 +5663,21 @@ async function cmSendToMake() {
 
 function vaultPrePopulateSocial() {
   if (!state.vault.social) state.vault.social = [];
-  if (state.vault.social.length > 0) return;
   const defaults = [
     { name:'INSTAGRAM_URL',    value:'https://instagram.com/VOTRE_COMPTE' },
+    { name:'FACEBOOK_URL',     value:'https://facebook.com/VOTRE_PAGE' },
+    { name:'X_URL',            value:'https://x.com/VOTRE_COMPTE' },
     { name:'TIKTOK_URL',       value:'https://tiktok.com/@VOTRE_COMPTE' },
     { name:'YOUTUBE_URL',      value:'https://youtube.com/@VOTRE_CHAINE' },
     { name:'LINKEDIN_URL',     value:'https://linkedin.com/company/VOTRE_ORG' },
-    { name:'FACEBOOK_URL',     value:'https://facebook.com/VOTRE_PAGE' },
     { name:'MAKE_CM_WEBHOOK',  value:'' },
   ];
-  defaults.forEach(d => state.vault.social.push(d));
-  saveStateToDB();
+  // Ajoute uniquement les clés manquantes — ne touche jamais aux valeurs déjà saisies
+  let added = false;
+  defaults.forEach(d => {
+    if (!state.vault.social.some(k => k.name === d.name)) { state.vault.social.push(d); added = true; }
+  });
+  if (added) saveStateToDB();
 }
 
 /* ============================================================
@@ -5725,7 +5748,8 @@ RÈGLES D'ÉCRITURE HUMAINE — OBLIGATOIRES :
 - TikTok/Instagram : brut, direct, comme si tu envoyais un message vocal transcrit à un ami
 - LinkedIn : réflexion personnelle d'un pro en pleine mission, sans langue de bois
 - YouTube : voix de narrateur documentaire, descriptions cinématographiques et sensorielles
-- Facebook : chaleureux et communautaire, entre ami proche et grand public, invitation naturelle à partager`;
+- Facebook : chaleureux et communautaire, entre ami proche et grand public, invitation naturelle à partager
+- X (ex-Twitter) : percutant et concis, 280 caractères MAX, une idée forte, ton direct et vivant`;
 
   const userPrompt = `Site : "${siteName}" ${siteZone}. Tonalité souhaitée : ${toneLabels[tone] || 'inspirant'}.
 
@@ -5753,6 +5777,10 @@ Réponds UNIQUEMENT avec ce JSON valide, sans markdown ni backticks :
   "facebook": {
     "text": "Post chaleureux communautaire (5-7 lignes, invitation à partager)",
     "hashtags": "6 hashtags grand public"
+  },
+  "twitter": {
+    "text": "Tweet percutant et concis, 280 caractères MAX, une idée forte",
+    "hashtags": "3 hashtags pertinents"
   }
 }`;
 
@@ -5783,7 +5811,7 @@ Réponds UNIQUEMENT avec ce JSON valide, sans markdown ni backticks :
     catch { const m = raw.match(/\{[\s\S]*\}/); content = m ? JSON.parse(m[0]) : null; }
     if (!content) throw new Error('Réponse Claude non parseable — réessayez');
 
-    const platColors = { tiktok:'#ee1d52', youtube:'#ff0000', linkedin:'#4fc3f7', instagram:'#e1306c', facebook:'#1877f2' };
+    const platColors = { tiktok:'#ee1d52', youtube:'#ff0000', linkedin:'#4fc3f7', instagram:'#e1306c', facebook:'#1877f2', twitter:'#e7e9ea' };
     let displayText = '', displayTitle = '', displayHash = '';
 
     if (plat === 'tiktok') {
@@ -5797,6 +5825,9 @@ Réponds UNIQUEMENT avec ce JSON valide, sans markdown ni backticks :
     } else if (plat === 'facebook') {
       displayText = content.facebook.text;
       displayHash = content.facebook.hashtags;
+    } else if (plat === 'twitter') {
+      displayText = content.twitter?.text || content.instagram?.caption || '';
+      displayHash = content.twitter?.hashtags || '';
     } else {
       displayText = content.instagram.caption;
       displayHash = content.instagram.hashtags;
