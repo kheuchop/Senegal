@@ -1,11 +1,11 @@
-﻿/**
- * sw.js â€” Service Worker MISSION CTRL Â· SÃ‰NÃ‰GAL
- * StratÃ©gie :
- *  - Shell applicatif prÃ©-cachÃ© Ã  l'installation (app utilisable 100% hors-ligne)
- *  - Navigation : network-first avec fallback cache (toujours la derniÃ¨re version si rÃ©seau)
- *  - Statique mÃªme-origine + polices : cache-first
- *  - Tuiles OSM : cache opportuniste plafonnÃ© (les zones visitÃ©es restent visibles hors-ligne)
- *  - /api/, Supabase, Make : rÃ©seau uniquement (jamais de cache â€” la file SupaSync gÃ¨re l'offline)
+/**
+ * sw.js — Service Worker MISSION CTRL · SÉNÉGAL
+ * Stratégie :
+ *  - Shell applicatif pré-caché à l'installation (app utilisable 100% hors-ligne)
+ *  - Navigation : network-first avec fallback cache (toujours la dernière version si réseau)
+ *  - Statique même-origine + polices : cache-first
+ *  - Tuiles OSM : cache opportuniste plafonné (les zones visitées restent visibles hors-ligne)
+ *  - /api/, Supabase, Make : réseau uniquement (jamais de cache — la file SupaSync gère l'offline)
  */
 const VERSION = 'mission-ctrl-v33';
 const SHELL_CACHE = `shell-${VERSION}`;
@@ -52,18 +52,18 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const req = event.request;
-  if (req.method !== 'GET') return; // POST /api/claude etc. â†’ rÃ©seau direct
+  if (req.method !== 'GET') return; // POST /api/claude etc. → réseau direct
 
   const url = new URL(req.url);
 
-  // DonnÃ©es dynamiques : jamais de cache (SupaSync gÃ¨re l'offline cÃ´tÃ© app)
+  // Données dynamiques : jamais de cache (SupaSync gère l'offline côté app)
   if (
     url.pathname.startsWith('/api/') ||
     url.hostname.endsWith('.supabase.co') ||
     url.hostname.endsWith('.make.com')
   ) return;
 
-  // Tuiles OpenStreetMap : cache opportuniste plafonnÃ©
+  // Tuiles OpenStreetMap : cache opportuniste plafonné
   if (url.hostname.endsWith('.tile.openstreetmap.org')) {
     event.respondWith(tileStrategy(req));
     return;
@@ -83,7 +83,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Statique mÃªme-origine + polices Google : cache-first avec remplissage
+  // Statique même-origine + polices Google : cache-first avec remplissage
   if (
     url.origin === self.location.origin ||
     url.hostname === 'fonts.googleapis.com' ||
@@ -116,7 +116,7 @@ async function tileStrategy(req) {
     }
     return res;
   } catch (e) {
-    // Hors-ligne et tuile inconnue â†’ rÃ©ponse vide (la carte affiche du gris)
+    // Hors-ligne et tuile inconnue → réponse vide (la carte affiche du gris)
     return new Response('', { status: 408 });
   }
 }
