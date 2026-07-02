@@ -3208,13 +3208,28 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <div id="a7-gen-result" style="margin-top:10px"></div>
         </div>
 
-        <!-- A7: Notes terrain → Prose -->
+        <!-- A7: Notes terrain → Prose (photo + notes obligatoires) -->
         <div class="card">
-          <div class="card-title">🎒 Notes Terrain → Prose Publiable <span class="pill pill-amber" style="margin-left:auto;font-size:0.45rem">Claude</span></div>
-          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:8px">Tape tes notes brutes depuis le terrain. Claude les transforme en texte prêt pour le livre ou les réseaux.</div>
+          <div class="card-title">🎒 Notes Terrain → Prose Publiable <span class="pill pill-amber" style="margin-left:auto;font-size:0.45rem">Claude Vision</span></div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--amber);margin-bottom:10px;line-height:1.5">✍️ Vos notes de terrain sont OBLIGATOIRES. L'IA enrichit votre regard — elle ne le remplace pas.</div>
+
+          <!-- Photo : appareil photo ou galerie -->
+          <label class="input-label">Photo du terrain (optionnel)</label>
+          <input type="file" id="a7-notes-cam" accept="image/*" capture="environment" style="display:none" onchange="a7NotesPhotoSelected(this)">
+          <input type="file" id="a7-notes-gal" accept="image/*" style="display:none" onchange="a7NotesPhotoSelected(this)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 8px">
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('a7-notes-cam').click()">📷 Prendre une photo</button>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('a7-notes-gal').click()">🖼️ Galerie</button>
+          </div>
+          <div id="a7-notes-photo-wrap" style="display:none;margin-bottom:10px;position:relative">
+            <img id="a7-notes-photo-preview" alt="Photo terrain" style="width:100%;border-radius:var(--r-sm);max-height:180px;object-fit:cover;display:block;border:1px solid var(--border)">
+            <button class="btn btn-danger btn-sm" style="position:absolute;top:6px;right:6px;padding:2px 9px" onclick="a7NotesClearPhoto()">✕</button>
+          </div>
+
           <div class="input-group">
-            <label class="input-label">Tes notes brutes</label>
-            <textarea class="input-field" id="a7-notes-input" placeholder="ex: lumière dingue à 6h, pêcheurs sur les pirogues, odeur de sel et de bois brûlé, vieux qui nous regardait sans bouger depuis 20 minutes…" style="min-height:100px"></textarea>
+            <label class="input-label">Vos notes brutes (obligatoire)</label>
+            <textarea class="input-field" id="a7-notes-input" oninput="a7NotesCheck()" placeholder="ex: lumière dingue à 6h, pêcheurs sur les pirogues, odeur de sel et de bois brûlé, vieux qui nous regardait sans bouger depuis 20 minutes…" style="min-height:100px"></textarea>
+            <div id="a7-notes-count" style="font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted);margin-top:4px">0 / 15 mots minimum</div>
           </div>
           <div class="input-group">
             <label class="input-label">Registre de sortie</label>
@@ -3225,8 +3240,8 @@ textarea.input-field { resize: vertical; min-height: 80px; }
               <option value="social">📱 Court Réseaux Sociaux — < 150 mots</option>
             </select>
           </div>
-          <button class="btn btn-primary btn-full" onclick="a7GenFromNotes(this)">
-            <div class="spinner"></div><span class="btn-text">🎒 Transformer les notes</span>
+          <button class="btn btn-primary btn-full" id="a7-notes-btn" onclick="a7GenFromNotes(this)" disabled>
+            <div class="spinner"></div><span class="btn-text">🎒 Transformer mes notes</span>
           </button>
           <div id="a7-notes-result" style="margin-top:10px"></div>
         </div>
@@ -7739,11 +7754,13 @@ const a7State = { lang: 'fr', outputMode: 'fr', library: [], lastOutput: { fr:''
 /* ── Identité rédacteur A7 ── */
 const A7_WRITER_IDENTITY = `Tu es rédacteur et traducteur en chef de la mission documentaire SÉNÉGAL V3 : « Sénégal, Terre d'Histoire et de Rencontres ». Tu rédiges pour un livre collector luxe 224 pages, format 210×280mm. Registre littéraire et journalistique haut de gamme : précis, sensible, ancré dans le réel, jamais générique. Même niveau d'exigence dans chaque langue.`;
 
-async function a7CallClaude(systemPrompt, userText, maxTok) {
+async function a7CallClaude(systemPrompt, userContent, maxTok) {
+  // userContent : chaîne (texte) OU tableau de blocs (image + texte) pour Claude Vision
+  const content = Array.isArray(userContent) ? userContent : [{ type:'text', text:userContent }];
   const res = await fetch('/api/claude', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens: maxTok||800, system: A7_WRITER_IDENTITY + '\n\n' + systemPrompt, messages:[{ role:'user', content:[{ type:'text', text:userText }] }] })
+    body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens: maxTok||800, system: A7_WRITER_IDENTITY + '\n\n' + systemPrompt, messages:[{ role:'user', content }] })
   });
   const data = await res.json();
   if (!res.ok || data.error) throw new Error(data.error?.message || data.hint || `HTTP ${res.status}`);
@@ -8051,17 +8068,66 @@ function a7ConfirmSendToBook(encodedOutput) {
 }
 
 /* ── A7 : Notes terrain → Prose ── */
+const A7_NOTES_MIN_WORDS = 15;
+let a7NotesPhotoBase64 = null;
+let a7NotesPhotoMime   = null;
+
+function _a7WordCount(s) { return (s || '').trim().split(/\s+/).filter(Boolean).length; }
+
+function a7NotesCheck() {
+  const ta    = document.getElementById('a7-notes-input');
+  const count = document.getElementById('a7-notes-count');
+  const btn   = document.getElementById('a7-notes-btn');
+  const n = _a7WordCount(ta?.value);
+  if (count) {
+    count.textContent = `${n} / ${A7_NOTES_MIN_WORDS} mots minimum`;
+    count.style.color = n >= A7_NOTES_MIN_WORDS ? 'var(--emerald)' : 'var(--text-muted)';
+  }
+  if (btn) btn.disabled = n < A7_NOTES_MIN_WORDS;
+}
+
+function a7NotesPhotoSelected(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { showToast('Photo trop lourde — max 5 Mo', 'warn'); input.value = ''; return; }
+  a7NotesPhotoMime = file.type || 'image/jpeg';
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    a7NotesPhotoBase64 = e.target.result.split(',')[1];
+    const wrap = document.getElementById('a7-notes-photo-wrap');
+    const img  = document.getElementById('a7-notes-photo-preview');
+    if (img)  img.src = e.target.result;
+    if (wrap) wrap.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function a7NotesClearPhoto() {
+  a7NotesPhotoBase64 = null;
+  a7NotesPhotoMime   = null;
+  const wrap = document.getElementById('a7-notes-photo-wrap');
+  if (wrap) wrap.style.display = 'none';
+}
+
 async function a7GenFromNotes(btn) {
   disableBtn(btn);
   const notes    = document.getElementById('a7-notes-input')?.value.trim();
   const register = document.getElementById('a7-notes-register')?.value || 'poetique';
   const div      = document.getElementById('a7-notes-result');
-  if (!notes) { showToast('Saisir des notes terrain', 'warn'); enableBtn(btn); return; }
+  if (_a7WordCount(notes) < A7_NOTES_MIN_WORDS) {
+    showToast(`Écrivez au moins ${A7_NOTES_MIN_WORDS} mots de notes de terrain — l'IA ne travaille pas seule`, 'warn');
+    enableBtn(btn); return;
+  }
   const regLabel = { poetique:'poétique luxe beau-livre', journalistique:'journalistique terrain reportage', academique:'académique patrimoine UNESCO', social:'social media (Instagram/LinkedIn court)' }[register] || register;
-  const sys = `Tu transformes des notes de terrain brutes en prose publiable pour la mission documentaire SÉNÉGAL V3. Registre : ${regLabel}. Jamais de liste à puces. Jamais de formules IA banales. Ancré dans le concret.`;
+  const hasPhoto = !!a7NotesPhotoBase64;
+  const sys = `Tu transformes des notes de terrain brutes en prose publiable pour la mission documentaire SÉNÉGAL V3. Registre : ${regLabel}. Jamais de liste à puces. Jamais de formules IA banales. Ancré dans le concret. ${hasPhoto ? 'Une photo est jointe : appuie-toi sur ce qui est RÉELLEMENT visible dedans, mais le récit, l\'histoire et l\'émotion viennent des NOTES. Ne contredis JAMAIS les notes du rédacteur — elles priment sur ton interprétation de l\'image.' : ''}`;
   try {
-    const data = await a7CallClaudeJSON(sys,
-      `Notes brutes du photographe/reporter :\n"${notes}"\n\nTransforme en prose publiable, 3 langues.\nJSON UNIQUEMENT : {"fr":"prose française","en":"English prose","ar":"النثر العربي","titre":"titre court FR pour cette prose"}`, 1000);
+    const userPrompt = `Notes brutes du photographe/reporter (SOURCE PRIORITAIRE) :\n"${notes}"\n\n${hasPhoto ? 'Photo du terrain jointe ci-dessus — utilise-la pour les détails visuels concrets uniquement.\n\n' : ''}Transforme en prose publiable, 3 langues.\nJSON UNIQUEMENT : {"fr":"prose française","en":"English prose","ar":"النثر العربي","titre":"titre court FR pour cette prose"}`;
+    const userContent = hasPhoto
+      ? [{ type:'image', source:{ type:'base64', media_type:a7NotesPhotoMime, data:a7NotesPhotoBase64 } }, { type:'text', text:userPrompt }]
+      : userPrompt;
+    const data = await a7CallClaudeJSON(sys, userContent, 1000);
     a7State.lastOutput = { fr: data.fr||'', en: data.en||'', ar: data.ar||'' };
     a7RenderOutput();
     if (div) div.innerHTML = `<div style="color:var(--emerald);font-size:12px">✓ ${data.titre ? '"'+data.titre+'"' : 'Prose générée'} — voir sortie ci-dessus</div>`;
