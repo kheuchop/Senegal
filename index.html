@@ -938,7 +938,21 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 
 /* Leaflet dark overrides */
 .leaflet-container { background: #0a0d14 !important; }
-.leaflet-tile-pane { filter: brightness(0.7) saturate(1.4) hue-rotate(190deg); }
+/* Filtre sombre appliqué au fond Plan uniquement — le satellite reste naturel */
+.tiles-plan { filter: brightness(0.7) saturate(1.4) hue-rotate(190deg); }
+/* Sélecteur de fond (Plan / Satellite / Hybride) — thème sombre */
+.leaflet-control-layers {
+  background: rgba(6,9,16,0.92) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--r-sm) !important;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.5);
+}
+.leaflet-control-layers-expanded { padding: 8px 10px !important; }
+.leaflet-control-layers label { margin: 3px 0; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.leaflet-control-layers-selector { margin-right: 4px; accent-color: var(--cyan); }
 .leaflet-popup-content-wrapper {
   background: var(--bg-card-2) !important;
   border: 1px solid var(--border) !important;
@@ -5098,9 +5112,37 @@ function animateCounter(el, target, duration) {
 function initMap() {
   try {
     if (typeof L === 'undefined') throw new Error('Leaflet CDN not loaded');
-    const map = L.map('leaflet-map', { zoomControl: true, attributionControl: false });
+    const map = L.map('leaflet-map', {
+      zoomControl: true,
+      attributionControl: false,
+      zoomSnap: 0.5,
+      zoomDelta: 0.5,
+      wheelPxPerZoomLevel: 80,
+      worldCopyJump: true,
+    });
     state.leafletMap = map;
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:18 }).addTo(map);
+
+    // --- Fonds de carte : Plan / Satellite / Hybride ---
+    const planLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, className: 'tiles-plan', attribution: '© OpenStreetMap'
+    });
+    const satUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+    const labelsUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
+    const satLayer = L.tileLayer(satUrl, { maxZoom: 19, className: 'tiles-sat', attribution: '© Esri, Maxar, Earthstar Geographics' });
+    const hybridLayer = L.layerGroup([
+      L.tileLayer(satUrl,    { maxZoom: 19, className: 'tiles-sat' }),
+      L.tileLayer(labelsUrl, { maxZoom: 19, className: 'tiles-labels' }),
+    ]);
+
+    // Fond par défaut : Hybride (imagerie réelle + noms de lieux)
+    hybridLayer.addTo(map);
+    state.mapBaseLayers = { plan: planLayer, sat: satLayer, hybrid: hybridLayer };
+
+    L.control.layers(
+      { 'Satellite + noms': hybridLayer, 'Satellite': satLayer, 'Plan': planLayer },
+      null,
+      { position: 'topright', collapsed: false }
+    ).addTo(map);
     const bounds = L.latLngBounds(SITES.map(s => s.coords));
     map.fitBounds(bounds.pad(0.1));
     SITES.forEach(s => {
