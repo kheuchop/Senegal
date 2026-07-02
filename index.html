@@ -5503,16 +5503,37 @@ function exportVault() {
   setTimeout(() => enableBtn(btn), 1000);
 }
 function changePIN() {
-  const newPin = prompt('Nouveau PIN (4 chiffres) :');
-  if (newPin && /^\d{4}$/.test(newPin) && newPin !== '1234') {
-    state.vaultPin = newPin;
-    saveStateToDB();
-    showToast('🔑 PIN mis à jour', 'ok');
-  } else if (newPin === '1234') {
-    showToast('Choisissez un PIN différent de 1234', 'warn');
-  } else if (newPin) {
-    showToast('PIN invalide — 4 chiffres requis', 'warn');
-  }
+  // Fenêtre in-app fiable — prompt() est bloqué dans certaines PWA installées
+  document.getElementById('pin-change-ov')?.remove();
+  const ov = document.createElement('div');
+  ov.className = 'bk-modal-overlay';
+  ov.id = 'pin-change-ov';
+  ov.innerHTML = `<div class="bk-modal" style="max-width:340px;padding:22px">
+    <div style="font-family:var(--font-display);font-size:1rem;margin-bottom:6px">🔑 Nouveau PIN du Coffre-Fort</div>
+    <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:14px">4 chiffres, différent de 1234.</div>
+    <input id="pin-new" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" class="input-field" placeholder="Nouveau PIN" style="width:100%;text-align:center;letter-spacing:8px;font-size:1.1rem;margin-bottom:10px" autocomplete="new-password">
+    <input id="pin-confirm" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" class="input-field" placeholder="Confirmer le PIN" style="width:100%;text-align:center;letter-spacing:8px;font-size:1.1rem;margin-bottom:8px" autocomplete="new-password">
+    <div id="pin-change-err" style="color:var(--red);font-size:0.68rem;min-height:16px;margin-bottom:8px"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('pin-change-ov')?.remove()">Plus tard</button>
+      <button class="btn btn-primary btn-sm" onclick="submitNewPin()">Valider</button>
+    </div></div>`;
+  ov.onclick = (e) => { if (e.target === ov) ov.remove(); };
+  document.body.appendChild(ov);
+  setTimeout(() => document.getElementById('pin-new')?.focus(), 100);
+}
+function submitNewPin() {
+  const a = (document.getElementById('pin-new')?.value || '').trim();
+  const b = (document.getElementById('pin-confirm')?.value || '').trim();
+  const err = document.getElementById('pin-change-err');
+  const setErr = m => { if (err) err.textContent = m; };
+  if (!/^\d{4}$/.test(a)) { setErr('Le PIN doit faire exactement 4 chiffres.'); return; }
+  if (a === '1234')       { setErr('Choisissez un PIN différent de 1234.'); return; }
+  if (a !== b)            { setErr('Les deux PIN ne correspondent pas.'); return; }
+  state.vaultPin = a;
+  saveStateToDB();
+  document.getElementById('pin-change-ov')?.remove();
+  showToast('🔑 PIN mis à jour et enregistré', 'ok');
 }
 
 /* ============================================================
@@ -6507,6 +6528,11 @@ async function init() {
         // Codes d'accès par rôle : restaure si aucun code local
         if (cloud.rolePins && typeof cloud.rolePins === 'object' && (!state.rolePins || Object.keys(state.rolePins).length === 0)) {
           state.rolePins = cloud.rolePins;
+          saveStateToDB();
+        }
+        // PIN du Coffre-Fort : adopte le PIN cloud si le local est encore au défaut (1234)
+        if (typeof cloud.vaultPin === 'string' && /^\d{4}$/.test(cloud.vaultPin) && cloud.vaultPin !== '1234' && state.vaultPin === '1234') {
+          state.vaultPin = cloud.vaultPin;
           saveStateToDB();
         }
       }
@@ -11376,6 +11402,11 @@ function _onSessionReady(session) {
             saveStateToDB();
             if (typeof renderVaultKeys === 'function') renderVaultKeys();
             showToast('🔐 Coffre-Fort synchronisé depuis le cloud', 'info');
+          }
+          // PIN du Coffre-Fort : adopte le PIN cloud si le local est encore au défaut
+          if (typeof d.vaultPin === 'string' && /^\d{4}$/.test(d.vaultPin) && d.vaultPin !== '1234' && state.vaultPin === '1234') {
+            state.vaultPin = d.vaultPin;
+            saveStateToDB();
           }
           if (changed) {
             updateFinancialUI();

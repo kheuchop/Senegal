@@ -280,6 +280,7 @@
             printRate:      stateData.printRate       ?? 150,
             a14ApiKey:      stateData.a14ApiKey       ?? null,
             vault:          stateData.vault           ?? null,
+            vaultPin:       stateData.vaultPin        ?? null,
             rolePins:       stateData.rolePins        ?? null,
             schema_version: SCHEMA_VERSION
           }
