@@ -3347,6 +3347,16 @@ textarea.input-field { resize: vertical; min-height: 80px; }
               <div class="spinner"></div><span class="btn-text">✨ Claude Corrige</span>
             </button>
           </div>
+          <button class="btn btn-success btn-sm btn-full" style="margin-top:8px" onclick="a8CorrectTrilingual(this)">
+            <div class="spinner"></div><span class="btn-text">🌍 Corriger FR + EN + AR</span>
+          </button>
+        </div>
+
+        <!-- A8: Correction trilingue -->
+        <div class="card" id="a8-tri-card" style="display:none">
+          <div class="card-title">Correction Trilingue <span class="pill pill-cyan" id="a8-tri-score" style="margin-left:auto;font-size:0.45rem"></span></div>
+          <div id="a8-tri-body"></div>
+          <button class="btn btn-primary btn-sm btn-full" style="margin-top:10px" onclick="a8ToBook()">📖 Envoyer au Livre Vivant (3 langues)</button>
         </div>
 
         <!-- A8: Rapport de conformité -->
@@ -7787,6 +7797,8 @@ function a7ToCorrector() {
   const out = a7State.lastOutput;
   if (!out || !out.fr) { showToast('Générez d\'abord un texte', 'warn'); return; }
   bookBridge = { en: out.en || '', ar: out.ar || '', pageId: a7State.targetPageId || null };
+  if (typeof a8State !== 'undefined') a8State.triCorrected = null;
+  const triCard = document.getElementById('a8-tri-card'); if (triCard) triCard.style.display = 'none';
   const ta = document.getElementById('a8-text-input');
   if (ta) ta.value = out.fr;
   if (typeof switchTab === 'function') switchTab(7); // onglet Correcteur
@@ -7796,15 +7808,22 @@ function a7ToCorrector() {
 
 /* ── Correcteur (A8) : envoyer le texte corrigé au Livre Vivant ── */
 function a8ToBook() {
-  const corr = (document.getElementById('a8-corrected-text')?.textContent || '').trim()
-            || (document.getElementById('a8-text-input')?.value || '').trim();
-  if (!corr) { showToast('Aucun texte corrigé à envoyer', 'warn'); return; }
-  const out = { fr: corr, en: (bookBridge && bookBridge.en) || '', ar: (bookBridge && bookBridge.ar) || '' };
-  const targetId = bookBridge && bookBridge.pageId;
-  if (targetId && (a6State.bookPages || []).some(p => p.id === targetId)) {
-    bookSendText(targetId, out); bookBridge = null; return;
+  let out;
+  const tri = a8State.triCorrected;
+  if (tri && (tri.fr || tri.en || tri.ar)) {
+    out = { fr: tri.fr || '', en: tri.en || '', ar: tri.ar || '' };
+  } else {
+    const corr = (document.getElementById('a8-corrected-text')?.textContent || '').trim()
+              || (document.getElementById('a8-text-input')?.value || '').trim();
+    if (!corr) { showToast('Aucun texte corrigé à envoyer', 'warn'); return; }
+    out = { fr: corr, en: (bookBridge && bookBridge.en) || '', ar: (bookBridge && bookBridge.ar) || '' };
   }
-  bookPickPage(id => { bookSendText(id, out); bookBridge = null; });
+  const targetId = bookBridge && bookBridge.pageId;
+  const done = () => { a8State.triCorrected = null; bookBridge = null; };
+  if (targetId && (a6State.bookPages || []).some(p => p.id === targetId)) {
+    bookSendText(targetId, out); done(); return;
+  }
+  bookPickPage(id => { bookSendText(id, out); done(); });
 }
 
 function a6BookExport() {
@@ -8371,7 +8390,7 @@ function initAgent7() {
 /* ============================================================
    AGENT 8 — CORRECTEUR ÉDITORIAL
    ============================================================ */
-const a8State = { mode: 'full', history: [], currentMode: 'full' };
+const a8State = { mode: 'full', history: [], currentMode: 'full', triCorrected: null };
 const A8_CONTEXT_LIMITS = {
   legende: 25, intro_chap: 120, corps: 300, citation: 15, couverture: 40, quatrieme: 200
 };
@@ -8521,6 +8540,7 @@ async function a8CallClaudeJSON(sys, txt, tok) {
 /* ── A8 : Claude Corrige ── */
 async function a8CorrectClaude(btn) {
   disableBtn(btn);
+  a8State.triCorrected = null;
   const text = document.getElementById('a8-text-input')?.value.trim();
   const ctx  = document.getElementById('a8-context')?.value || 'legende';
   const mode = a8State.currentMode || 'full';
@@ -8545,6 +8565,31 @@ async function a8CorrectClaude(btn) {
     a8State.history.unshift({ ctx, text: text.substring(0,30), score, ts: Date.now() });
     a8RenderHistory(); saveStateToDB();
     addActivity('✨', `Claude Corrige — score ${score}/100 (${ctx})`, now());
+  } catch(e) { showToast('Erreur : ' + e.message, 'error'); }
+  enableBtn(btn);
+}
+
+/* ── A8 : Correction trilingue (FR + EN + AR) → Livre ── */
+async function a8CorrectTrilingual(btn) {
+  disableBtn(btn);
+  const fr = (document.getElementById('a8-text-input')?.value || '').trim();
+  if (!fr) { showToast('Saisir un texte FR (ou l\'envoyer depuis le Rédacteur)', 'warn'); enableBtn(btn); return; }
+  const en = (bookBridge && bookBridge.en) || '';
+  const ar = (bookBridge && bookBridge.ar) || '';
+  const ctx = document.getElementById('a8-context')?.value || 'corps';
+  try {
+    const data = await a8CallClaudeJSON('Retourne un JSON valide uniquement.',
+      `Corrige et harmonise ces textes pour le livre collector SÉNÉGAL V3 (édition d'art luxe). Même sensibilité et même qualité dans les trois langues, ton humain, aucune tournure IA, respecte le sens. Contexte : ${ctx}.\n\nFR :\n"${fr}"\n${en ? `\nEN :\n"${en}"` : '\n(EN : produire une traduction anglaise de qualité depuis le FR corrigé)'}\n${ar ? `\nAR :\n"${ar}"` : '\n(AR : produire une traduction arabe de qualité depuis le FR corrigé)'}\n\nJSON UNIQUEMENT : {"fr":"FR corrigé","en":"EN corrigé/traduit","ar":"AR corrigé/traduit","score":85,"interventions":["changement clé 1","changement clé 2"]}`, 1400);
+    a8State.triCorrected = { fr: data.fr || fr, en: data.en || en, ar: data.ar || ar };
+    const sc = document.getElementById('a8-tri-score'); if (sc) sc.textContent = data.score ? `score ${data.score}/100` : '';
+    const body = document.getElementById('a8-tri-body');
+    if (body) {
+      const block = (flag, txt, rtl) => `<div style="margin-bottom:10px"><div style="font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted);margin-bottom:3px">${flag}</div><div style="font-size:0.72rem;line-height:1.6;white-space:pre-wrap${rtl ? ';direction:rtl;text-align:right' : ''}">${escapeHtml(txt || '')}</div></div>`;
+      body.innerHTML = block('🇫🇷 FRANÇAIS', a8State.triCorrected.fr) + block('🇬🇧 ENGLISH', a8State.triCorrected.en) + block('🇸🇦 عربية', a8State.triCorrected.ar, true);
+    }
+    const card = document.getElementById('a8-tri-card');
+    if (card) { card.style.display = 'block'; card.scrollIntoView({ behavior:'smooth', block:'nearest' }); }
+    addActivity('🌍', `Correction trilingue — score ${data.score || '—'}/100`, now());
   } catch(e) { showToast('Erreur : ' + e.message, 'error'); }
   enableBtn(btn);
 }
