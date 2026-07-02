@@ -1349,6 +1349,25 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 #agent-direction-artistique .a6-bkb-da{font-family:var(--font-mono);font-size:0.44rem;color:var(--text-muted);font-style:italic;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)}
 #agent-direction-artistique .a6-book-progress-bar{height:4px;background:var(--border);border-radius:2px;margin-bottom:8px;overflow:hidden}
 #agent-direction-artistique .a6-book-progress-fill{height:100%;background:var(--grad-cyan);border-radius:2px;transition:width 0.5s ease}
+/* ── Aperçu page book + sélecteur de page (modaux globaux) ── */
+.bk-modal-overlay{position:fixed;inset:0;z-index:6000;background:rgba(0,0,0,.72);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn .2s ease}
+.bk-modal{background:#0e0e12;border:1px solid var(--border);border-radius:14px;max-width:860px;width:100%;max-height:92vh;overflow:auto;position:relative;box-shadow:0 30px 80px -20px rgba(0,0,0,.8)}
+.bk-modal-close{position:absolute;top:10px;right:12px;z-index:20;background:rgba(0,0,0,.5);border:1px solid var(--border);color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px}
+.bkpv-spread{display:flex;background:#fbf6ec;color:#241f18;min-height:360px;font-family:Georgia,'Times New Roman',serif}
+.bkpv-left{width:50%;position:relative;background:#111;overflow:hidden}
+.bkpv-left img{width:100%;height:100%;object-fit:cover;display:block;min-height:360px}
+.bkpv-noimg{width:50%;display:flex;align-items:center;justify-content:center;color:#b09b6e;font-size:13px;font-style:italic;background:#f2ead9;border-right:1px solid #e6dcc4;min-height:360px}
+.bkpv-plate{position:absolute;left:16px;bottom:14px;color:#f5ecd7;font-size:11px;letter-spacing:.16em;text-shadow:0 1px 6px rgba(0,0,0,.85)}
+.bkpv-right{width:50%;padding:34px 30px;display:flex;flex-direction:column}
+.bkpv-tag{font-family:var(--font-mono),monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#a9803e}
+.bkpv-title{font-size:30px;line-height:1.08;margin:14px 0 4px;color:#1e1a14;font-weight:600}
+.bkpv-sub{font-style:italic;font-size:14px;color:#6f6350;margin-bottom:16px}
+.bkpv-body{font-size:14px;line-height:1.75;text-align:justify;color:#3d362b;white-space:pre-wrap}
+.bkpv-meta{margin-top:auto;padding-top:16px;border-top:1px solid #e0d4bd;display:flex;justify-content:space-between;align-items:flex-end;font-family:var(--font-mono),monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8a7c64}
+.bkpv-qr{width:64px;height:64px;background:#fff;padding:3px;border-radius:4px}
+.bkpv-alt{padding:12px 30px 22px;background:#fbf6ec;color:#5a5040;font-family:Georgia,serif;font-size:12px;line-height:1.65;border-top:1px dashed #e0d4bd}
+.bkpv-alt b{color:#a9803e;font-family:var(--font-mono),monospace;font-size:10px;letter-spacing:.1em}
+@media(max-width:640px){.bkpv-spread{flex-direction:column}.bkpv-left,.bkpv-right,.bkpv-noimg{width:100%}.bkpv-left img,.bkpv-noimg,.bkpv-left{min-height:220px}}
 
 /* ============================================================
    AGENT 7 — RÉDACTEUR-TRADUCTEUR — CSS Scopé #agent-redacteur
@@ -3150,6 +3169,10 @@ textarea.input-field { resize: vertical; min-height: 80px; }
             </button>
             <button class="btn btn-ghost btn-sm" onclick="a7ExportDocx()">📄 Exporter .txt</button>
           </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+            <button class="btn btn-ghost btn-sm" onclick="a7ToCorrector()">🔎 Corriger (A8)</button>
+            <button class="btn btn-success btn-sm" onclick="a7ToBook()">📖 Envoyer au Livre</button>
+          </div>
         </div>
 
         <!-- A7: Bibliothèque de textes -->
@@ -3357,6 +3380,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
               </button>
               <button class="btn btn-ghost btn-sm" onclick="a8CopyCorrection()">📋 Copier</button>
             </div>
+            <button class="btn btn-primary btn-sm" style="width:100%;margin-top:8px" onclick="a8ToBook()">📖 Envoyer au Livre Vivant</button>
           </div>
         </div>
 
@@ -7540,6 +7564,7 @@ function a6RenderBook() {
         <div class="a6-bp-st ${sCls}">${sLab}</div>
       </div>
       <div class="a6-book-body" id="bkbody-${pid}">
+        <button class="btn btn-ghost btn-sm" style="width:100%;margin-bottom:8px" onclick="a6PreviewPage('${pid}')">👁 Aperçu page (rendu book)</button>
         ${photoHtml}
         ${captionBtnHtml}
         ${capFr}${capEn}${capAr}
@@ -7624,6 +7649,136 @@ function a6SetBookQR(id, url) {
     ph.textContent = '🔲';
     old.replaceWith(ph);
   }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   APERÇU PAGE (rendu beau-livre) + PONT Rédacteur→Correcteur→Livre
+   ══════════════════════════════════════════════════════════════ */
+function a6PreviewPage(id) {
+  const p = (a6State.bookPages || []).find(x => x.id === id);
+  if (!p) return;
+  const site   = SITES.find(s => s.id === p.siteId) || (typeof OFFSHORE !== 'undefined' ? OFFSHORE.find(s => s.id === p.siteId) : null);
+  const coords = site ? `${site.coords[0].toFixed(4)}° N · ${Math.abs(site.coords[1]).toFixed(4)}° O` : '';
+  const bodyFr = p.caption_fr || p.textFr || '';
+  const title  = escapeHtml(p.siteName || A6_TYPE_LABEL[p.type] || 'Page');
+  const tag    = `${p.zone ? 'Zone ' + p.zone + ' · ' : ''}${A6_TYPE_LABEL[p.type] || ''}${p.num ? ' · p.' + String(p.num).padStart(2,'0') : ''}`;
+  const left   = p.thumbnail
+    ? `<div class="bkpv-left"><img src="${p.thumbnail}" alt="${title}"><div class="bkpv-plate">${escapeHtml((p.siteName || '').toUpperCase())}</div></div>`
+    : `<div class="bkpv-noimg">— emplacement photo —</div>`;
+  const qr = p.qrUrl
+    ? `<img class="bkpv-qr" src="https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${encodeURIComponent(p.qrUrl)}" alt="QR">`
+    : `<span></span>`;
+  const bodyHtml = bodyFr
+    ? escapeHtml(bodyFr)
+    : `<span style="color:#b09b6e;font-style:italic">Texte à venir — Rédacteur → Correcteur → Livre.</span>`;
+  const enTxt = p.caption_en || p.textEn || '';
+  const arTxt = p.caption_ar || p.textAr || '';
+  const altText = (enTxt || arTxt)
+    ? `<div class="bkpv-alt">${enTxt ? `<b>EN</b> ${escapeHtml(enTxt)}<br><br>` : ''}${arTxt ? `<b>AR</b> <span dir="rtl">${escapeHtml(arTxt)}</span>` : ''}</div>`
+    : '';
+  const ov = document.createElement('div');
+  ov.className = 'bk-modal-overlay';
+  ov.id = 'bk-pv-ov';
+  ov.innerHTML = `<div class="bk-modal">
+    <button class="bk-modal-close" onclick="a6ClosePreview()">✕</button>
+    <div class="bkpv-spread">
+      ${left}
+      <div class="bkpv-right">
+        <div class="bkpv-tag">${escapeHtml(tag)}</div>
+        <div class="bkpv-title">${title}</div>
+        ${coords ? `<div class="bkpv-sub">${coords}</div>` : ''}
+        <div class="bkpv-body">${bodyHtml}</div>
+        <div class="bkpv-meta"><span>Mission Sénégal · 2027</span>${qr}</div>
+      </div>
+    </div>
+    ${altText}
+  </div>`;
+  ov.onclick = (e) => { if (e.target === ov) a6ClosePreview(); };
+  document.body.appendChild(ov);
+}
+function a6ClosePreview() { document.getElementById('bk-pv-ov')?.remove(); }
+
+/* ── Pont : envoi d'un texte {fr,en,ar} vers une page du Livre Vivant ── */
+let bookBridge = null; // { en, ar, pageId } — mémoire entre Rédacteur/Correcteur et le Livre
+
+function bookTextTargetPages() {
+  return (a6State.bookPages || []).filter(p =>
+    A6_TEXT_TYPES.has(p.type) ||
+    ['pleine_page','legendes','double_page','double_suite','portfolio','contexte'].includes(p.type)
+  );
+}
+function bookSendText(pageId, out) {
+  const p = (a6State.bookPages || []).find(x => x.id === pageId);
+  if (!p) { showToast('Page introuvable', 'warn'); return false; }
+  const isText = A6_TEXT_TYPES.has(p.type);
+  if (isText) { p.textFr = out.fr || ''; p.textEn = out.en || ''; p.textAr = out.ar || ''; }
+  else        { p.caption_fr = out.fr || ''; p.caption_en = out.en || ''; p.caption_ar = out.ar || ''; }
+  p.status = p.thumbnail ? 'complet' : (isText ? 'texte' : 'caption');
+  saveStateToDB();
+  if (a6State.bookPages.length) a6RenderBook();
+  if (typeof a7RenderBookNeeds === 'function') a7RenderBookNeeds();
+  showToast(`✅ Texte inséré : p.${String(p.num).padStart(2,'0')} · ${A6_TYPE_LABEL[p.type] || p.type}`, 'ok');
+  addActivity('📚', `Texte → Livre p.${p.num} (${A6_TYPE_LABEL[p.type] || p.type})`, now());
+  return true;
+}
+function bookPickPage(cb) {
+  const pages = bookTextTargetPages();
+  if (!pages.length) { showToast('Initialisez d\'abord le livre (Direction Artistique)', 'warn'); return; }
+  const opts = pages.map(p =>
+    `<option value="${p.id}">p.${String(p.num).padStart(2,'0')} · ${A6_TYPE_LABEL[p.type] || p.type}${p.siteName ? ' — ' + escapeHtml(p.siteName) : ''}${(p.textFr || p.caption_fr) ? ' ✓' : ''}</option>`
+  ).join('');
+  const ov = document.createElement('div');
+  ov.className = 'bk-modal-overlay';
+  ov.id = 'bk-pick-ov';
+  ov.innerHTML = `<div class="bk-modal" style="max-width:440px;padding:20px">
+    <div style="font-family:var(--font-display);font-size:0.95rem;margin-bottom:12px">📖 Choisir la page du Livre</div>
+    <select id="bk-pick-sel" class="input-field" style="width:100%;margin-bottom:14px">${opts}</select>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="btn btn-ghost btn-sm" onclick="bookClosePick()">Annuler</button>
+      <button class="btn btn-primary btn-sm" id="bk-pick-ok">Envoyer</button>
+    </div></div>`;
+  ov.onclick = (e) => { if (e.target === ov) bookClosePick(); };
+  document.body.appendChild(ov);
+  document.getElementById('bk-pick-ok').onclick = () => {
+    const id = document.getElementById('bk-pick-sel').value;
+    bookClosePick();
+    if (id) cb(id);
+  };
+}
+function bookClosePick() { document.getElementById('bk-pick-ov')?.remove(); }
+
+/* ── Rédacteur (A7) : envoyer au Correcteur, ou directement au Livre ── */
+function a7ToBook() {
+  const out = a7State.lastOutput;
+  if (!out || !(out.fr || out.en || out.ar)) { showToast('Générez d\'abord un texte', 'warn'); return; }
+  if (a7State.targetPageId && (a6State.bookPages || []).some(p => p.id === a7State.targetPageId)) {
+    if (bookSendText(a7State.targetPageId, out) && typeof a7ClearTarget === 'function') a7ClearTarget();
+    return;
+  }
+  bookPickPage(id => bookSendText(id, out));
+}
+function a7ToCorrector() {
+  const out = a7State.lastOutput;
+  if (!out || !out.fr) { showToast('Générez d\'abord un texte', 'warn'); return; }
+  bookBridge = { en: out.en || '', ar: out.ar || '', pageId: a7State.targetPageId || null };
+  const ta = document.getElementById('a8-text-input');
+  if (ta) ta.value = out.fr;
+  if (typeof switchTab === 'function') switchTab(7); // onglet Correcteur
+  if (typeof a8UpdateComplianceLive === 'function') a8UpdateComplianceLive();
+  showToast('Texte FR envoyé au Correcteur — corrigez puis « Envoyer au Livre »', 'info');
+}
+
+/* ── Correcteur (A8) : envoyer le texte corrigé au Livre Vivant ── */
+function a8ToBook() {
+  const corr = (document.getElementById('a8-corrected-text')?.textContent || '').trim()
+            || (document.getElementById('a8-text-input')?.value || '').trim();
+  if (!corr) { showToast('Aucun texte corrigé à envoyer', 'warn'); return; }
+  const out = { fr: corr, en: (bookBridge && bookBridge.en) || '', ar: (bookBridge && bookBridge.ar) || '' };
+  const targetId = bookBridge && bookBridge.pageId;
+  if (targetId && (a6State.bookPages || []).some(p => p.id === targetId)) {
+    bookSendText(targetId, out); bookBridge = null; return;
+  }
+  bookPickPage(id => { bookSendText(id, out); bookBridge = null; });
 }
 
 function a6BookExport() {
