@@ -39,7 +39,7 @@
 
   --text-primary: #dde4f5;
   --text-secondary: #7a93c0;
-  --text-muted: #374d6e;
+  --text-muted: #465f8c;
 
   --font-display: 'Orbitron', monospace;
   --font-mono: 'IBM Plex Mono', monospace;
@@ -2182,11 +2182,23 @@ textarea.input-field { resize: vertical; min-height: 80px; }
     var sp = document.getElementById('splash');
     if (sp) sp.classList.add('hidden');
   };
+  function forceReveal(){
+    window.__introState.videoDone = true;
+    window.__introState.initDone  = true;
+    window.__introState.revealed  = true;
+    var sp = document.getElementById('splash');
+    if (sp) sp.classList.add('hidden');
+  }
+  // Filet de sécurité ultime : quoi qu'il arrive (init planté, vidéo bloquée),
+  // l'app apparaît au bout de 12 s — jamais d'écran de démarrage figé.
+  setTimeout(forceReveal, 12000);
   function done(){ window.__introState.videoDone = true; window.__maybeReveal(); }
   var v = document.getElementById('splash-video');
   var img = document.querySelector('.splash-fallback');
   function showFallback(){ if (img) img.style.display='block'; if (v) v.style.display='none'; }
-  if (!v) { showFallback(); done(); return; }
+  // Respect de prefers-reduced-motion : on saute la vidéo (logo fixe direct).
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!v || reduce) { showFallback(); done(); return; }
   v.addEventListener('ended', done);
   v.addEventListener('error', function(){ showFallback(); done(); });
   setTimeout(done, 7000); // filet de sécurité si la vidéo cale
@@ -11626,7 +11638,19 @@ async function checkAuthSession() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', function () {
+  // init() enchaîne de nombreux await : si l'un échoue, on révèle quand même
+  // l'app (jamais figé sur le splash) et on journalise l'erreur.
+  Promise.resolve().then(init).catch(function (e) {
+    console.error('[INIT] échec au démarrage :', e);
+    if (window.__introState && typeof window.__maybeReveal === 'function') {
+      window.__introState.initDone = true;
+      window.__maybeReveal();
+    }
+    var sp = document.getElementById('splash');
+    if (sp) sp.classList.add('hidden');
+  });
+});
 </script>
 <script src="agentCommercial.js"></script>
 <script>
