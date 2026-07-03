@@ -5885,8 +5885,13 @@ function cmDownloadKit() {
 }
 
 function getVaultValue(name) {
+  // Catégorie 'social' (liens réseaux publics + webhook Make) : accessible SANS
+  // déverrouiller le coffre — sinon « Ouvrir <réseau> » exige d'ouvrir le coffre
+  // à chaque session. Les autres catégories (clés/secrets) restent protégées.
+  const socialFound = (state.vault.social || []).find(e => e.name === name);
+  if (socialFound) return socialFound.value || null;
   if (!state.vaultUnlocked) return null;
-  for (const cat of ['social','telegram','cloud','maps']) {
+  for (const cat of ['telegram','cloud','maps']) {
     const found = (state.vault[cat] || []).find(e => e.name === name);
     if (found) return found.value || null;
   }
@@ -6617,6 +6622,8 @@ async function init() {
   setStatus('Chargement IndexedDB…');
   await initDB();
   await loadStateFromDB();
+  // Liens réseaux sociaux (publics) disponibles dès le départ, sans ouvrir le coffre
+  if (typeof vaultPrePopulateSocial === 'function') vaultPrePopulateSocial();
   setStatus('Connexion cloud Supabase…');
   if (typeof SupaSync !== 'undefined' && typeof SupaSync.init === 'function') {
     await SupaSync.init();
