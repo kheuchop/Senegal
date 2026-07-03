@@ -4893,10 +4893,10 @@ window.apiFetch = apiFetch;
 let db = null;
 function initDB() {
   return new Promise((res, rej) => {
-    const req = indexedDB.open('MissionDB_V3', 2);
+    const req = indexedDB.open('MissionDB_V3', 3);
     req.onupgradeneeded = e => {
       const d = e.target.result;
-      ['state','transactions','vault','alerts','receipts'].forEach(s => { if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, { keyPath:'id', autoIncrement:true }); });
+      ['state','transactions','vault','alerts','receipts','bookstore'].forEach(s => { if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, { keyPath:'id', autoIncrement:true }); });
     };
     req.onsuccess = e => { db = e.target.result; res(db); };
     req.onerror = e => { console.warn('IndexedDB unavailable:', e); res(null); };
@@ -4962,8 +4962,8 @@ function saveStateToDB() {
       cmHistory:      state.cmHistory,
       a5Sessions:     a5State.sessions,
       a6Briefs:       a6State.briefs,
-      a6BookGallery:  a6State.bookGallery,
-      a6BookPages:    a6State.bookPages,
+      // a6BookGallery / a6BookPages : déplacés dans le store 'bookstore'
+      // (photos base64 lourdes) — voir saveBookIfChanged() ci-dessous.
       a7Library:      a7State.library,
       a8History:      a8State.history,
       a16Raised:      a16State.raised,
@@ -4978,22 +4978,57 @@ function saveStateToDB() {
     }
   }).catch(e => console.error('[DB] saveState échoué:', e));
 
-  // Sync cloud non-bloquant — guard complet
-  if (typeof SupaSync !== 'undefined' && typeof SupaSync.syncState === 'function') {
+  // Sync cloud non-bloquant — guard complet (__skipCloudPush : anti ping-pong Realtime)
+  if (!window.__skipCloudPush && typeof SupaSync !== 'undefined' && typeof SupaSync.syncState === 'function') {
     SupaSync.syncState({
       spent:     state.spent,
       catSpend:  state.catSpend,
       daysDone:  state.daysDone,
       sitesDone: state.sitesDone,
       printRate: state.printRate,
+      treasury:  state.treasury,   // encaissements partagés entre coporteurs
+      printCfg:  state.printCfg,   // tarif imprimeur ARTRON partagé
     }).catch(e => console.warn('[Sync] syncState:', e.message));
     // SÉCURITÉ : vault, vaultPin, rolePins et clés API restent LOCAUX (IndexedDB).
     // Ils ne transitent plus jamais par Supabase.
   }
 
+  // Livre (photos lourdes) : store séparé, écrit UNIQUEMENT quand il change
+  saveBookIfChanged();
+
   // Détection de problèmes → proposition d'alerte équipe Telegram (débouncée)
   if (typeof scheduleMissionAlertCheck === 'function') scheduleMissionAlertCheck();
 }
+
+/* ---- LIVRE : stockage séparé (store 'bookstore') ------------------------
+   Les pages/galerie contiennent des photos base64 lourdes. Elles ne sont
+   PLUS dans le blob d'état : écrites seulement quand le livre change
+   (signature bon marché), sinon chaque sauvegarde réécrirait des Mo. */
+let _bookLastSig = null;
+function _bookSignature() {
+  let sig = a6State.bookPages.length * 1e9 + a6State.bookGallery.length * 1e6;
+  a6State.bookPages.forEach(p => {
+    sig += (p.thumbnail ? p.thumbnail.length : 0)
+        + (p.textFr || '').length + (p.textEn || '').length + (p.textAr || '').length
+        + (p.caption_fr || '').length + (p.caption_en || '').length + (p.caption_ar || '').length
+        + (p.qrUrl || '').length + (p.notes_da || '').length + (p.siteName || '').length;
+  });
+  a6State.bookGallery.forEach(g => { sig += (g.thumbnail ? g.thumbnail.length : 0) + (g.site || '').length; });
+  return sig;
+}
+function saveBookIfChanged(force) {
+  try {
+    const sig = _bookSignature();
+    if (!force && sig === _bookLastSig) return;
+    _bookLastSig = sig;
+    dbWrite('bookstore', { id: 1, gallery: a6State.bookGallery, pages: a6State.bookPages })
+      .catch(e => console.warn('[Livre] sauvegarde:', e));
+  } catch (e) { console.warn('[Livre] signature:', e); }
+}
+// Filet de sécurité : écriture du livre quand l'app passe en arrière-plan
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') saveBookIfChanged(true);
+});
 
 async function loadStateFromDB() {
   const rows = await dbReadAll('state');
@@ -5038,6 +5073,22 @@ async function loadStateFromDB() {
     if (d.rolePins && typeof d.rolePins === 'object') state.rolePins = d.rolePins;
     if (d.a17MissionStartTs) state.a17MissionStartTs = d.a17MissionStartTs;
   }
+  // Livre : store dédié (prioritaire) — les champs a6Book* du blob ci-dessus
+  // ne servent plus que de migration depuis les anciennes versions.
+  try {
+    const bookRows = await dbReadAll('bookstore');
+    const hasStore = bookRows && bookRows.length > 0 && bookRows[0];
+    if (hasStore) {
+      if (Array.isArray(bookRows[0].gallery)) a6State.bookGallery = bookRows[0].gallery;
+      if (Array.isArray(bookRows[0].pages))   a6State.bookPages   = bookRows[0].pages;
+      _bookLastSig = _bookSignature(); // évite une réécriture inutile au premier save
+    } else if (a6State.bookPages.length > 0 || a6State.bookGallery.length > 0) {
+      // MIGRATION : livre hérité du blob d'état → écrit immédiatement dans le
+      // store dédié (sinon perdu à la prochaine sauvegarde, qui n'inclut plus le livre)
+      saveBookIfChanged(true);
+      console.log('[Livre] migré vers le store dédié (' + a6State.bookPages.length + ' pages)');
+    }
+  } catch (e) { console.warn('[Livre] chargement:', e); }
 }
 
 /* ============================================================
@@ -6441,7 +6492,7 @@ function renderTransactions() {
     const div = document.createElement('div'); div.className = 'tx-item';
     const color = CAT_COLORS[tx.cat] || '#90a4ae';
     const time = new Date(tx.ts).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
-    div.innerHTML = `<div class="tx-dot" style="background:${color};box-shadow:0 0 6px ${color}"></div><div class="tx-desc">${escapeHtml(tx.description)}<div class="tx-cat">${CAT_LABELS[tx.cat] || escapeHtml(tx.cat)} · ${time}</div></div><div class="tx-amt tx-debit">−${fmtFCFA(tx.amount)}</div>${tx.receiptId ? `<button onclick="openReceiptViewer('${tx.receiptId}')" title="Voir le reçu" style="flex-shrink:0;cursor:pointer;margin-left:6px;font-size:0.7rem;padding:4px 7px;border-radius:14px;border:1px solid rgba(214,165,58,0.35);background:rgba(214,165,58,0.08);color:var(--gold)">🧾</button>` : ''}<button onclick="deleteTransaction('${String(tx.id)}')" title="Supprimer cette dépense" style="flex-shrink:0;cursor:pointer;margin-left:6px;font-family:var(--font-mono);font-size:0.6rem;padding:4px 8px;border-radius:14px;border:1px solid var(--border);background:var(--bg-card-2);color:var(--text-muted)">✕</button>`;
+    div.innerHTML = `<div class="tx-dot" style="background:${color};box-shadow:0 0 6px ${color}"></div><div class="tx-desc">${escapeHtml(tx.description)}<div class="tx-cat">${CAT_LABELS[tx.cat] || escapeHtml(tx.cat)} · ${time}</div></div><div class="tx-amt tx-debit">−${fmtFCFA(tx.amount)}</div>${tx.receiptId ? `<button onclick="openReceiptViewer('${tx.receiptId}')" title="Voir le reçu" style="flex-shrink:0;cursor:pointer;margin-left:6px;font-size:0.7rem;padding:4px 7px;border-radius:14px;border:1px solid rgba(214,165,58,0.35);background:rgba(214,165,58,0.08);color:var(--gold)">🧾</button>` : ''}<button onclick="editTransaction('${String(tx.id)}')" title="Modifier cette dépense" style="flex-shrink:0;cursor:pointer;margin-left:6px;font-size:0.62rem;padding:4px 7px;border-radius:14px;border:1px solid var(--border);background:var(--bg-card-2);color:var(--text-muted)">✏️</button><button onclick="deleteTransaction('${String(tx.id)}')" title="Supprimer cette dépense" style="flex-shrink:0;cursor:pointer;margin-left:6px;font-family:var(--font-mono);font-size:0.6rem;padding:4px 8px;border-radius:14px;border:1px solid var(--border);background:var(--bg-card-2);color:var(--text-muted)">✕</button>`;
     list.appendChild(div);
   });
 }
@@ -6479,6 +6530,34 @@ function deleteTransaction(id) {
     SupaSync.deleteTransaction(String(id)).catch(e => console.warn('[Sync] delete tx:', e.message));
   }
   showToast('🗑 Dépense supprimée — budget recalculé', 'ok');
+}
+function editTransaction(id) {
+  const tx = state.transactions.find(t => String(t.id) === String(id));
+  if (!tx) return;
+  if (!requireDirectionPin('modifier cette dépense')) return;
+  const montantStr = prompt('Nouveau montant (FCFA) :', tx.amount);
+  if (montantStr === null) return;
+  const montant = Math.round(parseFloat(montantStr));
+  if (!montant || montant <= 0) { showToast('Montant invalide — modification annulée', 'warn'); return; }
+  const desc = prompt('Nouvelle description :', tx.description);
+  if (desc === null) return;
+  tx.amount = montant;
+  tx.description = (desc.trim() || CAT_LABELS[tx.cat] || 'Dépense').substring(0, 200);
+  recomputeFinanceFromTransactions();
+  saveStateToDB();
+  updateFinancialUI();
+  // Cloud : l'upsert met à jour la même ligne (même id)
+  if (typeof SupaSync !== 'undefined' && typeof SupaSync.syncTransaction === 'function') {
+    SupaSync.syncTransaction(tx).catch(e => console.warn('[Sync] tx:', e.message));
+  }
+  // Reçu lié : met à jour montant + description affichés dans la galerie
+  if (tx.receiptId) {
+    dbReadAll('receipts').then(all => {
+      const r = all.find(x => x.id === tx.receiptId);
+      if (r) { r.amount = tx.amount; r.description = tx.description; dbWrite('receipts', r).then(() => renderReceiptGallery()); }
+    }).catch(() => {});
+  }
+  showToast('✏️ Dépense modifiée — budget recalculé', 'ok');
 }
 function resetFinance() {
   if (state.transactions.length === 0 && state.spent === 0) { showToast('Finance déjà à zéro', 'info'); return; }
@@ -7238,6 +7317,19 @@ async function init() {
         if (typeof cloud.printRate === 'number' && cloud.printRate && !state.printRate) {
           state.printRate = cloud.printRate;
           saveStateToDB();
+        }
+        // Trésorerie partagée entre coporteurs : le cloud fait foi s'il est plus fourni
+        // que le local (nouvel appareil / appareil resté hors-ligne).
+        if (cloud.treasury && Array.isArray(cloud.treasury.encaissements)) {
+          const localN = (state.treasury && state.treasury.encaissements || []).length;
+          if (cloud.treasury.encaissements.length > localN) {
+            state.treasury = { encaissements: cloud.treasury.encaissements, decaissements: cloud.treasury.decaissements || [] };
+            saveStateToDB();
+          }
+        }
+        // Tarif imprimeur partagé (dernière valeur cloud si local encore aux défauts)
+        if (cloud.printCfg && typeof cloud.printCfg === 'object' && cloud.printCfg.std) {
+          state.printCfg = { ...state.printCfg, ...cloud.printCfg };
         }
       }
     } catch (e) { console.warn('[Sync] fetchState:', e.message); }
@@ -12226,8 +12318,21 @@ function _onSessionReady(session) {
           if (d.daysDone    !== undefined && d.daysDone    !== state.daysDone)    { state.daysDone    = d.daysDone;    changed = true; }
           if (d.sitesDone   !== undefined && d.sitesDone   !== state.sitesDone)   { state.sitesDone   = d.sitesDone;   changed = true; }
           if (d.catSpend    !== undefined)                                         { state.catSpend    = d.catSpend;    changed = true; }
+          // Trésorerie + tarif imprimeur partagés en temps réel entre coporteurs
+          if (d.treasury && Array.isArray(d.treasury.encaissements)) {
+            state.treasury = { encaissements: d.treasury.encaissements, decaissements: d.treasury.decaissements || [] };
+            changed = true;
+          }
+          if (d.printCfg && typeof d.printCfg === 'object' && d.printCfg.std) {
+            state.printCfg = { ...state.printCfg, ...d.printCfg };
+            printCfgPopulate();
+            changed = true;
+          }
           // SÉCURITÉ : les secrets (vault/PIN/clés API) ne circulent plus via le cloud.
           if (changed) {
+            // Persiste en local SANS repousser vers le cloud (anti ping-pong)
+            window.__skipCloudPush = true;
+            try { saveStateToDB(); } finally { window.__skipCloudPush = false; }
             updateFinancialUI();
             updateCOORing();
             showToast('🔄 Données synchronisées depuis le cloud', 'info');

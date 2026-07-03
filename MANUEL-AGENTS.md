@@ -109,6 +109,7 @@ Suit le budget de 100 millions FCFA (objectif du projet).
 Le **budget global**, la **répartition par catégorie** et la **dérive** se recalculent automatiquement.
 - **Tarif Imprimeur — ARTRON** : tarifs réels du devis 26XT479 (unitaire standard ≈ 7 302 F × 2 000 ex., collector ≈ 15 264 F × 500 ex., + frais annexes) → coût total calculé. **Se remplit tout seul** si on scanne une facture d'imprimeur avec la catégorie Impression + ✨ Lire la facture.
 - **File de Transactions** / **Historique** : suivi de tous les mouvements.
+- **Modifier une dépense** : bouton **✏️** sur la ligne (montant + description) — PIN Direction requis, budget et reçu mis à jour.
 - **Supprimer une dépense** : bouton **✕** sur la ligne dans l'Historique → le budget est recalculé.
 - **🗑 Réinitialiser la finance** : efface toutes les dépenses (double confirmation) — le budget repart de 100 M.
 
@@ -138,6 +139,8 @@ Trois indicateurs en haut :
 - 🚦 **Seuil terrain** : les zones B à F ne se débloquent qu'à partir de **15 M encaissés**.
 
 Tout en bas, la **Projection du bilan (M1→M12)** est affichée en lecture seule (repère du plan et du « corridor critique » de M10) — mais ces montants **ne comptent pas** dans le Disponible.
+
+> ☁️ **Partagée entre coporteurs** : la Trésorerie (et le Tarif Imprimeur) se synchronise via le cloud — un encaissement saisi sur un téléphone apparaît sur l'autre en quelques secondes.
 
 ---
 
