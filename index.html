@@ -128,11 +128,25 @@ svg { display: block; flex-shrink: 0; }
 
 #splash {
   position: fixed; inset: 0; z-index: 9999;
-  background: var(--bg-deep);
+  background: #000;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px;
   transition: opacity 0.6s ease, visibility 0.6s ease;
 }
 #splash.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+/* Logo de la mission au démarrage */
+.splash-logo-img {
+  width: min(74vw, 300px); height: auto; display: block;
+  animation: splash-logo-in 0.9s cubic-bezier(0.16,1,0.3,1) both,
+             logo-glow 3s ease-in-out 0.9s infinite;
+}
+@keyframes splash-logo-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes logo-glow {
+  0%, 100% { filter: drop-shadow(0 0 12px rgba(196,135,42,0.25)); }
+  50%      { filter: drop-shadow(0 0 26px rgba(196,135,42,0.45)); }
+}
 .splash-logo {
   font-family: var(--font-display);
   font-size: 1.4rem; font-weight: 900; letter-spacing: 0.15em;
@@ -147,7 +161,7 @@ svg { display: block; flex-shrink: 0; }
 .splash-bar::after {
   content: '';
   position: absolute; top: 0; left: -100%; height: 100%;
-  width: 100%; background: var(--grad-cyan);
+  width: 100%; background: linear-gradient(90deg, #2d6e3e, #e8c97e, #d4522a);
   animation: bar-fill 2s ease forwards;
 }
 @keyframes bar-fill { to { left: 0; } }
@@ -2146,8 +2160,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 
 <!-- Splash Screen -->
 <div id="splash">
-  <div class="splash-logo">MISSION CTRL</div>
-  <div class="splash-sub">Sénégal Documentary · V3 · 2027</div>
+  <img class="splash-logo-img" src="assets/logo-senegal.jpg" alt="Sénégal — Terre d'Histoire et de Rencontres" width="1000" height="897">
   <div class="splash-bar"></div>
   <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted);letter-spacing:0.12em" id="splash-status">Initialisation système…</div>
 </div>

@@ -7,7 +7,7 @@
  *  - Tuiles OSM : cache opportuniste plafonné (les zones visitées restent visibles hors-ligne)
  *  - /api/, Supabase, Make : réseau uniquement (jamais de cache — la file SupaSync gère l'offline)
  */
-const VERSION = 'mission-ctrl-v46';
+const VERSION = 'mission-ctrl-v47';
 const SHELL_CACHE = `shell-${VERSION}`;
 const RUNTIME_CACHE = `runtime-${VERSION}`;
 const TILE_CACHE = `tiles-${VERSION}`;
@@ -19,6 +19,7 @@ const SHELL_ASSETS = [
   './supabase-sync-1.js',
   './agentCommercial.js',
   './manifest.json',
+  './assets/logo-senegal.jpg',
   './vendor/supabase.min.js',
   './vendor/leaflet/leaflet.js',
   './vendor/leaflet/leaflet.css',
