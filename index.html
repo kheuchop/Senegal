@@ -2719,13 +2719,35 @@ textarea.input-field { resize: vertical; min-height: 80px; }
             <label class="input-label">Catégorie</label>
             <select class="input-field" id="exp-category">
               <option value="transport">🚗 Transport & Déplacements</option>
+              <option value="carburant">⛽ Carburant</option>
               <option value="hebergement">🏨 Hébergement</option>
+              <option value="nourriture">🍽 Nourriture / Per diem</option>
               <option value="equipement">📷 Équipement & Matériel</option>
               <option value="api">🔌 Coûts API & Cloud</option>
               <option value="impression">🖨️ Impression & Production</option>
               <option value="communication">📣 Communication & Marketing</option>
-              <option value="divers">📦 Divers</option>
+              <option value="divers">📦 Autres (préciser en description)</option>
             </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Facture / Reçu (photo) — optionnel</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <button type="button" class="btn btn-ghost" onclick="document.getElementById('exp-photo-cam').click()">📷 Prendre en photo</button>
+              <button type="button" class="btn btn-ghost" onclick="document.getElementById('exp-photo-gal').click()">🖼️ Depuis la galerie</button>
+            </div>
+            <input type="file" id="exp-photo-cam" accept="image/*" capture="environment" style="display:none" onchange="finReceiptSelected(this)">
+            <input type="file" id="exp-photo-gal" accept="image/*" style="display:none" onchange="finReceiptSelected(this)">
+            <div id="exp-receipt-wrap" style="display:none;margin-top:8px">
+              <img id="exp-receipt-preview" alt="Aperçu du reçu" style="max-width:100%;max-height:180px;border-radius:8px;border:1px solid var(--border);display:block;margin:0 auto">
+              <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px">
+                <button type="button" class="btn btn-primary" id="exp-scan-btn" onclick="finScanReceipt(this)"><div class="spinner"></div><span class="btn-text">✨ Lire la facture (IA)</span></button>
+                <button type="button" class="btn btn-ghost" onclick="finClearReceipt()">✕</button>
+              </div>
+              <div id="exp-scan-status" style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted);margin-top:6px;line-height:1.5"></div>
+              <div id="exp-fx-row" style="display:none;margin-top:6px;align-items:center;gap:8px;font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted)">
+                Taux USD→FCFA : <input type="number" id="exp-usd-rate" class="input-field" value="605" min="1" style="width:90px;display:inline-block;padding:4px 8px;font-size:0.6rem" oninput="finReapplyFx()">
+              </div>
+            </div>
           </div>
           <div class="input-group">
             <label class="input-label">Montant (FCFA)</label>
@@ -2758,6 +2780,14 @@ textarea.input-field { resize: vertical; min-height: 80px; }
             </div>
           </div>
           <button class="btn btn-ghost btn-full" style="margin-top:10px;border-color:rgba(255,82,82,0.3);color:var(--red)" onclick="resetFinance()">🗑 Réinitialiser la finance (tout effacer)</button>
+        </div>
+
+        <!-- Galerie des reçus / factures -->
+        <div class="card">
+          <div class="card-title">🧾 Reçus & Factures</div>
+          <div id="fin-receipts-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+            <div style="grid-column:1/-1;font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);text-align:center;padding:16px 0">Aucun reçu archivé</div>
+          </div>
         </div>
 
       </div><!-- /agent-financier -->
@@ -4765,7 +4795,7 @@ const state = {
   currentPlatform: 'tiktok',
   cmHistory: [],
   printRate: 150,
-  catSpend: { transport:0, hebergement:0, equipement:0, api:0, impression:0, communication:0, divers:0 },
+  catSpend: { transport:0, carburant:0, hebergement:0, nourriture:0, equipement:0, api:0, impression:0, communication:0, divers:0 },
   treasury: { encaissements: [], decaissements: [] },
   daysDone: 0,
   sitesDone: 0,
@@ -4855,10 +4885,10 @@ window.apiFetch = apiFetch;
 let db = null;
 function initDB() {
   return new Promise((res, rej) => {
-    const req = indexedDB.open('MissionDB_V3', 1);
+    const req = indexedDB.open('MissionDB_V3', 2);
     req.onupgradeneeded = e => {
       const d = e.target.result;
-      ['state','transactions','vault','alerts'].forEach(s => { if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, { keyPath:'id', autoIncrement:true }); });
+      ['state','transactions','vault','alerts','receipts'].forEach(s => { if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, { keyPath:'id', autoIncrement:true }); });
     };
     req.onsuccess = e => { db = e.target.result; res(db); };
     req.onerror = e => { console.warn('IndexedDB unavailable:', e); res(null); };
@@ -4874,6 +4904,17 @@ function dbWrite(store, data) {
       const s = tx.objectStore(store);
       s.put(data);
     } catch(e) { console.warn('DB tx error:', e); res(null); }
+  });
+}
+function dbDelete(store, id) {
+  if (!db) return Promise.resolve(null);
+  return new Promise((res) => {
+    try {
+      const tx = db.transaction([store], 'readwrite');
+      tx.oncomplete = () => res(true);
+      tx.onerror = () => res(null);
+      tx.objectStore(store).delete(id);
+    } catch(e) { res(null); }
   });
 }
 function dbReadAll(store) {
@@ -4951,7 +4992,7 @@ async function loadStateFromDB() {
     const d = rows[0].data;
     if (d.spent !== undefined) state.spent = d.spent;
     if (d.transactions) state.transactions = d.transactions;
-    if (d.catSpend) state.catSpend = d.catSpend;
+    if (d.catSpend) state.catSpend = { ...state.catSpend, ...d.catSpend }; // merge : les nouvelles catégories gardent leur 0
     if (d.treasury && typeof d.treasury === 'object') state.treasury = {
       encaissements: Array.isArray(d.treasury.encaissements) ? d.treasury.encaissements : [],
       decaissements: Array.isArray(d.treasury.decaissements) ? d.treasury.decaissements : [],
@@ -6202,9 +6243,9 @@ Réponds UNIQUEMENT avec ce JSON valide, sans markdown ni backticks :
 /* ============================================================
    FINANCIAL ENGINE — transactionQueue auto-processor
    ============================================================ */
-const CAT_COLORS = { transport:'#e8c97e', hebergement:'#00e676', equipement:'#7c6fff', api:'#d6a53a', impression:'#ffab40', communication:'#f06292', divers:'#90a4ae' };
-const CAT_LABELS = { transport:'Transport', hebergement:'Hébergement', equipement:'Équipement', api:'API Cloud', impression:'Impression', communication:'Communication', divers:'Divers' };
-const CAT_BUDGET = { transport:15000000, hebergement:12000000, equipement:20000000, api:5000000, impression:25000000, communication:10000000, divers:13000000 };
+const CAT_COLORS = { transport:'#e8c97e', carburant:'#ff8a65', hebergement:'#00e676', nourriture:'#4db6ac', equipement:'#7c6fff', api:'#d6a53a', impression:'#ffab40', communication:'#f06292', divers:'#90a4ae' };
+const CAT_LABELS = { transport:'Transport', carburant:'Carburant', hebergement:'Hébergement', nourriture:'Nourriture / Per diem', equipement:'Équipement', api:'API Cloud', impression:'Impression', communication:'Communication', divers:'Divers' };
+const CAT_BUDGET = { transport:11000000, carburant:1100000, hebergement:12000000, nourriture:2900000, equipement:20000000, api:5000000, impression:25000000, communication:10000000, divers:13000000 };
 
 /* TRÉSORERIE — plan de financement échelonné (bilan financier, section 3, 2027).
    Encaissements par tranche (105M au total : 100M budget + 5M solde). */
@@ -6264,6 +6305,19 @@ function addExpense(evt) {
     ts:          Date.now(),
     type:        'debit'
   };
+  // Reçu/facture joint → archivage galerie (IndexedDB, hors state — pas de gonflement)
+  if (finReceipt) {
+    const rcptId = 'rcpt_' + Date.now();
+    tx.receiptId = rcptId;
+    dbWrite('receipts', {
+      id: rcptId, txId: tx.id, dataUrl: finReceipt.dataUrl, thumb: finReceipt.thumb,
+      amount: amt, cat, description: tx.description,
+      devise: finLastScan ? finLastScan.devise : 'XOF',
+      montantOriginal: finLastScan ? finLastScan.montant : amt,
+      ts: tx.ts
+    }).then(() => renderReceiptGallery()).catch(e => console.warn('[Reçus]', e));
+    finClearReceipt();
+  }
   state.transactionQueue.push(tx);
   document.getElementById('exp-amount').value = '';
   document.getElementById('exp-desc').value   = '';
@@ -6378,7 +6432,7 @@ function renderTransactions() {
     const div = document.createElement('div'); div.className = 'tx-item';
     const color = CAT_COLORS[tx.cat] || '#90a4ae';
     const time = new Date(tx.ts).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
-    div.innerHTML = `<div class="tx-dot" style="background:${color};box-shadow:0 0 6px ${color}"></div><div class="tx-desc">${escapeHtml(tx.description)}<div class="tx-cat">${CAT_LABELS[tx.cat] || escapeHtml(tx.cat)} · ${time}</div></div><div class="tx-amt tx-debit">−${fmtFCFA(tx.amount)}</div><button onclick="deleteTransaction('${String(tx.id)}')" title="Supprimer cette dépense" style="flex-shrink:0;cursor:pointer;margin-left:8px;font-family:var(--font-mono);font-size:0.6rem;padding:4px 8px;border-radius:14px;border:1px solid var(--border);background:var(--bg-card-2);color:var(--text-muted)">✕</button>`;
+    div.innerHTML = `<div class="tx-dot" style="background:${color};box-shadow:0 0 6px ${color}"></div><div class="tx-desc">${escapeHtml(tx.description)}<div class="tx-cat">${CAT_LABELS[tx.cat] || escapeHtml(tx.cat)} · ${time}</div></div><div class="tx-amt tx-debit">−${fmtFCFA(tx.amount)}</div>${tx.receiptId ? `<button onclick="openReceiptViewer('${tx.receiptId}')" title="Voir le reçu" style="flex-shrink:0;cursor:pointer;margin-left:6px;font-size:0.7rem;padding:4px 7px;border-radius:14px;border:1px solid rgba(214,165,58,0.35);background:rgba(214,165,58,0.08);color:var(--gold)">🧾</button>` : ''}<button onclick="deleteTransaction('${String(tx.id)}')" title="Supprimer cette dépense" style="flex-shrink:0;cursor:pointer;margin-left:6px;font-family:var(--font-mono);font-size:0.6rem;padding:4px 8px;border-radius:14px;border:1px solid var(--border);background:var(--bg-card-2);color:var(--text-muted)">✕</button>`;
     list.appendChild(div);
   });
 }
@@ -6431,6 +6485,187 @@ function resetFinance() {
     ids.forEach(id => SupaSync.deleteTransaction(id).catch(e => console.warn('[Sync] delete tx:', e.message)));
   }
   showToast('🗑 Finance réinitialisée — budget à ' + fmtFCFA(state.budget), 'ok');
+}
+
+/* ============================================================
+   FACTURES & REÇUS — photo → lecture IA (Claude Vision) → dépense
+   Flux : 1) choisir la catégorie  2) photographier la facture
+   3) ✨ Lire (montant + devise + description, conversion FCFA)
+   4) ➕ Enregistrer → le reçu est archivé dans la galerie (IndexedDB)
+   ============================================================ */
+let finReceipt = null;   // { dataUrl, thumb, b64, mime }
+let finLastScan = null;  // { montant, devise } — pour recalcul si taux USD modifié
+const FX_EUR_XOF = 655.957; // parité fixe FCFA/EUR
+
+function finCompressImage(file, maxDim, quality) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * scale);
+        c.height = Math.round(img.height * scale);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => reject(new Error('Image illisible'));
+      img.src = e.target.result;
+    };
+    r.onerror = () => reject(new Error('Lecture fichier échouée'));
+    r.readAsDataURL(file);
+  });
+}
+
+async function finReceiptSelected(input) {
+  const file = input.files && input.files[0];
+  input.value = '';
+  if (!file) return;
+  if (file.size > 10e6) { showToast('Photo trop lourde (max 10 Mo)', 'warn'); return; }
+  try {
+    const dataUrl = await finCompressImage(file, 1400, 0.82); // lisible par l'IA
+    const thumb   = await finCompressImage(file, 240, 0.6);   // vignette galerie
+    finReceipt = { dataUrl, thumb, b64: dataUrl.split(',')[1], mime: 'image/jpeg' };
+    finLastScan = null;
+    document.getElementById('exp-receipt-preview').src = dataUrl;
+    document.getElementById('exp-receipt-wrap').style.display = 'block';
+    document.getElementById('exp-scan-status').textContent = 'Photo prête. « ✨ Lire la facture » remplit le montant automatiquement, ou saisis-le à la main.';
+    document.getElementById('exp-fx-row').style.display = 'none';
+  } catch (e) {
+    showToast('Impossible de lire cette image', 'warn');
+  }
+}
+
+function finClearReceipt() {
+  finReceipt = null; finLastScan = null;
+  document.getElementById('exp-receipt-wrap').style.display = 'none';
+  document.getElementById('exp-receipt-preview').src = '';
+  document.getElementById('exp-scan-status').textContent = '';
+}
+
+function finConvertToXOF(montant, devise) {
+  const d = String(devise || 'XOF').toUpperCase();
+  if (d === 'XOF' || d === 'FCFA' || d === 'CFA') return { fcfa: Math.round(montant), note: '' };
+  if (d === 'EUR') return { fcfa: Math.round(montant * FX_EUR_XOF), note: `${montant} € × ${FX_EUR_XOF} (parité fixe)` };
+  if (d === 'USD') {
+    const rate = Math.round(parseFloat(document.getElementById('exp-usd-rate')?.value) || 605);
+    return { fcfa: Math.round(montant * rate), note: `${montant} $ × ${rate} (taux modifiable)`, usd: true };
+  }
+  return null; // devise non gérée → saisie manuelle
+}
+
+function finReapplyFx() {
+  if (!finLastScan || String(finLastScan.devise).toUpperCase() !== 'USD') return;
+  const conv = finConvertToXOF(finLastScan.montant, 'USD');
+  if (conv) {
+    document.getElementById('exp-amount').value = conv.fcfa;
+    document.getElementById('exp-scan-status').textContent = `✅ ${conv.note} = ${fmtFCFA(conv.fcfa)}`;
+  }
+}
+
+async function finScanReceipt(btn) {
+  if (!finReceipt) { showToast('Ajoute d\'abord une photo', 'warn'); return; }
+  const cat = document.getElementById('exp-category').value; // catégorie choisie AVANT (étape 1)
+  const statusEl = document.getElementById('exp-scan-status');
+  disableBtn(btn);
+  statusEl.textContent = '🧠 Claude lit la facture…';
+  try {
+    const res = await apiFetch('/api/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 300,
+        system: 'Tu lis des factures, reçus et tickets (français, anglais, arabe) pour la comptabilité d\'une mission documentaire au Sénégal. Tu extrais les données avec précision. Réponds UNIQUEMENT en JSON strict, sans texte autour.',
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: finReceipt.mime, data: finReceipt.b64 } },
+            { type: 'text', text: `Lis ce document (facture, reçu, ticket). La dépense est de catégorie « ${CAT_LABELS[cat] || cat} ».\nJSON attendu :\n{"montant": nombre (total TTC), "devise": "XOF"|"EUR"|"USD"|"autre", "description": "fournisseur + objet, concis (max 120 caractères)", "date": "JJ/MM/AAAA" ou null, "confiance": 0-100}` }
+          ]
+        }]
+      })
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error?.message || data.hint || `HTTP ${res.status}`);
+    const raw = data.content?.[0]?.text || '';
+    let parsed;
+    try { parsed = JSON.parse(raw); }
+    catch { const m = raw.match(/\{[\s\S]*\}/); if (!m) throw new Error('Réponse illisible'); parsed = JSON.parse(m[0]); }
+
+    const montant = parseFloat(parsed.montant);
+    if (!montant || montant <= 0) throw new Error('Montant non détecté sur la photo');
+    finLastScan = { montant, devise: parsed.devise };
+    const conv = finConvertToXOF(montant, parsed.devise);
+    document.getElementById('exp-fx-row').style.display = (String(parsed.devise).toUpperCase() === 'USD') ? 'flex' : 'none';
+
+    let desc = (parsed.description || '').substring(0, 150);
+    if (parsed.date) desc += ' · ' + parsed.date;
+
+    if (conv) {
+      document.getElementById('exp-amount').value = conv.fcfa;
+      document.getElementById('exp-desc').value = desc;
+      statusEl.textContent = `✅ Lu (confiance ${parsed.confiance ?? '?'}%) : ${conv.note ? conv.note + ' = ' : ''}${fmtFCFA(conv.fcfa)} — vérifie puis ➕ Enregistrer`;
+    } else {
+      document.getElementById('exp-desc').value = desc + ` [${parsed.montant} ${parsed.devise}]`;
+      statusEl.textContent = `⚠️ Devise « ${parsed.devise} » non convertie automatiquement — saisis le montant FCFA à la main.`;
+    }
+  } catch (e) {
+    statusEl.textContent = '❌ ' + e.message + (String(e.message).includes('NO_KEY') || String(e.message).includes('ANTHROPIC') ? ' — la clé IA n\'est pas encore configurée sur Vercel ; saisis le montant à la main (la photo sera quand même archivée).' : '');
+  }
+  enableBtn(btn);
+}
+
+async function renderReceiptGallery() {
+  const grid = document.getElementById('fin-receipts-grid');
+  if (!grid) return;
+  const all = (await dbReadAll('receipts')).sort((a, b) => b.ts - a.ts);
+  if (all.length === 0) {
+    grid.innerHTML = '<div style="grid-column:1/-1;font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);text-align:center;padding:16px 0">Aucun reçu archivé</div>';
+    return;
+  }
+  grid.innerHTML = all.map(r => `
+    <div onclick="openReceiptViewer('${r.id}')" style="cursor:pointer;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg-card-2)">
+      <img src="${r.thumb}" alt="Reçu" style="width:100%;height:80px;object-fit:cover;display:block">
+      <div style="padding:4px 6px">
+        <div style="font-family:var(--font-display);font-size:0.5rem;font-weight:700;color:var(--gold)">${fmtFCFA(r.amount || 0)}</div>
+        <div style="font-family:var(--font-mono);font-size:0.42rem;color:var(--text-muted)">${new Date(r.ts).toLocaleDateString('fr-FR')} · ${CAT_LABELS[r.cat] || ''}</div>
+      </div>
+    </div>`).join('');
+}
+
+async function openReceiptViewer(id) {
+  const all = await dbReadAll('receipts');
+  const r = all.find(x => x.id === id);
+  if (!r) { showToast('Reçu introuvable', 'warn'); return; }
+  let ov = document.getElementById('receipt-viewer-overlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'receipt-viewer-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:9600;background:rgba(3,5,9,0.94);display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:10px';
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = `
+    <img src="${r.dataUrl}" alt="Reçu" style="max-width:96vw;max-height:70vh;border-radius:10px;border:1px solid var(--border);object-fit:contain">
+    <div style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-secondary);text-align:center;line-height:1.6;max-width:90vw">
+      <b style="color:var(--gold)">${fmtFCFA(r.amount || 0)}</b> · ${CAT_LABELS[r.cat] || ''} · ${new Date(r.ts).toLocaleDateString('fr-FR')}<br>${escapeHtml(r.description || '')}
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" onclick="document.getElementById('receipt-viewer-overlay').style.display='none'">Fermer</button>
+      <button class="btn btn-ghost" style="border-color:rgba(255,82,82,0.3);color:var(--red)" onclick="deleteReceipt('${r.id}')">🗑 Supprimer</button>
+    </div>`;
+  ov.style.display = 'flex';
+}
+
+async function deleteReceipt(id) {
+  if (!confirm('Supprimer ce reçu de la galerie ? (la dépense associée n\'est pas touchée)')) return;
+  if (!requireDirectionPin('supprimer ce reçu')) return;
+  await dbDelete('receipts', id);
+  const ov = document.getElementById('receipt-viewer-overlay');
+  if (ov) ov.style.display = 'none';
+  renderReceiptGallery();
+  showToast('🗑 Reçu supprimé', 'ok');
 }
 /* ============================================================
    TRÉSORERIE — Cash-flow (encaissements échelonnés vs dépenses).
@@ -6932,6 +7167,8 @@ async function init() {
   if (typeof vaultPrePopulateSocial === 'function') vaultPrePopulateSocial();
   // Trésorerie : pré-charge l'échéancier du bilan si vide
   if (typeof treasurySeedIfEmpty === 'function') treasurySeedIfEmpty();
+  // Galerie des reçus/factures (IndexedDB, chargement non bloquant)
+  if (typeof renderReceiptGallery === 'function') renderReceiptGallery();
   setStatus('Connexion cloud Supabase…');
   if (typeof SupaSync !== 'undefined' && typeof SupaSync.init === 'function') {
     await SupaSync.init();

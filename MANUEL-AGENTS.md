@@ -92,9 +92,18 @@ Suit le budget de 100 millions FCFA (objectif du projet).
 
 **Enregistrer une dépense :**
 1. Carte **« Enregistrer une Dépense »**.
-2. Choisir la **Catégorie** (transport, hébergement, équipement, impression…).
+2. Choisir la **Catégorie** (transport, carburant, hébergement, nourriture/per diem, équipement, impression, autres…).
 3. Saisir le **Montant (FCFA)** et une **Description**.
 4. Cliquer **➕ Enregistrer**.
+
+**📷 Depuis une facture ou un reçu (photo) :**
+1. Choisir d'abord la **Catégorie**.
+2. **📷 Prendre en photo** le reçu (ou **🖼️ Depuis la galerie**).
+3. **✨ Lire la facture (IA)** : Claude lit le **montant**, la **devise** et la **description**. Les montants en **€ ou $ sont convertis en FCFA** automatiquement (€ : parité fixe 655,957 ; $ : taux modifiable, 605 par défaut).
+4. Vérifier les champs remplis, puis **➕ Enregistrer**.
+5. La photo est **archivée** dans la carte **🧾 Reçus & Factures** (galerie) : cliquer une vignette pour la revoir en grand. La ligne de dépense garde un bouton **🧾** pour rouvrir son reçu.
+
+> 💡 Sans connexion ou sans clé IA, la lecture automatique ne marche pas — mais on peut toujours joindre la photo et saisir le montant à la main : le reçu sera archivé pareil. Supprimer un reçu exige le PIN Direction.
 
 Le **budget global**, la **répartition par catégorie** et la **dérive** se recalculent automatiquement.
 - **Tarif Imprimeur** : régler le coût d'impression unitaire.
