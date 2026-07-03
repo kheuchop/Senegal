@@ -2643,6 +2643,55 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           </div>
         </div>
 
+        <!-- Trésorerie / Cash-flow -->
+        <div class="card">
+          <div class="card-title">Trésorerie — Cash-flow</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+            <div style="text-align:center;padding:8px;background:var(--bg-card-2);border:1px solid var(--border);border-radius:var(--r-sm)">
+              <div style="font-family:var(--font-display);font-size:0.75rem;font-weight:700;color:var(--emerald);font-variant-numeric:tabular-nums" id="treasury-encaisse">0M</div>
+              <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-top:2px">ENCAISSÉ</div>
+            </div>
+            <div style="text-align:center;padding:8px;background:var(--bg-card-2);border:1px solid var(--border);border-radius:var(--r-sm)">
+              <div style="font-family:var(--font-display);font-size:0.75rem;font-weight:700;color:var(--emerald);font-variant-numeric:tabular-nums" id="treasury-dispo">0M</div>
+              <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-top:2px">DISPONIBLE</div>
+            </div>
+            <div style="text-align:center;padding:8px;background:var(--bg-card-2);border:1px solid var(--border);border-radius:var(--r-sm)">
+              <div style="font-family:var(--font-display);font-size:0.75rem;font-weight:700;color:var(--amber);font-variant-numeric:tabular-nums" id="treasury-attendu">0M</div>
+              <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-top:2px">À ENCAISSER</div>
+            </div>
+          </div>
+          <div id="treasury-alerts" style="margin-top:10px"></div>
+          <div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted);letter-spacing:0.08em;text-transform:uppercase;margin:14px 0 4px">Échéancier des encaissements</div>
+          <div id="treasury-encaissements"></div>
+          <div id="treasury-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px"></div>
+          <input type="text" id="treasury-add-source" class="input-field" placeholder="Source (ex. Sponsor X, don…)" autocomplete="off" style="margin-top:8px">
+          <div style="display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:8px;margin-top:8px">
+            <input type="number" id="treasury-add-montant" class="input-field" placeholder="Montant FCFA" min="0" autocomplete="off">
+            <select class="input-field" id="treasury-add-mois">
+              <option value="0">Avant M1</option>
+              <option value="1">M1 Jan</option>
+              <option value="2">M2 Fév</option>
+              <option value="3">M3 Mar</option>
+              <option value="4">M4 Avr</option>
+              <option value="5">M5 Mai</option>
+              <option value="6">M6 Juin</option>
+              <option value="7">M7 Juil</option>
+              <option value="8">M8 Août</option>
+              <option value="9">M9 Sep</option>
+              <option value="10">M10 Oct</option>
+              <option value="11">M11 Nov</option>
+              <option value="12">M12 Déc</option>
+            </select>
+            <select class="input-field" id="treasury-add-statut">
+              <option value="recu">✓ Reçu</option>
+              <option value="attendu">⏳ Attendu</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-full" style="margin-top:8px" onclick="treasuryAddEncaissement(event)"><span class="btn-text">➕ Ajouter l'encaissement</span></button>
+          <div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted);letter-spacing:0.08em;text-transform:uppercase;margin:16px 0 4px">Projection du bilan — hypothèse (non confirmée)</div>
+          <div id="treasury-previsionnel" style="overflow-x:auto"></div>
+        </div>
+
         <!-- Catégories -->
         <div class="card">
           <div class="card-title">Répartition par Catégorie</div>
@@ -4714,6 +4763,7 @@ const state = {
   cmHistory: [],
   printRate: 150,
   catSpend: { transport:0, hebergement:0, equipement:0, api:0, impression:0, communication:0, divers:0 },
+  treasury: { encaissements: [], decaissements: [] },
   daysDone: 0,
   sitesDone: 0,
   leafletMap: null,
@@ -4841,6 +4891,7 @@ function saveStateToDB() {
       spent:          state.spent,
       transactions:   state.transactions,
       catSpend:       state.catSpend,
+      treasury:       state.treasury,
       vault:          state.vault,
       vaultPin:       state.vaultPin,
       daysDone:       state.daysDone,
@@ -4897,6 +4948,10 @@ async function loadStateFromDB() {
     if (d.spent !== undefined) state.spent = d.spent;
     if (d.transactions) state.transactions = d.transactions;
     if (d.catSpend) state.catSpend = d.catSpend;
+    if (d.treasury && typeof d.treasury === 'object') state.treasury = {
+      encaissements: Array.isArray(d.treasury.encaissements) ? d.treasury.encaissements : [],
+      decaissements: Array.isArray(d.treasury.decaissements) ? d.treasury.decaissements : [],
+    };
     if (d.vault) state.vault = { ...state.vault, ...d.vault };
     if (d.vaultPin && /^\d{4}$/.test(d.vaultPin)) state.vaultPin = d.vaultPin;
     if (d.daysDone !== undefined) state.daysDone = d.daysDone;
@@ -6153,6 +6208,32 @@ const CAT_COLORS = { transport:'#e8c97e', hebergement:'#00e676', equipement:'#7c
 const CAT_LABELS = { transport:'Transport', hebergement:'Hébergement', equipement:'Équipement', api:'API Cloud', impression:'Impression', communication:'Communication', divers:'Divers' };
 const CAT_BUDGET = { transport:15000000, hebergement:12000000, equipement:20000000, api:5000000, impression:25000000, communication:10000000, divers:13000000 };
 
+/* TRÉSORERIE — plan de financement échelonné (bilan financier, section 3, 2027).
+   Encaissements par tranche (105M au total : 100M budget + 5M solde). */
+const TREASURY_ENCAISSEMENTS_SEED = [
+  { id:'enc-m0',  mois:0,  montant:5000000,  source:'Apports propres (coporteurs)' },
+  { id:'enc-m1',  mois:1,  montant:9000000,  source:'Sponsoring — acompte 30 %' },
+  { id:'enc-m2',  mois:2,  montant:2000000,  source:'Souscriptions mécènes (T1)' },
+  { id:'enc-m3',  mois:3,  montant:8500000,  source:'Sponsoring T2 + mécènes' },
+  { id:'enc-m4',  mois:4,  montant:5500000,  source:'Précommandes B2B + mécènes' },
+  { id:'enc-m5',  mois:5,  montant:12000000, source:'International T1 (9M) + B2B (3M)' },
+  { id:'enc-m6',  mois:6,  montant:9000000,  source:'Sponsoring T3 + B2B' },
+  { id:'enc-m7',  mois:7,  montant:9000000,  source:'International T2 (9M)' },
+  { id:'enc-m8',  mois:8,  montant:3000000,  source:'Précommandes B2B (solde)' },
+  { id:'enc-m9',  mois:9,  montant:7000000,  source:'Sponsoring (solde 7M)' },
+  { id:'enc-m11', mois:11, montant:35000000, source:'Subvention MCAT (35M)' },
+];
+/* Décaissements prévus par mois (séquencement bilan, 100M au total). */
+const TREASURY_DECAISSEMENTS_SEED = [
+  { mois:1, prevu:5200000 },  { mois:2, prevu:3500000 },  { mois:3, prevu:3800000 },
+  { mois:4, prevu:9700000 },  { mois:5, prevu:6300000 },  { mois:6, prevu:6700000 },
+  { mois:7, prevu:10200000 }, { mois:8, prevu:5800000 },  { mois:9, prevu:7900000 },
+  { mois:10, prevu:6600000 }, { mois:11, prevu:25500000 }, { mois:12, prevu:8800000 },
+];
+const TREASURY_SEUIL_TERRAIN = 15000000; // clause d'activation zones B-F (vérif fin M3)
+const TREASURY_SEUIL_CRISE   = 2000000;  // comité de crise si solde < 2M (bilan)
+const MOIS_LABELS = ['Avant M1','M1 Jan','M2 Fév','M3 Mar','M4 Avr','M5 Mai','M6 Juin','M7 Juil','M8 Août','M9 Sep','M10 Oct','M11 Nov','M12 Déc'];
+
 function addExpense(evt) {
   const btn = evt.currentTarget; disableBtn(btn);
   const cat  = document.getElementById('exp-category').value;
@@ -6260,6 +6341,7 @@ function updateFinancialUI() {
   if (budgetFillBar) budgetFillBar.style.width = remPct + '%';
   renderCategories();
   renderTransactions();
+  renderTreasury();
 }
 function renderCategories() {
   const container = document.getElementById('fin-categories');
@@ -6287,6 +6369,167 @@ function renderTransactions() {
     div.innerHTML = `<div class="tx-dot" style="background:${color};box-shadow:0 0 6px ${color}"></div><div class="tx-desc">${tx.description}<div class="tx-cat">${CAT_LABELS[tx.cat] || tx.cat} · ${time}</div></div><div class="tx-amt tx-debit">−${fmtFCFA(tx.amount)}</div>`;
     list.appendChild(div);
   });
+}
+/* ============================================================
+   TRÉSORERIE — Cash-flow (encaissements échelonnés vs dépenses).
+   Réservé Direction. Modélise le Plan de trésorerie du bilan financier.
+   ============================================================ */
+function treasurySeedIfEmpty() {
+  // Les encaissements sont saisis MANUELLEMENT (les montants du bilan sont des
+  // hypothèses, pas des confirmations) → on garantit juste la structure.
+  if (!state.treasury || typeof state.treasury !== 'object') state.treasury = { encaissements: [], decaissements: [] };
+  if (!Array.isArray(state.treasury.encaissements)) state.treasury.encaissements = [];
+}
+function treasuryFillSource(s) {
+  const el = document.getElementById('treasury-add-source');
+  if (el) el.value = s;
+  const m = document.getElementById('treasury-add-montant');
+  if (m) m.focus();
+}
+function treasuryCompute() {
+  const enc = (state.treasury && state.treasury.encaissements) || [];
+  const encaisse = enc.filter(e => e.statut === 'recu').reduce((s, e) => s + e.montant, 0);
+  const attendu  = enc.filter(e => e.statut !== 'recu').reduce((s, e) => s + e.montant, 0);
+  return { encaisse, attendu, disponible: encaisse - state.spent };
+}
+function fmtMF(n) { return (n / 1000000).toFixed(1) + 'M'; }
+function treasuryToggleRecu(id) {
+  if (!state.treasury) return;
+  const e = state.treasury.encaissements.find(x => x.id === id);
+  if (!e) return;
+  if (e.statut === 'recu') { e.statut = 'attendu'; e.dateRecu = null; }
+  else { e.statut = 'recu'; e.dateRecu = Date.now(); }
+  saveStateToDB();
+  updateFinancialUI();
+  showToast(e.statut === 'recu' ? '✅ Tranche marquée encaissée' : '↩ Tranche remise en attente', 'ok');
+}
+function treasuryAddEncaissement(ev) {
+  if (ev && ev.preventDefault) ev.preventDefault();
+  treasurySeedIfEmpty();
+  const srcEl = document.getElementById('treasury-add-source');
+  const montEl = document.getElementById('treasury-add-montant');
+  const moisEl = document.getElementById('treasury-add-mois');
+  const src = (srcEl && srcEl.value || '').trim();
+  const montant = Math.round(parseFloat(montEl && montEl.value) || 0);
+  const mois = Math.max(0, Math.min(12, parseInt(moisEl && moisEl.value, 10) || 0));
+  const statutEl = document.getElementById('treasury-add-statut');
+  const statut = (statutEl && statutEl.value === 'attendu') ? 'attendu' : 'recu';
+  if (!src) { showToast('Indique une source', 'warn'); return; }
+  if (montant <= 0) { showToast('Montant invalide', 'warn'); return; }
+  state.treasury.encaissements.push({ id: 'enc-man-' + Date.now(), mois, montant, source: src, statut, dateRecu: statut === 'recu' ? Date.now() : null, manual: true });
+  if (srcEl) srcEl.value = '';
+  if (montEl) montEl.value = '';
+  saveStateToDB();
+  updateFinancialUI();
+  showToast(statut === 'recu' ? '✅ Encaissement ajouté (reçu)' : '⏳ Encaissement ajouté (attendu)', 'ok');
+}
+function treasuryDeleteEncaissement(id) {
+  if (!state.treasury) return;
+  const e = state.treasury.encaissements.find(x => x.id === id);
+  if (!e) return;
+  if (!confirm('Supprimer l\'encaissement « ' + e.source + ' » (' + fmtFCFA(e.montant) + ') ?')) return;
+  state.treasury.encaissements = state.treasury.encaissements.filter(x => x.id !== id);
+  saveStateToDB();
+  updateFinancialUI();
+  showToast('Encaissement supprimé', 'ok');
+}
+function renderTreasury() {
+  const wrap = document.getElementById('treasury-encaissements');
+  if (!wrap) return; // panneau financier absent du DOM
+  treasurySeedIfEmpty();
+  const { encaisse, attendu, disponible } = treasuryCompute();
+
+  const encEl = document.getElementById('treasury-encaisse');
+  const dispEl = document.getElementById('treasury-dispo');
+  const attEl = document.getElementById('treasury-attendu');
+  if (encEl) encEl.textContent = fmtMF(encaisse);
+  if (attEl) attEl.textContent = fmtMF(attendu);
+  if (dispEl) {
+    dispEl.textContent = fmtMF(disponible);
+    dispEl.style.color = disponible < 0 ? 'var(--red)' : (disponible < TREASURY_SEUIL_CRISE ? 'var(--amber)' : 'var(--emerald)');
+  }
+
+  // Alertes automatiques
+  const alerts = [];
+  const nEnc = state.treasury.encaissements.length;
+  if (nEnc === 0) {
+    alerts.push(['amber', `ℹ️ Aucun encaissement saisi. Ajoute chaque rentrée (sponsor, subvention, don…) quand elle est confirmée ou reçue — les montants du bilan sont des hypothèses, pas des engagements.`]);
+  } else {
+    if (disponible < 0) {
+      alerts.push(['red', `🔴 Découvert : dépenses (${fmtFCFA(state.spent)}) supérieures à l'encaissé (${fmtFCFA(encaisse)}). Enregistre les encaissements reçus ou réduis les dépenses.`]);
+    } else if (disponible < TREASURY_SEUIL_CRISE) {
+      alerts.push(['amber', `🩸 Trésorerie critique : disponible sous ${fmtFCFA(TREASURY_SEUIL_CRISE)} → réunir le comité de crise (procédure du bilan).`]);
+    }
+    if (encaisse < TREASURY_SEUIL_TERRAIN) {
+      alerts.push(['amber', `🚦 Seuil terrain non atteint : ${fmtFCFA(encaisse)} / ${fmtFCFA(TREASURY_SEUIL_TERRAIN)} encaissés — zones B à F non déblocables (manque ${fmtFCFA(TREASURY_SEUIL_TERRAIN - encaisse)}).`]);
+    } else {
+      alerts.push(['emerald', `✅ Seuil terrain 15M atteint — zones B à F déblocables.`]);
+    }
+  }
+
+  // Puces raccourci : pré-remplissent le libellé de source (sans montant)
+  const chipEl = document.getElementById('treasury-chips');
+  if (chipEl && !chipEl.dataset.filled) {
+    const sources = ['Apports propres', 'Sponsoring', 'Souscriptions mécènes', 'Financement international', 'Précommandes B2B', 'Subvention MCAT'];
+    chipEl.innerHTML = sources.map(s => `<button type="button" onclick="treasuryFillSource('${s}')" style="cursor:pointer;font-family:var(--font-mono);font-size:0.52rem;padding:5px 10px;border-radius:16px;border:1px solid var(--border);background:var(--bg-card-2);color:var(--text-muted)">${s}</button>`).join('');
+    chipEl.dataset.filled = '1';
+  }
+  const alertsEl = document.getElementById('treasury-alerts');
+  if (alertsEl) {
+    const colorMap = { red:'255,82,82', amber:'255,171,64', emerald:'0,230,118' };
+    alertsEl.innerHTML = alerts.map(([c, msg]) =>
+      `<div style="padding:8px 10px;margin-bottom:6px;border-radius:var(--r-sm);background:rgba(${colorMap[c]},0.1);border:1px solid rgba(${colorMap[c]},0.35);font-family:var(--font-mono);font-size:0.56rem;line-height:1.5;color:rgb(${colorMap[c]})">${msg}</div>`
+    ).join('');
+  }
+
+  // Échéancier des encaissements (saisis manuellement ; bascule reçu/attendu)
+  const rows = [...state.treasury.encaissements].sort((a, b) => a.mois - b.mois);
+  if (rows.length === 0) {
+    wrap.innerHTML = `<div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted);padding:10px 0;line-height:1.6">Aucun encaissement saisi. Ajoute une entrée ci-dessous à chaque confirmation ou versement.</div>`;
+  } else {
+  wrap.innerHTML = rows.map(e => {
+    const recu = e.statut === 'recu';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)">
+      <div style="flex:0 0 58px;font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted)">${MOIS_LABELS[e.mois]}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-family:var(--font-display);font-size:0.64rem;font-weight:600;color:${recu ? 'var(--emerald)' : 'var(--text-primary)'}">${fmtFCFA(e.montant)}</div>
+        <div style="font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(e.source)}</div>
+      </div>
+      <button onclick="treasuryToggleRecu('${e.id}')" style="flex:0 0 auto;cursor:pointer;font-family:var(--font-mono);font-size:0.52rem;padding:5px 9px;border-radius:20px;border:1px solid ${recu ? 'rgba(0,230,118,0.4)' : 'var(--border)'};background:${recu ? 'rgba(0,230,118,0.12)' : 'var(--bg-card-2)'};color:${recu ? 'var(--emerald)' : 'var(--text-muted)'}">${recu ? '✓ Reçu' : '⏳ Attendu'}</button>
+      ${e.manual ? `<button onclick="treasuryDeleteEncaissement('${e.id}')" title="Supprimer cet encaissement" style="flex:0 0 auto;cursor:pointer;font-family:var(--font-mono);font-size:0.62rem;padding:5px 8px;border-radius:20px;border:1px solid var(--border);background:var(--bg-card-2);color:var(--text-muted)">✕</button>` : ''}
+    </div>`;
+  }).join('');
+  }
+
+  // Solde prévisionnel mois par mois (plan du bilan, référence fixe)
+  const prev = document.getElementById('treasury-previsionnel');
+  if (prev) {
+    const decByMonth = {}; TREASURY_DECAISSEMENTS_SEED.forEach(d => { decByMonth[d.mois] = d.prevu; });
+    const encByMonth = {}; TREASURY_ENCAISSEMENTS_SEED.forEach(e => { encByMonth[e.mois] = (encByMonth[e.mois] || 0) + e.montant; });
+    let run = 0, minRun = Infinity; const lines = [];
+    for (let m = 0; m <= 12; m++) {
+      const enc = encByMonth[m] || 0, dec = decByMonth[m] || 0;
+      run += enc - dec; if (run < minRun) minRun = run;
+      lines.push({ m, enc, dec, run });
+    }
+    const body = lines.map(l => {
+      const crit = l.run === minRun;
+      return `<tr style="${crit ? 'background:rgba(255,82,82,0.08)' : ''}">
+        <td style="padding:4px 8px;font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted);white-space:nowrap">${MOIS_LABELS[l.m]}</td>
+        <td style="padding:4px 8px;text-align:right;font-family:var(--font-mono);font-size:0.5rem;color:var(--emerald)">${l.enc ? ('+' + fmtMF(l.enc)) : '—'}</td>
+        <td style="padding:4px 8px;text-align:right;font-family:var(--font-mono);font-size:0.5rem;color:var(--red)">${l.dec ? ('−' + fmtMF(l.dec)) : '—'}</td>
+        <td style="padding:4px 8px;text-align:right;font-family:var(--font-display);font-size:0.55rem;font-weight:700;color:${crit ? 'var(--red)' : 'var(--text-primary)'}">${fmtMF(l.run)}${crit ? ' 🩸' : ''}</td>
+      </tr>`;
+    }).join('');
+    prev.innerHTML = `<table style="width:100%;border-collapse:collapse;min-width:300px">
+      <thead><tr>
+        <th style="padding:4px 8px;text-align:left;font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted)">MOIS</th>
+        <th style="padding:4px 8px;text-align:right;font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted)">ENCAIS.</th>
+        <th style="padding:4px 8px;text-align:right;font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted)">DÉCAIS.</th>
+        <th style="padding:4px 8px;text-align:right;font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted)">SOLDE</th>
+      </tr></thead><tbody>${body}</tbody></table>
+      <div style="font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted);margin-top:6px;line-height:1.6">⚠️ Montants <b>hypothétiques</b> du bilan (subventions et sponsors non confirmés) — à titre indicatif seulement. Seuls les encaissements que tu saisis ci-dessus comptent dans le Disponible.<br>🩸 Corridor critique projeté : solde minimum ${fmtFCFA(minRun)} en M10, avant l'arrivée de la subvention MCAT (35M) en M11.</div>`;
+  }
 }
 function updatePrintRate(val) {
   const rate = Math.round(parseFloat(val) || 150);
@@ -6624,6 +6867,8 @@ async function init() {
   await loadStateFromDB();
   // Liens réseaux sociaux (publics) disponibles dès le départ, sans ouvrir le coffre
   if (typeof vaultPrePopulateSocial === 'function') vaultPrePopulateSocial();
+  // Trésorerie : pré-charge l'échéancier du bilan si vide
+  if (typeof treasurySeedIfEmpty === 'function') treasurySeedIfEmpty();
   setStatus('Connexion cloud Supabase…');
   if (typeof SupaSync !== 'undefined' && typeof SupaSync.init === 'function') {
     await SupaSync.init();
