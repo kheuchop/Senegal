@@ -74,7 +74,9 @@ Crée les posts pour les réseaux.
 
 ## 04 · FINANCIER — Budget et dépenses
 
-Suit le budget de 100 millions FCFA.
+Suit le budget de 100 millions FCFA (objectif du projet).
+
+> 💡 **La grande jauge affiche le DISPONIBLE RÉEL** (encaissé − dépensé), pas les 100 M : on n'a jamais tout l'argent d'un coup. Tant qu'aucun encaissement n'est saisi dans la Trésorerie, elle affiche 0 (ou négatif en rouge si on a déjà dépensé). La ligne « Enveloppe projet » en dessous suit la consommation des 100 M du plan.
 
 **Enregistrer une dépense :**
 1. Carte **« Enregistrer une Dépense »**.

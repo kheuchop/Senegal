@@ -2243,7 +2243,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
       </div>
     </div>
     <div class="budget-bar-row" id="header-budget-row">
-      <div class="budget-label">BUDGET</div>
+      <div class="budget-label">DISPO</div>
       <div class="budget-track"><div class="budget-fill" id="budget-fill-bar"></div></div>
       <div class="budget-val" id="budget-remaining-header">100M FCFA</div>
     </div>
@@ -2614,7 +2614,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 
         <!-- Budget Gauge -->
         <div class="card">
-          <div class="card-title">Budget Mission — 100 000 000 FCFA</div>
+          <div class="card-title">Budget Mission — Objectif 100 000 000 FCFA</div>
 
           <div class="budget-gauge">
             <svg class="gauge-svg" viewBox="0 0 200 110">
@@ -2622,10 +2622,12 @@ textarea.input-field { resize: vertical; min-height: 80px; }
               <path class="gauge-fill" id="gauge-fill-path" d="M20,100 A90,90 0 0,1 180,100"/>
             </svg>
             <div class="gauge-center" style="bottom:8px">
-              <div class="gauge-val" id="budget-remaining-val">100.0M</div>
-              <div class="gauge-sub">FCFA RESTANT</div>
+              <div class="gauge-val" id="budget-remaining-val">0.0M</div>
+              <div class="gauge-sub">FCFA DISPONIBLE (RÉEL)</div>
             </div>
           </div>
+          <div style="text-align:center;font-family:var(--font-mono);font-size:0.6rem;font-weight:600" id="budget-dispo-exact">0 FCFA</div>
+          <div style="text-align:center;font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted);margin-top:4px" id="budget-plan-line">Enveloppe projet : 0 FCFA dépensés sur 100 000 000 FCFA (0%)</div>
 
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px">
             <div style="text-align:center;padding:8px;background:var(--bg-card-2);border:1px solid var(--border);border-radius:var(--r-sm)">
@@ -2634,7 +2636,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
             </div>
             <div style="text-align:center;padding:8px;background:var(--bg-card-2);border:1px solid var(--border);border-radius:var(--r-sm)">
               <div style="font-family:var(--font-display);font-size:0.75rem;font-weight:700;color:var(--amber);font-variant-numeric:tabular-nums" id="pct-spent-val">0%</div>
-              <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-top:2px">CONSOMMÉ</div>
+              <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-top:2px">CONSOMMÉ (PLAN)</div>
             </div>
             <div style="text-align:center;padding:8px;background:var(--bg-card-2);border:1px solid var(--border);border-radius:var(--r-sm)">
               <div style="font-family:var(--font-display);font-size:0.75rem;font-weight:700;color:var(--emerald);font-variant-numeric:tabular-nums" id="tx-count-val">0</div>
@@ -6317,12 +6319,25 @@ function updateQueueStatusUI(active) {
   if (label) label.textContent = active ? `Traitement en cours — ${state.transactionQueue.length} en attente` : 'Processeur inactif — File vide';
 }
 function updateFinancialUI() {
-  const remaining = Math.round(state.budget - state.spent);
+  // Enveloppe plan : consommation de l'objectif 100M (suivi projet, PAS du cash)
   const pct = Math.round((state.spent / state.budget) * 100);
-  const remPct = 100 - pct;
-  const remMF = (remaining / 1000000).toFixed(1);
+  // Cash RÉEL : disponible = encaissé − dépensé (module Trésorerie).
+  // C'est LUI que la jauge principale affiche — on n'a jamais les 100M d'un coup.
+  let encaisse = 0;
+  if (typeof treasuryCompute === 'function' && state.treasury) encaisse = treasuryCompute().encaisse;
+  const dispo = encaisse - state.spent;
+  const dispoPct = encaisse > 0 ? Math.max(0, Math.min(100, Math.round((dispo / encaisse) * 100))) : 0;
+  const dispoColor = dispo < 0 ? 'var(--red)' : (dispo < TREASURY_SEUIL_CRISE ? 'var(--amber)' : 'var(--emerald)');
   const el = document.getElementById('budget-remaining-val');
-  if (el) el.textContent = remMF + 'M';
+  if (el) {
+    el.textContent = (dispo / 1000000).toFixed(1) + 'M';
+    el.style.background = 'none';
+    el.style.webkitTextFillColor = dispoColor;
+  }
+  const exactEl = document.getElementById('budget-dispo-exact');
+  if (exactEl) { exactEl.textContent = fmtFCFA(dispo); exactEl.style.color = dispoColor; }
+  const planLine = document.getElementById('budget-plan-line');
+  if (planLine) planLine.textContent = `Enveloppe projet : ${fmtFCFA(state.spent)} dépensés sur ${fmtFCFA(state.budget)} (${pct}%)`;
   const spentEl = document.getElementById('total-spent-val');
   if (spentEl) spentEl.textContent = fmtFCFA(state.spent);
   const pctEl = document.getElementById('pct-spent-val');
@@ -6330,11 +6345,11 @@ function updateFinancialUI() {
   const txEl = document.getElementById('tx-count-val');
   if (txEl) txEl.textContent = state.transactions.length;
   const gaugeFill = document.getElementById('gauge-fill-path');
-  if (gaugeFill) { const offset = Math.round(282.7 * (1 - pct/100)); gaugeFill.style.strokeDashoffset = String(offset); }
+  if (gaugeFill) { const offset = Math.round(282.7 * (1 - dispoPct/100)); gaugeFill.style.strokeDashoffset = String(offset); }
   const headerRemaining = document.getElementById('budget-remaining-header');
-  if (headerRemaining) headerRemaining.textContent = remMF + 'M FCFA';
+  if (headerRemaining) { headerRemaining.textContent = (dispo / 1000000).toFixed(1) + 'M FCFA'; headerRemaining.style.color = dispoColor; }
   const budgetFillBar = document.getElementById('budget-fill-bar');
-  if (budgetFillBar) budgetFillBar.style.width = remPct + '%';
+  if (budgetFillBar) budgetFillBar.style.width = dispoPct + '%';
   renderCategories();
   renderTransactions();
   renderTreasury();
@@ -9082,11 +9097,8 @@ function a9ComputeTotals() {
   if (el('a9-priv-bar')) el('a9-priv-bar').style.width = Math.min(Math.round(priv / MISSION.budget * 100), 100) + '%';
   if (el('a9-global-bar')) el('a9-global-bar').style.width = Math.min(pct, 100) + '%';
   if (el('a9-global-pct')) el('a9-global-pct').textContent = pct + '%';
-  // Injection dans state global si versé
-  if (total > 0) {
-    const headerRem = document.getElementById('budget-remaining-header');
-    if (headerRem) headerRem.textContent = ((MISSION.budget - state.spent + total) / 1000000).toFixed(1) + 'M FCFA';
-  }
+  // (Le header affiche désormais le Disponible réel de la Trésorerie —
+  //  les sponsors versés se saisissent comme encaissements, jamais par-dessus le budget.)
 }
 
 function a9OpenAddSponsor() {
