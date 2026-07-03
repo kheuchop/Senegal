@@ -609,6 +609,18 @@
     syncTransaction: _syncTransaction,
 
     /**
+     * Supprime une transaction côté cloud (après suppression locale).
+     * Best-effort : nécessite une policy DELETE sur mission_transactions.
+     */
+    deleteTransaction: async function (id) {
+      const client = _buildClient();
+      if (!client || !navigator.onLine) return;
+      const { error } = await client.from('mission_transactions').delete().eq('id', String(id));
+      if (error) { _log('warn', `Delete TX cloud refusé (policy DELETE absente ?) : ${error.message}`); return; }
+      _log('info', `TX cloud supprimée : ${id}`);
+    },
+
+    /**
      * Écrit une entrée dans system_logs Supabase.
      */
     writeLog: _writeSystemLog,

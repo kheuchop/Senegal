@@ -85,6 +85,8 @@ Suit le budget de 100 millions FCFA.
 Le **budget global**, la **répartition par catégorie** et la **dérive** se recalculent automatiquement.
 - **Tarif Imprimeur** : régler le coût d'impression unitaire.
 - **File de Transactions** / **Historique** : suivi de tous les mouvements.
+- **Supprimer une dépense** : bouton **✕** sur la ligne dans l'Historique → le budget est recalculé.
+- **🗑 Réinitialiser la finance** : efface toutes les dépenses (double confirmation) — le budget repart de 100 M.
 
 > ⚠️ Saisir chaque dépense le jour même pour garder un budget juste.
 
@@ -395,10 +397,11 @@ Outils numériques du livre.
 
 ## 17 · RISK MANAGER — Anticipation des risques
 
-Surveille en continu.
+Surveille en continu — **tout est calculé en direct sur les vraies données de l'app** (rien d'inventé).
 
+- **Mode PRÉ-MISSION** : tant qu'aucun jour terrain n'est validé, l'agent est en veille (pas de fausse dérive). L'horloge démarre au **premier jour validé**.
 - **Moniteur de Dérive Temporelle** : écart entre planning prévu et réel (mis à jour via Coordination).
-- **Matrice des Risques** : cartographie probabilité / impact.
+- **Registre des Risques dynamique** : un risque n'apparaît **que s'il est réel** — trésorerie (découvert, seuil critique, seuil terrain 15 M), budget par catégorie dépassé ou presque épuisé, dérive planning, autorisations à relancer (A10), stocks faibles (A12), devis en dépassement (A15). Si tout va bien : « ✅ Aucun risque actif ».
 - **💡 Recommandations d'Optimisation** : en cas de retard → **⚡ Appliquer Recalibration** (mobilise des jours de repos, regroupe des sites).
 - **🚨 Plan B Critique** : si retard grave → **🚨 Activer Plan B** (fusion de sites, surcoût injecté au budget).
 - **Contrôle Watcher Financier** : surveille les transactions (**⚙️ Forcer Cycle** pour relancer).

@@ -2755,6 +2755,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
               Aucune transaction enregistrée
             </div>
           </div>
+          <button class="btn btn-ghost btn-full" style="margin-top:10px;border-color:rgba(255,82,82,0.3);color:var(--red)" onclick="resetFinance()">🗑 Réinitialiser la finance (tout effacer)</button>
         </div>
 
       </div><!-- /agent-financier -->
@@ -4921,6 +4922,7 @@ function saveStateToDB() {
       approvals:      state.approvals,
       dailyChecklist: state.dailyChecklist,
       rolePins:       state.rolePins,
+      a17MissionStartTs: state.a17MissionStartTs || null,
     }
   }).catch(e => console.error('[DB] saveState échoué:', e));
 
@@ -4981,6 +4983,7 @@ async function loadStateFromDB() {
     if (Array.isArray(d.approvals))    state.approvals        = d.approvals;
     if (d.dailyChecklist && typeof d.dailyChecklist === 'object') state.dailyChecklist = { date: d.dailyChecklist.date || '', checked: d.dailyChecklist.checked || {} };
     if (d.rolePins && typeof d.rolePins === 'object') state.rolePins = d.rolePins;
+    if (d.a17MissionStartTs) state.a17MissionStartTs = d.a17MissionStartTs;
   }
 }
 
@@ -6335,6 +6338,7 @@ function updateFinancialUI() {
   renderCategories();
   renderTransactions();
   renderTreasury();
+  if (typeof a17RenderRisks === 'function') a17RenderRisks(); // risques recalculés à chaque mouvement financier
 }
 function renderCategories() {
   const container = document.getElementById('fin-categories');
@@ -6359,9 +6363,46 @@ function renderTransactions() {
     const div = document.createElement('div'); div.className = 'tx-item';
     const color = CAT_COLORS[tx.cat] || '#90a4ae';
     const time = new Date(tx.ts).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
-    div.innerHTML = `<div class="tx-dot" style="background:${color};box-shadow:0 0 6px ${color}"></div><div class="tx-desc">${escapeHtml(tx.description)}<div class="tx-cat">${CAT_LABELS[tx.cat] || escapeHtml(tx.cat)} · ${time}</div></div><div class="tx-amt tx-debit">−${fmtFCFA(tx.amount)}</div>`;
+    div.innerHTML = `<div class="tx-dot" style="background:${color};box-shadow:0 0 6px ${color}"></div><div class="tx-desc">${escapeHtml(tx.description)}<div class="tx-cat">${CAT_LABELS[tx.cat] || escapeHtml(tx.cat)} · ${time}</div></div><div class="tx-amt tx-debit">−${fmtFCFA(tx.amount)}</div><button onclick="deleteTransaction('${String(tx.id)}')" title="Supprimer cette dépense" style="flex-shrink:0;cursor:pointer;margin-left:8px;font-family:var(--font-mono);font-size:0.6rem;padding:4px 8px;border-radius:14px;border:1px solid var(--border);background:var(--bg-card-2);color:var(--text-muted)">✕</button>`;
     list.appendChild(div);
   });
+}
+/* Recalcule spent + catSpend depuis la liste des transactions (source de vérité) */
+function recomputeFinanceFromTransactions() {
+  state.spent = 0;
+  Object.keys(state.catSpend).forEach(c => { state.catSpend[c] = 0; });
+  state.transactions.forEach(tx => {
+    state.spent += tx.amount || 0;
+    if (state.catSpend[tx.cat] !== undefined) state.catSpend[tx.cat] += tx.amount || 0;
+  });
+}
+function deleteTransaction(id) {
+  const tx = state.transactions.find(t => String(t.id) === String(id));
+  if (!tx) return;
+  if (!confirm('Supprimer la dépense « ' + tx.description + ' » (' + fmtFCFA(tx.amount) + ') ?\nLe budget sera recalculé.')) return;
+  state.transactions = state.transactions.filter(t => String(t.id) !== String(id));
+  recomputeFinanceFromTransactions();
+  saveStateToDB();
+  updateFinancialUI();
+  // Efface aussi la ligne côté cloud (best-effort — nécessite la policy DELETE)
+  if (typeof SupaSync !== 'undefined' && typeof SupaSync.deleteTransaction === 'function') {
+    SupaSync.deleteTransaction(String(id)).catch(e => console.warn('[Sync] delete tx:', e.message));
+  }
+  showToast('🗑 Dépense supprimée — budget recalculé', 'ok');
+}
+function resetFinance() {
+  if (state.transactions.length === 0 && state.spent === 0) { showToast('Finance déjà à zéro', 'info'); return; }
+  if (!confirm('⚠️ RÉINITIALISER LA FINANCE ?\n\nToutes les dépenses (' + state.transactions.length + ' transaction(s), ' + fmtFCFA(state.spent) + ') seront effacées.\nLe budget repartira de ' + fmtFCFA(state.budget) + '.')) return;
+  if (!confirm('Dernière confirmation : tout effacer ?')) return;
+  const ids = state.transactions.map(t => String(t.id));
+  state.transactions = [];
+  recomputeFinanceFromTransactions();
+  saveStateToDB();
+  updateFinancialUI();
+  if (typeof SupaSync !== 'undefined' && typeof SupaSync.deleteTransaction === 'function') {
+    ids.forEach(id => SupaSync.deleteTransaction(id).catch(e => console.warn('[Sync] delete tx:', e.message)));
+  }
+  showToast('🗑 Finance réinitialisée — budget à ' + fmtFCFA(state.budget), 'ok');
 }
 /* ============================================================
    TRÉSORERIE — Cash-flow (encaissements échelonnés vs dépenses).
@@ -11498,17 +11539,79 @@ const a17State = {
   missionStartTs: null, // initialisé dans initAgent17() après loadStateFromDB
   planBActive: false,
   log: [],
-  risks: [
-    { level:'critical', name:'Dérive temporelle terrain', desc:'Retard accumulé > 72h sur le planning des 54 jours.', mitigation:'Plan B : fusion sites proches + puisage jours repos.' },
-    { level:'high',     name:'Budget API Cloud dépassé', desc:'Synchronisation backups > estimation : +15% potentiel.', mitigation:'Compression RAW + sync différée off-peak.' },
-    { level:'high',     name:'Harmattan Zone Nord',       desc:'Vents de sable Tambacounda/Saint-Louis — réduction visibilité.', mitigation:'Reporter tournage ou basculer sur sites intérieurs.' },
-    { level:'medium',   name:'Panne matériel drone',      desc:'DJI Mavic 3 en maintenance — perte vues aériennes.', mitigation:'Redéploiement DJI Mini 4 + adaptation brief DA.' },
-    { level:'medium',   name:'Retard autorisations',      desc:'Sites UNESCO/Touba : validations toujours en attente.', mitigation:'Escalade Agent 10 — relances J+3 si non réponse.' },
-    { level:'low',      name:'Stock exemplaires critique','desc':'< 10 ex. disponibles sur 3 points de vente.', mitigation:'Alerte Agent 12 — réallocation depuis réserve centrale.' },
-    { level:'low',      name:'Dépassement devis imprimeur','desc':'Ecart +12% sur estimation initiale Graphi Plus.', mitigation:'Négociation Agent 15 — devis concurrent Printex.' },
-  ],
+  risks: [], // calculés en direct par a17ComputeRisks() — plus de données de démo
   fusionSuggestions: []
 };
+
+/* Registre des risques DYNAMIQUE : chaque risque n'apparaît que s'il est réel,
+   calculé depuis les données vivantes de l'app (trésorerie, budget, agents). */
+function a17ComputeRisks() {
+  const risks = [];
+
+  // 1. Trésorerie (module cash-flow — Direction)
+  if (typeof treasuryCompute === 'function' && state.treasury) {
+    const t = treasuryCompute();
+    const hasEnc = (state.treasury.encaissements || []).length > 0;
+    if (hasEnc && t.disponible < 0) {
+      risks.push({ level:'critical', name:'Trésorerie en découvert', desc:`Dépenses (${fmtFCFA(state.spent)}) supérieures à l'encaissé (${fmtFCFA(t.encaisse)}).`, mitigation:'Suspendre les dépenses non vitales + accélérer les encaissements attendus.' });
+    } else if (hasEnc && t.disponible < TREASURY_SEUIL_CRISE) {
+      risks.push({ level:'critical', name:'Trésorerie critique', desc:`Disponible ${fmtFCFA(t.disponible)} — sous le seuil de ${fmtFCFA(TREASURY_SEUIL_CRISE)}.`, mitigation:'Réunir le comité de crise (procédure du bilan financier).' });
+    }
+    if (t.encaisse < TREASURY_SEUIL_TERRAIN) {
+      risks.push({ level:'medium', name:'Seuil d\'activation terrain non atteint', desc:`${fmtFCFA(t.encaisse)} encaissés sur ${fmtFCFA(TREASURY_SEUIL_TERRAIN)} requis — zones B à F non déblocables.`, mitigation:'Prioriser sponsoring + mécènes ; zone A (Dakar) seule engageable.' });
+    }
+  }
+
+  // 2. Budget par catégorie (dépenses réelles vs enveloppes)
+  Object.keys(CAT_BUDGET).forEach(cat => {
+    const spent = state.catSpend[cat] || 0, bud = CAT_BUDGET[cat];
+    if (spent > bud) {
+      risks.push({ level:'high', name:`Budget ${CAT_LABELS[cat]} dépassé`, desc:`${fmtFCFA(spent)} dépensés pour une enveloppe de ${fmtFCFA(bud)} (+${Math.round((spent/bud-1)*100)}%).`, mitigation:'Geler la catégorie + arbitrage Direction sur les prochains engagements.' });
+    } else if (spent > bud * 0.85) {
+      risks.push({ level:'medium', name:`Budget ${CAT_LABELS[cat]} presque épuisé`, desc:`${Math.round(spent/bud*100)}% consommés (${fmtFCFA(bud - spent)} restants).`, mitigation:'Limiter aux dépenses indispensables sur cette catégorie.' });
+    }
+  });
+
+  // 3. Dérive temporelle (uniquement mission démarrée)
+  if (state.daysDone > 0 && a17State.missionStartTs) {
+    const d = a17CalcDrift();
+    if (d.deltaHours <= -72) {
+      risks.push({ level:'critical', name:'Dérive temporelle critique', desc:`Retard de ${Math.abs(d.deltaHours)}h sur le planning des ${MISSION.joursTerrain} jours.`, mitigation:'Plan B : fusion des sites proches + puisage dans les jours de repos.' });
+    } else if (d.deltaHours <= -24) {
+      risks.push({ level:'high', name:'Dérive temporelle', desc:`Retard de ${Math.abs(d.deltaHours)}h accumulé sur le planning terrain.`, mitigation:'Optimisation : regrouper les sites de la zone en cours.' });
+    }
+  }
+
+  // 4. Autorisations (Agent 10)
+  const relances = a10State.auths.filter(a => a.status === 'relance');
+  if (relances.length > 0) {
+    risks.push({ level:'high', name:`${relances.length} autorisation(s) à relancer`, desc:relances.slice(0,3).map(a => a.site).join(' · ') + (relances.length > 3 ? '…' : ''), mitigation:'Relances immédiates (Agent 10) — blocage terrain possible.' });
+  }
+  const encours = a10State.auths.filter(a => a.status === 'encours');
+  if (encours.length > 0) {
+    risks.push({ level:'low', name:`${encours.length} autorisation(s) en cours`, desc:'Validations administratives en attente de réponse.', mitigation:'Suivi hebdomadaire (Agent 10).' });
+  }
+
+  // 5. Stocks points de vente (Agent 12)
+  const lowStock = a12State.points.filter(p => {
+    const rs = (p.allocStd||0) - (p.venduStd||0), rl = (p.allocLuxe||0) - (p.venduLuxe||0);
+    return (p.allocStd > 0 && rs <= a12State.seuil) || (p.allocLuxe > 0 && rl <= a12State.seuil);
+  });
+  if (lowStock.length > 0) {
+    risks.push({ level:'medium', name:`Stock faible — ${lowStock.length} point(s) de vente`, desc:lowStock.slice(0,3).map(p => p.name).join(' · ') + (lowStock.length > 3 ? '…' : ''), mitigation:'Réallocation depuis la réserve centrale (Agent 12).' });
+  }
+
+  // 6. Devis en dépassement (Agent 15)
+  const overDevis = a15State.devis.filter(d => d.reel > d.est);
+  if (overDevis.length > 0) {
+    const totalOver = overDevis.reduce((s, d) => s + (d.reel - d.est), 0);
+    risks.push({ level:'medium', name:`${overDevis.length} devis en dépassement`, desc:`Surcoût cumulé ${fmtFCFA(totalOver)} vs estimations.`, mitigation:'Renégociation ou devis concurrents (Agent 15).' });
+  }
+
+  const order = { critical:0, high:1, medium:2, low:3 };
+  risks.sort((a, b) => order[a.level] - order[b.level]);
+  return risks;
+}
 
 /* --- DRIFT OBSERVER --- */
 function a17CalcDrift() {
@@ -11523,6 +11626,27 @@ function a17CalcDrift() {
 }
 
 function a17UpdateDriftUI() {
+  // PRÉ-MISSION : tant qu'aucun jour terrain n'est validé, pas de dérive —
+  // l'horloge ne démarre qu'au premier jour validé (ancrée + persistée).
+  if (state.daysDone === 0) {
+    const modeBadge = document.getElementById('a17-mode-badge');
+    const deltaDisp = document.getElementById('a17-delta-display');
+    const deltaSub = document.getElementById('a17-delta-sub');
+    if (modeBadge) { modeBadge.textContent = '⬡ PRÉ-MISSION'; modeBadge.className = 'a17-mode-badge'; }
+    if (deltaDisp) { deltaDisp.textContent = 'Δ 0h'; deltaDisp.className = 'a17-delta-display'; }
+    if (deltaSub) deltaSub.textContent = 'Mission non démarrée — surveillance en veille (départ 2027)';
+    const kDone = document.getElementById('a17-k-done');
+    const kTheo = document.getElementById('a17-k-theorique');
+    const kRepos = document.getElementById('a17-k-repos');
+    const kDelta = document.getElementById('a17-k-delta');
+    if (kDone) kDone.textContent = '0';
+    if (kTheo) kTheo.textContent = '0';
+    if (kRepos) kRepos.textContent = MISSION.joursRepos;
+    if (kDelta) { kDelta.textContent = '0'; kDelta.style.color = 'var(--emerald)'; }
+    const oc = document.getElementById('a17-optim-card'); if (oc) oc.style.display = 'none';
+    const pc = document.getElementById('a17-planb-card'); if (pc) pc.style.display = 'none';
+    return;
+  }
   const d = a17CalcDrift();
   const absDeltaH = Math.abs(d.deltaHours);
   const isBehind = d.deltaHours < 0;
@@ -11618,6 +11742,8 @@ function a17ApplyOptim(evt) {
   addActivity('⚡', `Risk Manager : recalibration appliquée — ${reposAMobiliser}j repos mobilisés`, now());
   showToast(`⚡ Recalibration appliquée — ${reposAMobiliser}j repos mobilisés`, 'ok');
   a17State.missionStartTs = Date.now() - (state.daysDone * 86400000 * 0.9);
+  state.a17MissionStartTs = a17State.missionStartTs;
+  saveStateToDB();
   setTimeout(() => { a17UpdateDriftUI(); enableBtn(btn); }, 500);
 }
 
@@ -11657,6 +11783,7 @@ function a17StartWatcher() {
   a17State.driftObserverInterval = setInterval(() => {
     a17UpdateDriftUI();
     a17UpdateQueueDisplay();
+    a17RenderRisks(); // registre dynamique — recalculé sur données vivantes
   }, 30000);
 
   a17AddLog('Watcher financier démarré — intervalle 2s');
@@ -11689,16 +11816,21 @@ function a17InjectTestTx() {
 
 function a17RenderRisks() {
   const list = document.getElementById('a17-risk-matrix'); if (!list) return;
+  a17State.risks = a17ComputeRisks();
   list.innerHTML = '';
+  if (a17State.risks.length === 0) {
+    list.innerHTML = `<div style="text-align:center;padding:16px;font-family:var(--font-mono);font-size:0.6rem;color:var(--emerald)">✅ Aucun risque actif détecté — tous les indicateurs sont au vert</div>`;
+    return;
+  }
   a17State.risks.forEach(r => {
     const div = document.createElement('div'); div.className = `a17-risk-item risk-${r.level}`;
     div.innerHTML = `<div>
         <div class="a17-risk-badge">${r.level.toUpperCase()}</div>
       </div>
       <div class="a17-risk-body">
-        <div class="a17-risk-name">${r.name}</div>
-        <div class="a17-risk-desc">${r.desc}</div>
-        <div class="a17-risk-mitigation">→ ${r.mitigation}</div>
+        <div class="a17-risk-name">${escapeHtml(r.name)}</div>
+        <div class="a17-risk-desc">${escapeHtml(r.desc)}</div>
+        <div class="a17-risk-mitigation">→ ${escapeHtml(r.mitigation)}</div>
       </div>`;
     list.appendChild(div);
   });
@@ -11716,8 +11848,14 @@ function a17AddLog(text) {
 }
 
 function initAgent17() {
-  if (!a17State.missionStartTs) {
-    a17State.missionStartTs = Date.now() - (state.daysDone * 86400000);
+  // Ancrage persistant : l'horloge de dérive ne démarre qu'une fois la mission
+  // réellement commencée (1er jour validé), et survit aux rechargements.
+  if (state.daysDone > 0) {
+    if (!state.a17MissionStartTs) {
+      state.a17MissionStartTs = Date.now() - (state.daysDone * 86400000);
+      saveStateToDB();
+    }
+    a17State.missionStartTs = state.a17MissionStartTs;
   }
   a17RenderRisks();
   a17UpdateDriftUI();
