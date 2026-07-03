@@ -8,29 +8,42 @@ Guide pratique et détaillé : comment utiliser concrètement chaque agent, écr
 
 ---
 
+## CONNEXION & ACCÈS PAR RÔLE
+
+**À l'ouverture**, une courte animation du logo s'affiche, puis un écran de **connexion** : saisir l'**identifiant** et le **mot de passe** de l'équipe (compte partagé). Sans connexion, l'app ne s'ouvre pas et les agents IA sont bloqués.
+
+Ensuite, un **code d'accès à 4 chiffres** ouvre ton espace selon ton **rôle** :
+- **Direction** : accès à **tous** les agents + réglages.
+- **Communication**, **Finance**, **Terrain**, **Éditorial**, **Juridique**, **Photo/Vidéo** : chacun ne voit que **ses** agents et **ses** tâches.
+
+> La **Direction** définit et communique ces codes : Superviseur → **🔐 Gestion des Accès** → modifier chaque code → **💾 Enregistrer**. Bouton **🔒 Changer d'accès** pour reverrouiller et changer de rôle.
+
+---
+
 ## 01 · SUPERVISEUR — Tableau de bord
 
 C'est l'écran d'accueil, la vue d'ensemble.
 
 - **Avancement Mission** : anneau de progression + indicateurs (sites, jours, km).
-- **Check-list du Jour** : le rituel quotidien. Cliquer sur une ligne pour la cocher. Se réinitialise chaque jour.
+- **Check-list du Jour** : le rituel quotidien, **filtré selon ton poste** (chacun ne voit que ses tâches ; la Direction les voit toutes). Cliquer sur une ligne pour la cocher. Se réinitialise chaque jour.
 - **File d'Approbations** : valider ou refuser les décisions en attente.
 - **Notifications Critiques** : les alertes importantes.
 - **Journal d'Activité** : l'historique des actions.
-- **Diffusion Telegram** : écrire un message → bouton **📣 Équipe** (message normal) ou **🚨 Urgence** (alerte). Le message part dans le groupe Telegram.
+- **Diffusion Telegram** : écrire un message → bouton **📣 Équipe** (message normal) ou **🚨 Urgence** (alerte). Le message part dans le groupe Telegram (configuré côté serveur, voir Coffre-Fort).
+- **🔐 Gestion des Accès** *(Direction uniquement)* : définir les codes d'accès de chaque rôle.
 
 ---
 
 ## 02 · COFFRE-FORT — Clés et identifiants
 
-Stockage sécurisé, protégé par un code PIN.
+Stockage sécurisé, protégé par un code PIN, **local à chaque appareil** (rien n'est envoyé dans le cloud).
 
-1. Saisir le PIN pour déverrouiller.
-2. Chaque catégorie (Telegram, Maps, Cloud, Réseaux sociaux) a un bouton **« + Ajouter clé »**.
-3. Renseigner un **Nom** et une **Valeur**, puis enregistrer.
-4. Possibilité d'**exporter** une sauvegarde du coffre.
+1. Saisir le PIN pour déverrouiller. Au **premier usage, changer le PIN par défaut**.
+2. Chaque catégorie a un bouton **« + Ajouter clé »** : renseigner un **Nom** et une **Valeur**.
+3. En bas : **🔑 Changer PIN** et **📤 Exporter** (sauvegarde).
+4. À conserver ici : les **URL des réseaux sociaux** (pour le bouton « Ouvrir » du CM), la **clé météo**, et vos mots de passe de services.
 
-> Y conserver : token du bot Telegram, clés API, mots de passe de services.
+> ⚠️ **Telegram et la clé IA (Claude) ne se mettent PLUS dans l'app.** Le token du bot Telegram, les groupes et la clé Claude sont configurés **côté serveur** (Vercel), jamais dans le navigateur — c'est nettement plus sûr. Le PIN et le contenu du coffre restent **sur l'appareil** et doivent être définis sur chaque téléphone utilisé.
 
 ---
 
@@ -39,7 +52,7 @@ Stockage sécurisé, protégé par un code PIN.
 Crée les posts pour les réseaux.
 
 **A. Générer un post depuis une photo *(IA)***
-1. Choisir la **Plateforme cible** (TikTok, Instagram, LinkedIn…).
+1. Choisir la **Plateforme cible** (TikTok, YouTube, Instagram, Facebook, LinkedIn, X).
 2. Dans « 🤖 IA — Générer depuis une Photo », **cliquer pour charger une photo** de terrain.
 3. Cliquer **✨ Analyser & Générer** : Claude regarde la photo et rédige le post adapté à la plateforme.
 
@@ -50,6 +63,12 @@ Crée les posts pour les réseaux.
 **C. Aperçu & Historique**
 - L'**Aperçu** montre le rendu selon la plateforme.
 - L'**Historique** garde les posts déjà générés.
+
+**D. Partager / publier** *(après génération)*
+- **📲 Partager le post** : ouvre le partage du téléphone avec la **photo + le texte** (sur ordinateur : copie le texte et télécharge la photo). Sur **X**, le texte est pré-rempli.
+- **⬇️ Télécharger** : récupère la photo et le texte.
+- **🔗 Ouvrir <réseau>** : ouvre directement ta page du réseau (l'URL se renseigne dans le Coffre-Fort).
+- **📤 Envoyer à Make.com** : publication automatisée si un webhook Make est configuré.
 
 ---
 
@@ -160,13 +179,14 @@ Rédige et traduit les textes.
 1. Coller le **Texte Source**, choisir le **Type de contenu**.
 2. Boutons : **✨ Poétiser** (embellir), **🌍 Traduire** (FR/EN/AR), **✂️ Condenser** (raccourcir). *(IA)*
 3. Les **Versions Trilingues** s'affichent → **📚 Archiver Trilingue**.
+4. Depuis les Versions Trilingues : **📝 Corriger (A8)** envoie le texte au Correcteur ; **📖 Envoyer au Livre** l'insère directement dans une page du Livre Vivant.
 
 **📝 Générateur de Page Livre *(IA)* :**
 1. Choisir le **Type de page** et le **Site concerné** (optionnel).
 2. Ajouter des **Notes complémentaires**.
 3. **📝 Générer le texte**.
 
-**🎒 Notes Terrain → Prose Publiable *(IA)* :** coller ses **notes brutes**, choisir un **registre**, cliquer **🎒 Transformer les notes**.
+**🎒 Notes Terrain → Prose Publiable *(IA)* :** tes **notes brutes sont obligatoires** (l'IA enrichit ton regard, elle ne le remplace pas). Tu peux joindre une **photo** (📷 prendre une photo ou 🖼️ galerie). Choisir un **registre** → **🎒 Transformer mes notes**.
 
 **🔀 Reformulateur 4 Registres *(IA)* :** un texte → 4 versions de ton différentes.
 
@@ -184,7 +204,9 @@ Valide la qualité des textes.
 1. Coller le **Texte à Valider** + le **Contexte éditorial**.
 2. **🔍 Analyser (local)** : vérification immédiate sans IA.
 3. **✨ Claude Corrige** *(IA)* : correction approfondie.
-4. Le **Rapport de Conformité** s'affiche → **✅ Accepter**.
+4. **🌍 Corriger FR + EN + AR** *(IA)* : corrige et harmonise les **trois langues** d'un coup.
+5. Le **Rapport de Conformité** s'affiche → **✅ Accepter**.
+6. **📖 Envoyer au Livre Vivant** : place le texte corrigé directement dans une page du livre.
 
 **🎨 Cohérence Éditoriale *(IA)* :** vérifie l'homogénéité de style entre textes.
 
@@ -360,6 +382,17 @@ Surveille en continu.
 - **Log Risk Manager** : historique des analyses.
 
 > Cet agent travaille surtout **tout seul** : il suffit de tenir à jour les jours/sites faits (Coordination) et les dépenses (Financier) pour qu'il calcule et alerte.
+
+---
+
+## ⬡ CARTE — Localisation des sites
+
+Onglet **Carte** (icône ⬡, ou bouton **Carte** en bas).
+
+- Bascule **Satellite / Plan / Satellite + noms** (sélecteur en haut à droite de la carte).
+- Chaque site est un point : cliquer dessus affiche son **nom**, sa **zone** et ses **coordonnées GPS**. Les sites offshore (Sangomar, GTA) sont signalés à part.
+- Bouton **GPS** : suit ta position en temps réel et indique le **site le plus proche** et la distance.
+- Les zones déjà consultées restent visibles **hors-ligne** sur le terrain.
 
 ---
 
