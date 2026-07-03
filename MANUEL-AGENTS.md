@@ -18,6 +18,18 @@ Ensuite, un **code d'accès à 4 chiffres** ouvre ton espace selon ton **rôle**
 
 > La **Direction** définit et communique ces codes : Superviseur → **🔐 Gestion des Accès** → modifier chaque code → **💾 Enregistrer**. Bouton **🔒 Changer d'accès** pour reverrouiller et changer de rôle.
 
+**📱 Installation d'un nouvel appareil (procédure obligatoire)**
+
+Les codes d'accès sont stockés **localement sur chaque appareil** (jamais dans le cloud, par sécurité). Un téléphone jamais configuré garde donc les **codes par défaut** — il faut les remplacer **avant** de confier l'appareil :
+
+1. Ouvrir l'app sur le nouvel appareil et se connecter (compte équipe).
+2. **La Direction** entre son code → Superviseur → **🔐 Gestion des Accès**.
+3. Saisir **les 7 nouveaux codes** (les mêmes que sur les autres appareils) → **💾 Enregistrer**.
+4. **🔒 Changer d'accès** → laisser le membre entrer **son** code de rôle.
+5. Le **PIN Direction reste secret** (coporteurs uniquement) : c'est lui qui autorise les suppressions en finance.
+
+> ⚠️ Sans cette étape, l'appareil accepte les codes par défaut (9999, 1111…) et le verrou finance peut être contourné avec `9999`. **Nouvel appareil = Gestion des Accès d'abord.**
+
 ---
 
 ## 01 · SUPERVISEUR — Tableau de bord
