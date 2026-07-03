@@ -9,13 +9,15 @@
  *   CRON_SECRET (optionnel)     — si défini, sécurise l'endpoint
  */
 export default async function handler(req, res) {
-  // Sécurité : si CRON_SECRET est défini, exiger l'en-tête d'autorisation Vercel
+  // SÉCURITÉ : CRON_SECRET désormais OBLIGATOIRE — sans lui, l'endpoint
+  // refuse tout appel (sinon n'importe qui pourrait spammer le groupe).
   const secret = process.env.CRON_SECRET;
-  if (secret) {
-    const auth = req.headers.authorization || '';
-    if (auth !== `Bearer ${secret}`) {
-      return res.status(401).json({ error: 'UNAUTHORIZED' });
-    }
+  if (!secret) {
+    return res.status(500).json({ error: 'NO_CRON_SECRET', hint: 'Définir CRON_SECRET dans Vercel → Settings → Environment Variables' });
+  }
+  const auth = req.headers.authorization || '';
+  if (auth !== `Bearer ${secret}`) {
+    return res.status(401).json({ error: 'UNAUTHORIZED' });
   }
 
   const token = process.env.TELEGRAM_BOT_TOKEN;

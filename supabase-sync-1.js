@@ -278,10 +278,12 @@
             daysDone:       stateData.daysDone        ?? 0,
             sitesDone:      stateData.sitesDone       ?? 0,
             printRate:      stateData.printRate       ?? 150,
-            a14ApiKey:      stateData.a14ApiKey       ?? null,
-            vault:          stateData.vault           ?? null,
-            vaultPin:       stateData.vaultPin        ?? null,
-            rolePins:       stateData.rolePins        ?? null,
+            // SÉCURITÉ : plus AUCUN secret dans le cloud.
+            // vault, vaultPin, rolePins, a14ApiKey restent en local (IndexedDB).
+            a14ApiKey:      null,
+            vault:          null,
+            vaultPin:       null,
+            rolePins:       null,
             schema_version: SCHEMA_VERSION
           }
           // updated_at : NE PAS passer — généré par now() Supabase RLS

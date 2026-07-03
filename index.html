@@ -4721,6 +4721,25 @@ window.escapeHtml = escapeHtml;
 window.escapeAttr = escapeAttr;
 
 /* ============================================================
+   SÉCURITÉ — apiFetch : fetch vers /api/* avec le jeton Supabase
+   Les endpoints serverless refusent désormais les requêtes anonymes.
+   ============================================================ */
+async function apiFetch(url, options = {}) {
+  const headers = { ...(options.headers || {}) };
+  try {
+    const client = (typeof _getAuthClient === 'function') ? _getAuthClient() : null;
+    if (client) {
+      const { data } = await client.auth.getSession();
+      if (data && data.session && data.session.access_token) {
+        headers['Authorization'] = 'Bearer ' + data.session.access_token;
+      }
+    }
+  } catch (e) { /* sans session : le serveur répondra 401 */ }
+  return fetch(url, { ...options, headers });
+}
+window.apiFetch = apiFetch;
+
+/* ============================================================
    INDEXEDDB — Isolated readwrite transactions
    ============================================================ */
 let db = null;
@@ -4799,7 +4818,15 @@ function saveStateToDB() {
 
   // Sync cloud non-bloquant — guard complet
   if (typeof SupaSync !== 'undefined' && typeof SupaSync.syncState === 'function') {
-    SupaSync.syncState({ ...state, a14ApiKey: a14State.apiKey }).catch(e => console.warn('[Sync] syncState:', e.message));
+    SupaSync.syncState({
+      spent:     state.spent,
+      catSpend:  state.catSpend,
+      daysDone:  state.daysDone,
+      sitesDone: state.sitesDone,
+      printRate: state.printRate,
+    }).catch(e => console.warn('[Sync] syncState:', e.message));
+    // SÉCURITÉ : vault, vaultPin, rolePins et clés API restent LOCAUX (IndexedDB).
+    // Ils ne transitent plus jamais par Supabase.
   }
 
   // Détection de problèmes → proposition d'alerte équipe Telegram (débouncée)
@@ -4884,18 +4911,33 @@ window.addEventListener('offline', updateOnlineStatus);
 let webhookProcessing = false;
 let webhookFlags = {};
 
+/* ============================================================
+   TELEGRAM — désormais 100% côté serveur (/api/telegram).
+   Le token du bot n'est plus jamais présent dans le navigateur.
+   Le client ne connaît que des cibles logiques : 'team' / 'direction'.
+   ============================================================ */
+const tgServerStatus = { loaded: false, team: false, direction: false };
+async function refreshTelegramStatus() {
+  try {
+    const r = await fetch('/api/telegram');
+    if (!r.ok) return;
+    const d = await r.json();
+    tgServerStatus.loaded    = true;
+    tgServerStatus.team      = !!d.team;
+    tgServerStatus.direction = !!d.direction;
+  } catch (e) { /* endpoint absent ou hors-ligne : Telegram indisponible */ }
+}
+refreshTelegramStatus();
+
 function getTelegramConfig() {
-  const keys = state.vault.telegram || [];
-  const token = (keys.find(k => k.name && k.name.toLowerCase().includes('token')) || {}).value || null;
-  // Chat ID Direction = clé dont le nom contient "direction" (groupe des 2 co-porteurs)
-  const chatIdDirection = (keys.find(k => k.name && k.name.toLowerCase().includes('direction')) || {}).value || null;
-  // Chat ID Équipe = clé "chat"/"id" qui n'est PAS la direction
-  const chatId = (keys.find(k => {
-    if (!k.name) return false;
-    const n = k.name.toLowerCase();
-    return (n.includes('chat') || n.includes('id')) && !n.includes('direction');
-  }) || {}).value || null;
-  return { token, chatId, chatIdDirection };
+  // Compatibilité avec les appelants existants : token = simple indicateur
+  // de disponibilité serveur ; chatId/chatIdDirection = cibles logiques.
+  const anyTarget = tgServerStatus.team || tgServerStatus.direction;
+  return {
+    token:           anyTarget ? 'server' : null,
+    chatId:          tgServerStatus.team ? 'team' : null,
+    chatIdDirection: tgServerStatus.direction ? 'direction' : null,
+  };
 }
 /* kept for Make.com webhook fallback — reads from telegram vault now */
 function getWebhookUrl() {
@@ -4976,9 +5018,9 @@ async function triggerTelegramBroadcast(evt, type) {
   if (!msg) { showToast('Saisir un message avant d\'envoyer', 'warn'); return; }
   if (msg.length > 4096) { showToast('Message trop long (4096 caractères max Telegram)', 'warn'); return; }
 
-  const { token, chatId } = getTelegramConfig();
-  if (!token || !chatId) {
-    showToast('⚙️ Telegram non configuré — Coffre-fort → Telegram → ajouter Bot Token + Chat ID', 'warn');
+  const { chatId } = getTelegramConfig();
+  if (!chatId) {
+    showToast('⚙️ Telegram non configuré côté serveur — variables TELEGRAM_* sur Vercel', 'warn');
     return;
   }
 
@@ -4989,16 +5031,9 @@ async function triggerTelegramBroadcast(evt, type) {
     : '📣 *MISSION SÉNÉGAL — Message Équipe*\n\n';
 
   const text = prefix + msg;
-  const tgUrl = `https://api.telegram.org/bot${token}/sendMessage`;
 
   try {
-    const res = await fetch(tgUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown' })
-    });
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.description || `Telegram error ${res.status}`);
+    await sendTelegramTo('team', text, 'Markdown');
     addNotification({ type: type === 'emergency' ? 'critical' : 'info',
       text: `📣 Telegram (${type}) : "${msg.substring(0, 50)}${msg.length > 50 ? '…' : ''}"`,
       time: now() });
@@ -5972,7 +6007,7 @@ Réponds UNIQUEMENT avec ce JSON valide, sans markdown ni backticks :
 }`;
 
   try {
-    const res = await fetch('/api/claude', {
+    const res = await apiFetch('/api/claude', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -6235,15 +6270,14 @@ function showToast(msg, type='info') {
    Le superviseur propose d'envoyer une alerte au groupe quand un
    problème est détecté. Rien ne part sans confirmation de l'utilisateur.
    ============================================================ */
-async function sendTelegramTo(chatId, text) {
-  const { token } = getTelegramConfig();
-  if (!token || !chatId) throw new Error('Telegram non configuré');
-  const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+async function sendTelegramTo(target, text, parseMode) {
+  if (!target) throw new Error('Telegram non configuré');
+  const res = await apiFetch('/api/telegram', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text })
+    body: JSON.stringify({ target, text, parse_mode: parseMode || undefined })
   });
-  const data = await res.json();
-  if (!data.ok) throw new Error(data.description || `Telegram error ${res.status}`);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.ok) throw new Error(data.error || data.description || `Telegram error ${res.status}`);
   return data;
 }
 
@@ -6544,28 +6578,10 @@ async function init() {
     try {
       const cloud = await SupaSync.fetchState();
       if (cloud) {
-        if (!a14State.apiKey && typeof cloud.a14ApiKey === 'string' && cloud.a14ApiKey) {
-          a14State.apiKey = cloud.a14ApiKey;
-          saveStateToDB();
-          showToast('🔑 Clé météo restaurée depuis le cloud', 'info');
-        }
-        // Coffre-Fort : restaure si le vault local est vide (après effacement / nouvel appareil)
-        const localKeys = Object.values(state.vault || {}).reduce((n, arr) => n + (Array.isArray(arr) ? arr.length : 0), 0);
-        const cloudKeys = cloud.vault ? Object.values(cloud.vault).reduce((n, arr) => n + (Array.isArray(arr) ? arr.length : 0), 0) : 0;
-        if (localKeys === 0 && cloudKeys > 0) {
-          state.vault = { ...state.vault, ...cloud.vault };
-          saveStateToDB();
-          if (typeof renderVaultKeys === 'function') renderVaultKeys();
-          showToast('🔐 Coffre-Fort restauré depuis le cloud', 'info');
-        }
-        // Codes d'accès par rôle : restaure si aucun code local
-        if (cloud.rolePins && typeof cloud.rolePins === 'object' && (!state.rolePins || Object.keys(state.rolePins).length === 0)) {
-          state.rolePins = cloud.rolePins;
-          saveStateToDB();
-        }
-        // PIN du Coffre-Fort : adopte le PIN cloud si le local est encore au défaut (1234)
-        if (typeof cloud.vaultPin === 'string' && /^\d{4}$/.test(cloud.vaultPin) && cloud.vaultPin !== '1234' && state.vaultPin === '1234') {
-          state.vaultPin = cloud.vaultPin;
+        // SÉCURITÉ : le cloud ne contient plus de secrets (vault/PIN/clés API).
+        // Seules les métriques de mission sont restaurées ici si besoin.
+        if (typeof cloud.printRate === 'number' && cloud.printRate && !state.printRate) {
+          state.printRate = cloud.printRate;
           saveStateToDB();
         }
       }
@@ -7113,7 +7129,7 @@ Règles : Sois proactif et audacieux. Si une directive nuit à l'esthétique pre
 
 async function a6CallClaude(systemPrompt, contentArr, maxTok) {
   const fullSystem = A6_DA_IDENTITY + '\n\n' + systemPrompt;
-  const res = await fetch('/api/claude', {
+  const res = await apiFetch('/api/claude', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: maxTok || 800, system: fullSystem, messages: [{ role: 'user', content: contentArr }] })
@@ -7980,7 +7996,7 @@ const A7_WRITER_IDENTITY = `Tu es rédacteur et traducteur en chef de la mission
 async function a7CallClaude(systemPrompt, userContent, maxTok) {
   // userContent : chaîne (texte) OU tableau de blocs (image + texte) pour Claude Vision
   const content = Array.isArray(userContent) ? userContent : [{ type:'text', text:userContent }];
-  const res = await fetch('/api/claude', {
+  const res = await apiFetch('/api/claude', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens: maxTok||800, system: A7_WRITER_IDENTITY + '\n\n' + systemPrompt, messages:[{ role:'user', content }] })
@@ -8545,7 +8561,7 @@ function a8RenderHistory() {
 const A8_EDITOR_IDENTITY = `Tu es correcteur éditorial senior de la mission documentaire SÉNÉGAL V3 : livre collector luxe 224 pages. Tu corriges avec exigence de maison d'édition haut-de-gamme (NatGeo, Actes Sud, La Martinière). Tu détectes le ton IA, les tournures mortes, les anglicismes, les clichés. Tu proposes toujours une version réécrite, pas seulement une liste de remarques.`;
 
 async function a8CallClaude(sys, txt, tok) {
-  const res = await fetch('/api/claude', {
+  const res = await apiFetch('/api/claude', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens: tok||900, system: A8_EDITOR_IDENTITY + '\n\n' + sys, messages:[{ role:'user', content:[{ type:'text', text:txt }] }] })
@@ -8685,7 +8701,7 @@ const a9State = { sponsors: [], dossierOutput: null };
 const A9_COMMERCIAL_IDENTITY = `Tu es le responsable du développement et du mécénat de la Mission Documentaire SÉNÉGAL V3 — le plus grand livre photographique jamais réalisé sur le Sénégal. Tu rédiges des dossiers de financement percutants, crédibles et adaptés à chaque type de bailleur. Registre professionnel, concret, jamais grandiloquent. Pas de listes à puces dans les paragraphes de présentation (les puces sont autorisées uniquement pour les contreparties et modalités).`;
 
 async function a9CallClaude(sys, txt, tok) {
-  const res = await fetch('/api/claude', {
+  const res = await apiFetch('/api/claude', {
     method: 'POST', headers: {'Content-Type':'application/json'},
     body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens: tok||1400, system: A9_COMMERCIAL_IDENTITY + '\n\n' + sys, messages:[{role:'user',content:[{type:'text',text:txt}]}] })
   });
@@ -9186,7 +9202,7 @@ function initAgent10() {
 const A10_LEGAL_IDENTITY = `Tu es juriste expert en droit de l'image, droit de la propriété intellectuelle et droit administratif sénégalais. Tu rédiges pour la Mission Documentaire SÉNÉGAL V3 — livre collector 224 pages, 500 exemplaires numérotés. Tes documents sont professionnels, juridiquement solides et adaptés au contexte sénégalais. Tu maîtrises le français juridique et l'arabe standard lorsque requis.`;
 
 async function a10CallClaude(sys, txt, tok) {
-  const res = await fetch('/api/claude', {
+  const res = await apiFetch('/api/claude', {
     method: 'POST', headers: {'Content-Type':'application/json'},
     body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens: tok||900, system: A10_LEGAL_IDENTITY + '\n\n' + sys, messages:[{role:'user',content:[{type:'text',text:txt}]}] })
   });
@@ -9504,7 +9520,7 @@ function initAgent11() {
 const A11_LOGISTICS_IDENTITY = `Tu es coordinateur logistique expert en missions photographiques documentaires terrain. Tu maîtrises les équipements photo/vidéo professionnels, les contraintes terrain au Sénégal (chaleur, humidité, sable, lumière tropicale), et l'optimisation de la couverture photographique. Mission : SÉNÉGAL V3, 32 sites, 54 jours.`;
 
 async function a11CallClaude(sys, txt, tok) {
-  const res = await fetch('/api/claude', {
+  const res = await apiFetch('/api/claude', {
     method: 'POST', headers: {'Content-Type':'application/json'},
     body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens: tok||800, system: A11_LOGISTICS_IDENTITY + '\n\n' + sys, messages:[{role:'user',content:[{type:'text',text:txt}]}] })
   });
@@ -9658,7 +9674,7 @@ const A12_IDENTITY = `Tu es expert en distribution de livres d'art et d'édition
 
 async function a12CallClaude(sys, txt, tok) {
   try {
-    const r = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:tok||800, system:sys, messages:[{role:'user',content:txt}] }) });
+    const r = await apiFetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:tok||800, system:sys, messages:[{role:'user',content:txt}] }) });
     const d = await r.json();
     return d.content?.[0]?.text || '';
   } catch(e) { return ''; }
@@ -10236,7 +10252,7 @@ function a13UpdateResilienceUI(active, badges) {
 
 async function a13CallClaude(sys, txt, tok) {
   try {
-    const r = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:tok||800, system:sys, messages:[{role:'user',content:txt}] }) });
+    const r = await apiFetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:tok||800, system:sys, messages:[{role:'user',content:txt}] }) });
     const d = await r.json();
     return d.content?.[0]?.text || '';
   } catch(e) { return ''; }
@@ -10739,7 +10755,7 @@ function a15AddDevis(evt) {
 
 async function a15CallClaude(sys, txt, tok) {
   try {
-    const r = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:tok||800, system:sys, messages:[{role:'user',content:txt}] }) });
+    const r = await apiFetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:tok||800, system:sys, messages:[{role:'user',content:txt}] }) });
     const d = await r.json(); return d.content?.[0]?.text || '';
   } catch(e) { return ''; }
 }
@@ -10767,7 +10783,7 @@ async function a15ReadDevisPDF(input) {
       ? { type:'document', source:{ type:'base64', media_type:'application/pdf', data:base64 } }
       : { type:'image',    source:{ type:'base64', media_type:mt, data:base64 } };
     try {
-      const r = await fetch('/api/claude', {
+      const r = await apiFetch('/api/claude', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
@@ -10959,7 +10975,7 @@ function a16UpdateDays(val) { a16State.daysLeft = parseInt(val) || 0; a16UpdateJ
 /* --- Claude helpers --- */
 async function a16CallClaude(sys, txt, tok) {
   try {
-    const r = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:tok||700, system:sys, messages:[{role:'user',content:txt}] }) });
+    const r = await apiFetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:tok||700, system:sys, messages:[{role:'user',content:txt}] }) });
     const d = await r.json(); return d.content?.[0]?.text || '';
   } catch(e) { return ''; }
 }
@@ -11457,25 +11473,7 @@ function _onSessionReady(session) {
           if (d.daysDone    !== undefined && d.daysDone    !== state.daysDone)    { state.daysDone    = d.daysDone;    changed = true; }
           if (d.sitesDone   !== undefined && d.sitesDone   !== state.sitesDone)   { state.sitesDone   = d.sitesDone;   changed = true; }
           if (d.catSpend    !== undefined)                                         { state.catSpend    = d.catSpend;    changed = true; }
-          if (typeof d.a14ApiKey === 'string' && d.a14ApiKey && d.a14ApiKey !== a14State.apiKey) {
-            a14State.apiKey = d.a14ApiKey;
-            saveStateToDB();
-            if (typeof initAgent14 === 'function') initAgent14();
-          }
-          // Coffre-Fort : adopte le vault cloud si le local est encore vide
-          const localKeys = Object.values(state.vault || {}).reduce((n, arr) => n + (Array.isArray(arr) ? arr.length : 0), 0);
-          const cloudKeys = d.vault ? Object.values(d.vault).reduce((n, arr) => n + (Array.isArray(arr) ? arr.length : 0), 0) : 0;
-          if (localKeys === 0 && cloudKeys > 0) {
-            state.vault = { ...state.vault, ...d.vault };
-            saveStateToDB();
-            if (typeof renderVaultKeys === 'function') renderVaultKeys();
-            showToast('🔐 Coffre-Fort synchronisé depuis le cloud', 'info');
-          }
-          // PIN du Coffre-Fort : adopte le PIN cloud si le local est encore au défaut
-          if (typeof d.vaultPin === 'string' && /^\d{4}$/.test(d.vaultPin) && d.vaultPin !== '1234' && state.vaultPin === '1234') {
-            state.vaultPin = d.vaultPin;
-            saveStateToDB();
-          }
+          // SÉCURITÉ : les secrets (vault/PIN/clés API) ne circulent plus via le cloud.
           if (changed) {
             updateFinancialUI();
             updateCOORing();

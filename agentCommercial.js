@@ -117,7 +117,7 @@ Réponds UNIQUEMENT en JSON valide sans markdown :
 {"analyse":"2 phrases","suggestions":[{"nom":"...","type":"prive|mtac|particulier","montant":5000000,"statut":"prospect","contreparties":"..."}]}`;
 
   try {
-    const response = await fetch('/api/claude', {
+    const response = await (window.apiFetch || fetch)('/api/claude', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:600, messages:[{ role:'user', content:prompt }] })

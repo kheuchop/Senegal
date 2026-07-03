@@ -2,6 +2,8 @@
  * api/claude.js — Proxy serverless Vercel pour l'API Anthropic
  * La clé ANTHROPIC_API_KEY reste côté serveur (jamais exposée au client).
  */
+import { verifySupabaseUser } from './_auth.js';
+
 const ALLOWED_ORIGINS = [
   'https://www.senegalthr.com',
   'https://senegalthr.com',
@@ -35,11 +37,18 @@ export default async function handler(req, res) {
   }
   res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'METHOD_NOT_ALLOWED' });
+  }
+
+  // SÉCURITÉ : session Supabase obligatoire — bloque l'usage anonyme
+  // de la clé Anthropic (curl, bots, tiers) et protège les crédits API.
+  const user = await verifySupabaseUser(req);
+  if (!user) {
+    return res.status(401).json({ error: 'UNAUTHORIZED', hint: 'Connectez-vous dans l\'application avant d\'utiliser les agents IA' });
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;

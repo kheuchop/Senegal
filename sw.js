@@ -7,7 +7,7 @@
  *  - Tuiles OSM : cache opportuniste plafonné (les zones visitées restent visibles hors-ligne)
  *  - /api/, Supabase, Make : réseau uniquement (jamais de cache — la file SupaSync gère l'offline)
  */
-const VERSION = 'mission-ctrl-v45';
+const VERSION = 'mission-ctrl-v46';
 const SHELL_CACHE = `shell-${VERSION}`;
 const RUNTIME_CACHE = `runtime-${VERSION}`;
 const TILE_CACHE = `tiles-${VERSION}`;
@@ -63,8 +63,12 @@ self.addEventListener('fetch', (event) => {
     url.hostname.endsWith('.make.com')
   ) return;
 
-  // Tuiles OpenStreetMap : cache opportuniste plafonné
-  if (url.hostname.endsWith('.tile.openstreetmap.org')) {
+  // Tuiles cartographiques (plan OSM + satellite Esri) : cache opportuniste plafonné
+  // — la carte satellite reste elle aussi consultable hors-ligne sur le terrain
+  if (
+    url.hostname.endsWith('.tile.openstreetmap.org') ||
+    url.hostname.endsWith('arcgisonline.com')
+  ) {
     event.respondWith(tileStrategy(req));
     return;
   }
