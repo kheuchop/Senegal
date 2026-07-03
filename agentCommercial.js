@@ -70,7 +70,7 @@ async function a9LaunchSourcing(btn) {
 
 /* MODE B — Algorithme local */
 function a9SourcingLocal(statusEl, resultsEl) {
-  statusEl.innerHTML = '<span style="color:var(--cyan)">🔍 Scan base locale en cours…</span>';
+  statusEl.innerHTML = '<span style="color:var(--gold)">🔍 Scan base locale en cours…</span>';
   const existants = a9State.sponsors.map(s => s.name.toLowerCase());
   const budgetRestant = MISSION.budget - (state.spent || 0);
   const disponibles = A9_VIVIER.filter(p =>
@@ -101,7 +101,7 @@ function a9SourcingLocal(statusEl, resultsEl) {
 async function a9SourcingAvecClaude(statusEl, resultsEl) {
   const existants = a9State.sponsors.map(s => s.name);
   const budgetRestant = MISSION.budget - (state.spent || 0);
-  statusEl.innerHTML = '<span style="color:var(--cyan)">🧠 Claude analyse le marché…</span>';
+  statusEl.innerHTML = '<span style="color:var(--gold)">🧠 Claude analyse le marché…</span>';
   const prompt = `Tu es un expert en mécénat culturel et sponsoring pour l'Afrique de l'Ouest.
 
 CONTEXTE :
@@ -157,7 +157,7 @@ function a9RenderSourcingResults(data, resultsEl, statusEl) {
     ${data.suggestions.map(s => `
       <div class="sponsor-card" style="margin-bottom:10px;padding:14px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <span style="font-weight:700;color:var(--cyan);font-size:0.85rem">${esc(s.nom)}</span>
+          <span style="font-weight:700;color:var(--gold);font-size:0.85rem">${esc(s.nom)}</span>
           <span style="font-size:0.6rem;background:var(--bg-deep);padding:2px 6px;border-radius:4px;color:var(--text-muted)">${s.type === 'mtac' ? '🏛 MTAC' : s.type === 'particulier' ? '👤 Particulier' : '🏢 Privé'}</span>
         </div>
         <div style="font-size:1.1rem;font-weight:800;color:var(--emerald);margin-bottom:4px">${Number(s.montant).toLocaleString('fr-FR')} FCFA</div>
