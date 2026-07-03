@@ -7,7 +7,7 @@
  *  - Tuiles OSM : cache opportuniste plafonné (les zones visitées restent visibles hors-ligne)
  *  - /api/, Supabase, Make : réseau uniquement (jamais de cache — la file SupaSync gère l'offline)
  */
-const VERSION = 'mission-ctrl-v53';
+const VERSION = 'mission-ctrl-v54';
 const SHELL_CACHE = `shell-${VERSION}`;
 const RUNTIME_CACHE = `runtime-${VERSION}`;
 const TILE_CACHE = `tiles-${VERSION}`;
@@ -98,9 +98,11 @@ self.addEventListener('fetch', (event) => {
       caches.match(req).then((cached) => {
         if (cached) return cached;
         return fetch(req).then((res) => {
-          if (res.ok) {
+          // status 200 uniquement : les réponses partielles 206 (vidéo streamée
+          // par plages) ne sont pas acceptées par le Cache API
+          if (res.status === 200) {
             const copy = res.clone();
-            caches.open(RUNTIME_CACHE).then((c) => c.put(req, copy));
+            caches.open(RUNTIME_CACHE).then((c) => c.put(req, copy)).catch(() => {});
           }
           return res;
         });
