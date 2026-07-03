@@ -37,6 +37,7 @@ Les codes d'accès sont stockés **localement sur chaque appareil** (jamais dans
 C'est l'écran d'accueil, la vue d'ensemble.
 
 - **Avancement Mission** : anneau de progression + indicateurs (sites, jours, km).
+- **Barre DISPO** (bandeau du haut) : le **cash réellement disponible** (encaissé − dépensé, voir Financier/Trésorerie) — visible sur tous les écrans.
 - **Check-list du Jour** : le rituel quotidien, **filtré selon ton poste** (chacun ne voit que ses tâches ; la Direction les voit toutes). Cliquer sur une ligne pour la cocher. Se réinitialise chaque jour.
 - **File d'Approbations** : valider ou refuser les décisions en attente.
 - **Notifications Critiques** : les alertes importantes.
@@ -277,6 +278,8 @@ Trouve et suit les financements.
 
 **Pipeline Commercial :** vue prospect → signé → versé.
 
+> 💰 **Quand un sponsor passe à « versé »** : saisis aussi le montant dans **Financier → Trésorerie** (➕ Ajouter l'encaissement, statut ✓ Reçu). C'est **là** que l'argent compte dans le Disponible — le pipeline ici ne suit que la relation commerciale.
+
 **🤖 IA Sourcing :** **⚡ Lancer le Radar** → analyse le portefeuille et suggère des pistes.
 
 **Générateur Dossier d'Impact *(IA, avec repli)* :**
@@ -414,6 +417,8 @@ Outils numériques du livre.
 
 **Objectif de Campagne :** définir l'**Objectif (FCFA)** et la **Durée restante**. Une jauge + une **projection** indiquent si l'objectif sera atteint au rythme actuel.
 
+> 💰 L'argent **réellement reçu** de la campagne (virements Wave / Orange Money arrivés sur le compte) se saisit aussi dans **Financier → Trésorerie** (encaissement « Souscriptions mécènes », ✓ Reçu) pour compter dans le Disponible.
+
 **Message Diaspora *(IA)* :** Réseau cible + Anecdote terrain → **✦ Générer avec Claude** (message adapté au réseau).
 **Email de Remerciement *(IA)* :** choisir un contributeur → **💌 Générer le remerciement** (personnalisé).
 **Diagnostic Campagne *(IA)* :** **✦ Analyser avec Claude** → état de santé + actions prioritaires.
@@ -453,4 +458,4 @@ Onglet **Carte** (icône ⬡, ou bouton **Carte** en bas).
 - Tout se sauvegarde automatiquement, même hors-ligne.
 - Les fonctions *(IA)* ont besoin de la clé Claude active ; les autres marchent toujours.
 
-*Manuel d'utilisation — Mission CTRL Sénégal V3.*
+*Manuel d'utilisation — Mission CTRL Sénégal V3 · mis à jour juillet 2026.*
