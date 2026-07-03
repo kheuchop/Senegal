@@ -88,6 +88,29 @@ Le **budget global**, la **répartition par catégorie** et la **dérive** se re
 
 > ⚠️ Saisir chaque dépense le jour même pour garder un budget juste.
 
+**Trésorerie — Cash-flow** *(le vrai suivi de l'argent)*
+
+Les 100 M ne sont **pas disponibles d'un coup** : l'argent arrive par tranches (sponsors, subventions, dons). Cette carte suit le **cash réel**, pas seulement l'enveloppe théorique.
+
+Trois indicateurs en haut :
+- **Encaissé** : la somme réellement reçue.
+- **Disponible** : Encaissé − Dépensé = ce que tu peux dépenser **maintenant**.
+- **À encaisser** : les tranches que tu attends (promises, pas encore versées).
+
+**Ajouter un encaissement** (à chaque confirmation ou versement) :
+1. Clique une **puce source** (Sponsoring, MCAT, Mécènes, International, B2B…) pour pré-remplir le nom — ou tape ta propre source.
+2. Saisis le **Montant réel**, choisis le **mois**, puis **✓ Reçu** (compte dans le Disponible) ou **⏳ Attendu** (promis mais pas encore versé).
+3. **➕ Ajouter l'encaissement**. Le ✕ supprime une ligne.
+
+> 🔑 Rien n'est pré-rempli : les montants du plan de financement sont des **hypothèses** (sponsors et subventions non confirmés). On ne saisit que le **réel**.
+
+**Alertes automatiques :**
+- 🔴 **Découvert** : tes dépenses dépassent l'encaissé.
+- 🩸 **Trésorerie critique** : disponible sous 2 M → réunir le comité de crise.
+- 🚦 **Seuil terrain** : les zones B à F ne se débloquent qu'à partir de **15 M encaissés**.
+
+Tout en bas, la **Projection du bilan (M1→M12)** est affichée en lecture seule (repère du plan et du « corridor critique » de M10) — mais ces montants **ne comptent pas** dans le Disponible.
+
 ---
 
 ## 05 · COORDINATION TERRAIN — Chronomètre et planning
