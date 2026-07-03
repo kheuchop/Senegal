@@ -90,6 +90,8 @@ Le **budget global**, la **répartition par catégorie** et la **dérive** se re
 - **Supprimer une dépense** : bouton **✕** sur la ligne dans l'Historique → le budget est recalculé.
 - **🗑 Réinitialiser la finance** : efface toutes les dépenses (double confirmation) — le budget repart de 100 M.
 
+> 🔐 **Verrou Direction** : supprimer une dépense, supprimer un encaissement ou réinitialiser la finance exige le **PIN Direction**. Le rôle Finance peut saisir librement, mais pas effacer seul.
+
 > ⚠️ Saisir chaque dépense le jour même pour garder un budget juste.
 
 **Trésorerie — Cash-flow** *(le vrai suivi de l'argent)*

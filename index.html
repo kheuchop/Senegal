@@ -6391,10 +6391,22 @@ function recomputeFinanceFromTransactions() {
     if (state.catSpend[tx.cat] !== undefined) state.catSpend[tx.cat] += tx.amount || 0;
   });
 }
+/* Verrou Direction : les actions destructrices de la finance exigent le PIN
+   Direction — le rôle Finance peut saisir, mais pas supprimer/réinitialiser seul. */
+function requireDirectionPin(action) {
+  const pin = prompt('🔐 PIN Direction requis — ' + action);
+  if (pin === null) return false; // annulé
+  if (String(pin).trim() !== getRolePins().direction) {
+    showToast('⛔ PIN Direction incorrect — action refusée', 'error');
+    return false;
+  }
+  return true;
+}
 function deleteTransaction(id) {
   const tx = state.transactions.find(t => String(t.id) === String(id));
   if (!tx) return;
   if (!confirm('Supprimer la dépense « ' + tx.description + ' » (' + fmtFCFA(tx.amount) + ') ?\nLe budget sera recalculé.')) return;
+  if (!requireDirectionPin('supprimer cette dépense')) return;
   state.transactions = state.transactions.filter(t => String(t.id) !== String(id));
   recomputeFinanceFromTransactions();
   saveStateToDB();
@@ -6409,6 +6421,7 @@ function resetFinance() {
   if (state.transactions.length === 0 && state.spent === 0) { showToast('Finance déjà à zéro', 'info'); return; }
   if (!confirm('⚠️ RÉINITIALISER LA FINANCE ?\n\nToutes les dépenses (' + state.transactions.length + ' transaction(s), ' + fmtFCFA(state.spent) + ') seront effacées.\nLe budget repartira de ' + fmtFCFA(state.budget) + '.')) return;
   if (!confirm('Dernière confirmation : tout effacer ?')) return;
+  if (!requireDirectionPin('réinitialiser toute la finance')) return;
   const ids = state.transactions.map(t => String(t.id));
   state.transactions = [];
   recomputeFinanceFromTransactions();
@@ -6477,6 +6490,7 @@ function treasuryDeleteEncaissement(id) {
   const e = state.treasury.encaissements.find(x => x.id === id);
   if (!e) return;
   if (!confirm('Supprimer l\'encaissement « ' + e.source + ' » (' + fmtFCFA(e.montant) + ') ?')) return;
+  if (!requireDirectionPin('supprimer cet encaissement')) return;
   state.treasury.encaissements = state.treasury.encaissements.filter(x => x.id !== id);
   saveStateToDB();
   updateFinancialUI();
