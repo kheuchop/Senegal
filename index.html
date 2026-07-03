@@ -874,20 +874,6 @@ textarea.input-field { resize: vertical; min-height: 80px; }
   background: var(--amber);
   animation: blink 0.5s linear infinite;
 }
-#agent-financier .print-rate-row {
-  display: flex; align-items: center; gap: 10px;
-}
-#agent-financier .print-rate-label {
-  font-family: var(--font-mono); font-size: 0.55rem; color: var(--text-muted);
-  flex: 1;
-}
-#agent-financier .print-rate-input {
-  width: 120px; text-align: right;
-  background: var(--bg-input); border: 1px solid var(--border);
-  border-radius: var(--r-xs); padding: 6px 10px;
-  font-family: var(--font-mono); font-size: 0.65rem;
-  font-variant-numeric: tabular-nums;
-}
 @keyframes fadeInUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
 
 /* ============================================================
@@ -2702,13 +2688,34 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 
         <!-- Printer Rate -->
         <div class="card">
-          <div class="card-title">Tarif Imprimeur</div>
-          <div class="print-rate-row">
-            <div class="print-rate-label">Coût/page (FCFA)</div>
-            <input type="number" class="input-field print-rate-input" id="print-rate-input" value="150" min="1" autocomplete="off" oninput="updatePrintRate(this.value)">
+          <div class="card-title">Tarif Imprimeur — ARTRON (devis 26XT479)</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <label class="input-label">Standard (FCFA/ex.)</label>
+              <input type="number" class="input-field" id="print-unit-std" value="7302" min="0" autocomplete="off" oninput="updatePrintCfg()">
+            </div>
+            <div>
+              <label class="input-label">Collector (FCFA/ex.)</label>
+              <input type="number" class="input-field" id="print-unit-luxe" value="15264" min="0" autocomplete="off" oninput="updatePrintCfg()">
+            </div>
+            <div>
+              <label class="input-label">Qté standard</label>
+              <input type="number" class="input-field" id="print-qty-std" value="2000" min="0" autocomplete="off" oninput="updatePrintCfg()">
+            </div>
+            <div>
+              <label class="input-label">Qté collector</label>
+              <input type="number" class="input-field" id="print-qty-luxe" value="500" min="0" autocomplete="off" oninput="updatePrintCfg()">
+            </div>
           </div>
-          <div style="margin-top:8px;font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted)">
-            Estimation tirage 500 ex. × 224p : <span id="print-estimate" style="color:var(--amber);font-weight:600">15 000 000 FCFA</span>
+          <div style="margin-top:8px">
+            <label class="input-label">Frais annexes (dédouanement + transport + assurance)</label>
+            <input type="number" class="input-field" id="print-fees" value="1465919" min="0" autocomplete="off" oninput="updatePrintCfg()">
+          </div>
+          <div style="margin-top:10px;font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted)">
+            Coût total impression : <span id="print-estimate" style="color:var(--amber);font-weight:700">—</span>
+          </div>
+          <div style="margin-top:6px;font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted);line-height:1.5">
+            💡 Se remplit automatiquement si tu scannes une facture d'imprimeur (catégorie <b>Impression</b> + ✨ Lire la facture).
           </div>
         </div>
 
@@ -4794,7 +4801,8 @@ const state = {
   approvals: [],
   currentPlatform: 'tiktok',
   cmHistory: [],
-  printRate: 150,
+  printRate: 150, // legacy (sync cloud) — l'UI utilise printCfg
+  printCfg: { std: 7302, luxe: 15264, qStd: 2000, qLuxe: 500, frais: 1465919 }, // devis ARTRON 26XT479
   catSpend: { transport:0, carburant:0, hebergement:0, nourriture:0, equipement:0, api:0, impression:0, communication:0, divers:0 },
   treasury: { encaissements: [], decaissements: [] },
   daysDone: 0,
@@ -4941,6 +4949,7 @@ function saveStateToDB() {
       daysDone:       state.daysDone,
       sitesDone:      state.sitesDone,
       printRate:      state.printRate,
+      printCfg:       state.printCfg,
       a9Sponsors:     a9State.sponsors,
       a10Auths:       a10State.auths,
       a10Journal:     a10State.journal,
@@ -5002,6 +5011,7 @@ async function loadStateFromDB() {
     if (d.daysDone !== undefined) state.daysDone = d.daysDone;
     if (d.sitesDone !== undefined) state.sitesDone = d.sitesDone;
     if (d.printRate !== undefined) state.printRate = d.printRate;
+    if (d.printCfg && typeof d.printCfg === 'object') state.printCfg = { ...state.printCfg, ...d.printCfg };
     if (Array.isArray(d.a9Sponsors))   a9State.sponsors      = d.a9Sponsors;
     if (Array.isArray(d.a10Auths))     a10State.auths         = d.a10Auths;
     if (Array.isArray(d.a10Journal))   a10State.journal       = d.a10Journal;
@@ -5328,8 +5338,7 @@ function switchTab(idx) {
   if (idx === 4) a5UpdateKPIs();
   if (idx === 3) {
     updateFinancialUI();
-    document.getElementById('print-rate-input').value = state.printRate;
-    updatePrintRate(state.printRate);
+    printCfgPopulate();
   }
 }
 function scrollTabIntoView(idx) {
@@ -6582,7 +6591,7 @@ async function finScanReceipt(btn) {
           role: 'user',
           content: [
             { type: 'image', source: { type: 'base64', media_type: finReceipt.mime, data: finReceipt.b64 } },
-            { type: 'text', text: `Lis ce document (facture, reçu, ticket). La dépense est de catégorie « ${CAT_LABELS[cat] || cat} ».\nJSON attendu :\n{"montant": nombre (total TTC), "devise": "XOF"|"EUR"|"USD"|"autre", "description": "fournisseur + objet, concis (max 120 caractères)", "date": "JJ/MM/AAAA" ou null, "confiance": 0-100}` }
+            { type: 'text', text: `Lis ce document (facture, reçu, ticket). La dépense est de catégorie « ${CAT_LABELS[cat] || cat} ».\nJSON attendu :\n{"montant": nombre (total TTC), "devise": "XOF"|"EUR"|"USD"|"autre", "description": "fournisseur + objet, concis (max 120 caractères)", "date": "JJ/MM/AAAA" ou null, "confiance": 0-100${cat === 'impression' ? ', "impression": {"unitaire_standard": prix unitaire par exemplaire édition standard ou null, "unitaire_collector": prix unitaire par exemplaire édition collector/luxe ou null, "qte_standard": quantité standard ou null, "qte_collector": quantité collector ou null, "frais_annexes": total des frais (dédouanement, transport, assurance) ou null} — cherche ces lignes si c\'est une facture d\'imprimeur (ex. ARTRON)' : ''}}` }
           ]
         }]
       })
@@ -6602,6 +6611,29 @@ async function finScanReceipt(btn) {
 
     let desc = (parsed.description || '').substring(0, 150);
     if (parsed.date) desc += ' · ' + parsed.date;
+
+    // Facture d'imprimeur (cat. Impression) → remplit le Tarif Imprimeur automatiquement
+    if (cat === 'impression' && parsed.impression && typeof parsed.impression === 'object') {
+      const imp = parsed.impression;
+      const convUnit = v => {
+        const n = parseFloat(v);
+        if (!n || n <= 0) return null;
+        const c2 = finConvertToXOF(n, parsed.devise);
+        return c2 ? c2.fcfa : null;
+      };
+      const cfg = { ...state.printCfg };
+      const uStd  = convUnit(imp.unitaire_standard);  if (uStd)  cfg.std  = uStd;
+      const uLuxe = convUnit(imp.unitaire_collector); if (uLuxe) cfg.luxe = uLuxe;
+      if (parseInt(imp.qte_standard, 10)  > 0) cfg.qStd  = parseInt(imp.qte_standard, 10);
+      if (parseInt(imp.qte_collector, 10) > 0) cfg.qLuxe = parseInt(imp.qte_collector, 10);
+      const fr = convUnit(imp.frais_annexes); if (fr) cfg.frais = fr;
+      if (uStd || uLuxe || fr) {
+        state.printCfg = cfg;
+        printCfgPopulate();
+        saveStateToDB();
+        showToast('🖨️ Tarif Imprimeur mis à jour depuis la facture', 'ok');
+      }
+    }
 
     if (conv) {
       document.getElementById('exp-amount').value = conv.fcfa;
@@ -6829,12 +6861,26 @@ function renderTreasury() {
       <div style="font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted);margin-top:6px;line-height:1.6">⚠️ Montants <b>hypothétiques</b> du bilan (subventions et sponsors non confirmés) — à titre indicatif seulement. Seuls les encaissements que tu saisis ci-dessus comptent dans le Disponible.<br>🩸 Corridor critique projeté : solde minimum ${fmtFCFA(minRun)} en M10, avant l'arrivée de la subvention MCAT (35M) en M11.</div>`;
   }
 }
-function updatePrintRate(val) {
-  const rate = Math.round(parseFloat(val) || 150);
-  state.printRate = rate;
-  const est = Math.round(500 * 224 * rate);
+/* Tarif imprimeur ARTRON : 2 tirages (standard + collector) + frais CIF.
+   Total = qStd×std + qLuxe×luxe + frais. Rempli par scan IA (cat. Impression). */
+function printCfgPopulate() {
+  const c = state.printCfg || {};
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+  set('print-unit-std',  c.std   ?? 7302);
+  set('print-unit-luxe', c.luxe  ?? 15264);
+  set('print-qty-std',   c.qStd  ?? 2000);
+  set('print-qty-luxe',  c.qLuxe ?? 500);
+  set('print-fees',      c.frais ?? 1465919);
+  updatePrintCfg(false);
+}
+function updatePrintCfg(save = true) {
+  const num = id => Math.max(0, Math.round(parseFloat(document.getElementById(id)?.value) || 0));
+  const cfg = { std: num('print-unit-std'), luxe: num('print-unit-luxe'), qStd: num('print-qty-std'), qLuxe: num('print-qty-luxe'), frais: num('print-fees') };
+  state.printCfg = cfg;
+  const total = cfg.qStd * cfg.std + cfg.qLuxe * cfg.luxe + cfg.frais;
   const estEl = document.getElementById('print-estimate');
-  if (estEl) estEl.textContent = fmtFCFA(est);
+  if (estEl) estEl.textContent = fmtFCFA(total);
+  if (save) saveStateToDB();
 }
 function addAPIcostDeduction(amount, description) {
   const tx = { id: 'api_' + Date.now(), cat:'api', amount: Math.round(amount), description, ts: Date.now(), type:'debit' };
@@ -7253,8 +7299,7 @@ async function init() {
   await sleep(300);
 
   // Populate CM site selector
-  const printIn = document.getElementById('print-rate-input');
-  if (printIn) { printIn.value = state.printRate; updatePrintRate(state.printRate); }
+  printCfgPopulate();
 
   // Animate odometers
   await sleep(200);

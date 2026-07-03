@@ -106,7 +106,7 @@ Suit le budget de 100 millions FCFA (objectif du projet).
 > 💡 Sans connexion ou sans clé IA, la lecture automatique ne marche pas — mais on peut toujours joindre la photo et saisir le montant à la main : le reçu sera archivé pareil. Supprimer un reçu exige le PIN Direction.
 
 Le **budget global**, la **répartition par catégorie** et la **dérive** se recalculent automatiquement.
-- **Tarif Imprimeur** : régler le coût d'impression unitaire.
+- **Tarif Imprimeur — ARTRON** : tarifs réels du devis 26XT479 (unitaire standard ≈ 7 302 F × 2 000 ex., collector ≈ 15 264 F × 500 ex., + frais annexes) → coût total calculé. **Se remplit tout seul** si on scanne une facture d'imprimeur avec la catégorie Impression + ✨ Lire la facture.
 - **File de Transactions** / **Historique** : suivi de tous les mouvements.
 - **Supprimer une dépense** : bouton **✕** sur la ligne dans l'Historique → le budget est recalculé.
 - **🗑 Réinitialiser la finance** : efface toutes les dépenses (double confirmation) — le budget repart de 100 M.
