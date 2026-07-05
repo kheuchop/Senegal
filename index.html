@@ -2354,6 +2354,13 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           </div>
         </div>
 
+        <!-- Journal d'audit des actions sensibles -->
+        <div class="card">
+          <div class="card-title">📜 Journal d'Audit <span id="audit-log-count" style="font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted);font-weight:400;margin-left:6px"></span></div>
+          <div id="audit-log-list"></div>
+          <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="exportAuditLog()">📄 Exporter le journal (Word)</button>
+        </div>
+
         <!-- Gestion des Accès (Direction uniquement) -->
         <div class="card" id="access-admin-card" style="display:none">
           <div class="card-title">🔑 Gestion des Accès</div>
@@ -2834,6 +2841,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
             </div>
           </div>
           <button class="btn btn-ghost btn-full" style="margin-top:10px" onclick="finExportCSV()">📊 Exporter CSV (comptable)</button>
+          <button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="finExportJustificatifs(event)"><div class="spinner"></div><span class="btn-text">📎 Justificatifs du mois (Word + photos)</span></button>
           <button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="finMonthlyReport(event)">📄 Rapport mensuel → Telegram Direction</button>
           <button class="btn btn-ghost btn-full" style="margin-top:8px;border-color:rgba(255,82,82,0.3);color:var(--red)" onclick="resetFinance()">🗑 Réinitialiser la finance (tout effacer)</button>
         </div>
@@ -2912,6 +2920,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
             </button>
             <button class="btn btn-danger btn-sm" id="a5-btn-reset" onclick="a5ChronoReset()">↺</button>
           </div>
+          <button class="btn btn-ghost btn-full" style="margin-top:10px;border-color:rgba(214,165,58,0.35);color:var(--gold)" onclick="openTerrainMode()">🏕 Mode Journée Terrain (plein écran)</button>
           <div class="a5-session-meta" id="a5-session-meta" style="display:none">
             <span class="pill pill-cyan" id="a5-session-site">Site —</span>
             <span class="pill pill-green" id="a5-session-km">0 km</span>
@@ -4734,6 +4743,20 @@ textarea.input-field { resize: vertical; min-height: 80px; }
             </button>
           </div>
         </div>
+        <!-- Packs hors-ligne par zone -->
+        <div style="padding:12px;border-top:1px solid var(--border);background:var(--bg-card)">
+          <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--gold);letter-spacing:0.12em;margin-bottom:6px">📥 CARTES HORS-LIGNE PAR ZONE</div>
+          <div style="font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted);margin-bottom:8px;line-height:1.5">Télécharge les cartes d'une zone AVANT le départ (Wi-Fi conseillé) — elles resteront visibles sans réseau sur le terrain.</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px" id="map-pack-btns">
+            <button class="btn btn-ghost btn-sm" onclick="downloadZoneTiles('A',this)">Zone A</button>
+            <button class="btn btn-ghost btn-sm" onclick="downloadZoneTiles('B',this)">Zone B</button>
+            <button class="btn btn-ghost btn-sm" onclick="downloadZoneTiles('C',this)">Zone C</button>
+            <button class="btn btn-ghost btn-sm" onclick="downloadZoneTiles('D',this)">Zone D</button>
+            <button class="btn btn-ghost btn-sm" onclick="downloadZoneTiles('E',this)">Zone E</button>
+            <button class="btn btn-ghost btn-sm" onclick="downloadZoneTiles('F',this)">Zone F</button>
+          </div>
+          <div id="map-pack-status" style="font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted);margin-top:8px"></div>
+        </div>
         <!-- Offshore Section -->
         <div style="padding:12px;border-top:1px solid var(--border);background:var(--bg-card)">
           <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--amber);letter-spacing:0.12em;margin-bottom:8px">⚓ MISSION HORS-TERRAIN · 0 JOUR</div>
@@ -5064,6 +5087,7 @@ function saveStateToDB() {
       rolePins:       state.rolePins,
       a17MissionStartTs: state.a17MissionStartTs || null,
       lastMonthlyReport: state.lastMonthlyReport || null,
+      auditLog:       state.auditLog || [],
     }
   }).catch(e => console.error('[DB] saveState échoué:', e));
 
@@ -5361,6 +5385,7 @@ async function loadStateFromDB() {
     if (d.rolePins && typeof d.rolePins === 'object') state.rolePins = d.rolePins;
     if (d.a17MissionStartTs) state.a17MissionStartTs = d.a17MissionStartTs;
     if (d.lastMonthlyReport) state.lastMonthlyReport = d.lastMonthlyReport;
+    if (Array.isArray(d.auditLog)) state.auditLog = d.auditLog;
   }
   // Livre : store dédié (prioritaire) — les champs a6Book* du blob ci-dessus
   // ne servent plus que de migration depuis les anciennes versions.
@@ -5595,6 +5620,43 @@ function onGpsPosition(pos) {
   if (state.leafletMap) { state.leafletMap.setView([avgLat, avgLon], state.leafletMap.getZoom()); }
 }
 
+/* Téléchargement des tuiles d'une zone (plan OSM, zooms 12-14, 3×3 autour de
+   chaque site) — mise en cache par le Service Worker pour l'usage hors-ligne.
+   Volume limité et téléchargement séquentiel (usage raisonnable des serveurs). */
+async function downloadZoneTiles(zone, btn) {
+  const sites = SITES.filter(s => s.zone === zone && s.coords);
+  if (!sites.length) { showToast('Aucun site dans cette zone', 'warn'); return; }
+  if (!navigator.onLine) { showToast('Connexion requise pour télécharger', 'warn'); return; }
+  const statusEl = document.getElementById('map-pack-status');
+  const urls = new Set();
+  const t2 = (lat, lon, z) => {
+    const n = Math.pow(2, z);
+    const x = Math.floor((lon + 180) / 360 * n);
+    const y = Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * n);
+    return { x, y };
+  };
+  sites.forEach(s => {
+    for (let z = 12; z <= 14; z++) {
+      const c = t2(s.coords[0], s.coords[1], z);
+      for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+        urls.add(`https://a.tile.openstreetmap.org/${z}/${c.x + dx}/${c.y + dy}.png`);
+      }
+    }
+  });
+  const list = [...urls];
+  if (btn) { btn.disabled = true; btn.textContent = '0%'; }
+  let done = 0, fail = 0;
+  for (const u of list) {
+    try { await fetch(u, { mode: 'no-cors' }); } catch (e) { fail++; }
+    done++;
+    if (btn && done % 10 === 0) btn.textContent = Math.round(done / list.length * 100) + '%';
+    await sleep(120); // politesse envers les serveurs de tuiles
+  }
+  if (btn) { btn.disabled = false; btn.textContent = 'Zone ' + zone + ' ✓'; btn.style.borderColor = 'rgba(0,230,118,0.4)'; btn.style.color = 'var(--emerald)'; }
+  if (statusEl) statusEl.textContent = `✅ Zone ${zone} : ${done - fail}/${list.length} cartes en cache hors-ligne (${sites.length} sites, zooms 12-14).`;
+  showToast('📥 Zone ' + zone + ' téléchargée pour le hors-ligne', 'ok');
+}
+
 function _haversineKm(lat1, lon1, lat2, lon2) {
   const R = 6371, toRad = x => x * Math.PI / 180;
   const dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
@@ -5692,7 +5754,7 @@ function switchTab(idx) {
     updateFinancialUI();
     printCfgPopulate();
   }
-  if (idx === 0) { try { renderMorningBrief(); } catch (e) {} }
+  if (idx === 0) { try { renderMorningBrief(); renderAuditLog(); } catch (e) {} }
 }
 function scrollTabIntoView(idx) {
   const tabs = document.querySelectorAll('.agent-tab');
@@ -5870,7 +5932,7 @@ function approveItem(id, evt) {
 }
 function rejectItem(id, evt) {
   const btn = evt.currentTarget; disableBtn(btn);
-  setTimeout(() => { const a = state.approvals.find(x=>x.id===id); if(a){a.status='rejected'; addActivity('❌', `Demande refusée : ${a.source}`, 'À l\'instant'); saveStateToDB(); renderApprovals(); } enableBtn(btn); }, 800);
+  setTimeout(() => { const a = state.approvals.find(x=>x.id===id); if(a){a.status='rejected'; addActivity('❌', `Demande refusée : ${a.source}`, 'À l\'instant'); auditLog('❌ Demande refusée', a.msg || a.source); saveStateToDB(); renderApprovals(); } enableBtn(btn); }, 800);
 }
 function addNotification(n) {
   state.notifications.unshift({ ...n, id: 'n' + Date.now() });
@@ -6880,6 +6942,36 @@ function recomputeFinanceFromTransactions() {
     if (state.catSpend[tx.cat] !== undefined) state.catSpend[tx.cat] += tx.amount || 0;
   });
 }
+/* JOURNAL D'AUDIT — trace horodatée des actions sensibles (qui ne s'efface
+   pas depuis l'interface). Rôle actif + action + détail. Plafonné à 300. */
+function auditLog(action, detail) {
+  if (!Array.isArray(state.auditLog)) state.auditLog = [];
+  state.auditLog.unshift({ ts: Date.now(), role: window.currentRole || '?', action, detail: String(detail || '').substring(0, 160) });
+  if (state.auditLog.length > 300) state.auditLog.length = 300;
+  saveStateToDB();
+  renderAuditLog();
+}
+function renderAuditLog() {
+  const list = document.getElementById('audit-log-list');
+  if (!list) return;
+  const items = state.auditLog || [];
+  const cnt = document.getElementById('audit-log-count');
+  if (cnt) cnt.textContent = items.length + ' action(s) tracée(s)';
+  list.innerHTML = items.length === 0
+    ? '<div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted);text-align:center;padding:10px 0">Aucune action sensible enregistrée</div>'
+    : items.slice(0, 15).map(a => `<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:0.5rem">
+        <span style="color:var(--text-muted);flex-shrink:0">${new Date(a.ts).toLocaleDateString('fr-FR')} ${new Date(a.ts).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+        <span style="color:var(--gold);flex-shrink:0">[${escapeHtml(a.role)}]</span>
+        <span style="color:var(--text-secondary);min-width:0">${escapeHtml(a.action)}${a.detail ? ' — ' + escapeHtml(a.detail) : ''}</span>
+      </div>`).join('');
+}
+function exportAuditLog() {
+  const items = state.auditLog || [];
+  if (!items.length) { showToast('Journal vide', 'info'); return; }
+  const text = items.map(a => `${new Date(a.ts).toLocaleString('fr-FR')} · [${a.role}] ${a.action}${a.detail ? ' — ' + a.detail : ''}`).join('\n');
+  exportWordDoc('journal-audit-' + new Date().toISOString().slice(0, 10), 'Journal d\'audit des actions sensibles', text, { objet: false, signature: false });
+}
+
 /* Verrou Direction : les actions destructrices de la finance exigent le PIN
    Direction — le rôle Finance peut saisir, mais pas supprimer/réinitialiser seul. */
 function requireDirectionPin(action) {
@@ -6887,8 +6979,10 @@ function requireDirectionPin(action) {
   if (pin === null) return false; // annulé
   if (String(pin).trim() !== getRolePins().direction) {
     showToast('⛔ PIN Direction incorrect — action refusée', 'error');
+    auditLog('⛔ PIN Direction REFUSÉ', action); // tentative échouée tracée
     return false;
   }
+  auditLog('🔓 PIN Direction validé', action);
   return true;
 }
 function deleteTransaction(id) {
@@ -6928,6 +7022,50 @@ function finPerDiemToday(evt) {
   processTransactionQueue();
   showToast('🍽 Per diem enregistré : ' + fmtFCFA(total), 'ok');
   if (btn) setTimeout(() => enableBtn(btn), 500);
+}
+
+/* Justificatifs du mois en Word AVEC les photos des reçus (format MHTML :
+   les images s'affichent dans Word/LibreOffice). Dossier prêt pour le
+   comptable externe, le CPF et les bailleurs. */
+async function finExportJustificatifs(evt) {
+  const btn = evt && evt.currentTarget; if (btn) disableBtn(btn);
+  try {
+    const moisStr = prompt('Mois à exporter (AAAA-MM), ou vide pour TOUT :', new Date().toISOString().slice(0, 7));
+    if (moisStr === null) { if (btn) enableBtn(btn); return; }
+    let receipts = (await dbReadAll('receipts')).sort((a, b) => a.ts - b.ts);
+    if (moisStr.trim()) receipts = receipts.filter(r => new Date(r.ts).toISOString().slice(0, 7) === moisStr.trim());
+    if (receipts.length === 0) { showToast('Aucun reçu sur cette période', 'warn'); if (btn) enableBtn(btn); return; }
+    const total = receipts.reduce((s, r) => s + (r.amount || 0), 0);
+    const dateStr = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+    const B = 'MCTRL-JUSTIF-BOUND';
+    let html = `<html xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Justificatifs</title><style>@page{size:A4;margin:2cm}body{font-family:Calibri,Arial,sans-serif;font-size:10.5pt;color:#1a1a1a}</style></head><body>
+<table width="100%" style="border-bottom:2pt solid #C4872A"><tr><td style="font-family:Cambria,serif;font-size:13pt;font-weight:bold;color:#C4872A;padding-bottom:6pt">SÉNÉGAL, TERRE D'HISTOIRE ET DE RENCONTRES</td><td align="right" style="font-size:8pt;color:#555">THR Éditions SARL<br>Dakar, le ${dateStr}</td></tr></table>
+<p style="margin:14pt 0"><b>PIÈCES JUSTIFICATIVES${moisStr.trim() ? ' — ' + escapeHtml(moisStr.trim()) : ' — INTÉGRALITÉ'}</b><br>${receipts.length} justificatif(s) · Total : ${fmtFCFA(total)}</p>`;
+    const parts = [];
+    receipts.forEach((r, i) => {
+      const imgName = 'justif' + (i + 1) + '.jpg';
+      html += `<div style="page-break-inside:avoid;margin-bottom:18pt;border:0.5pt solid #cccccc;padding:8pt">
+<p style="margin:0 0 6pt 0"><b>N°${i + 1} — ${fmtFCFA(r.amount || 0)}</b> · ${escapeHtml(CAT_LABELS[r.cat] || r.cat || '')} · ${new Date(r.ts).toLocaleDateString('fr-FR')}${r.devise && r.devise !== 'XOF' ? ' · ' + r.montantOriginal + ' ' + r.devise : ''}<br><span style="font-size:9pt;color:#555">${escapeHtml(r.description || '')}</span></p>
+<img src="${imgName}" style="max-width:420pt;max-height:340pt"></div>`;
+      parts.push({ name: imgName, b64: (r.dataUrl || '').split(',')[1] || '' });
+    });
+    html += `<p style="margin-top:20pt;border-top:0.5pt solid #bbb;padding-top:6pt;font-size:8pt;color:#888">Registre généré par Mission CTRL · THR Éditions SARL · contact@senegalthr.com</p></body></html>`;
+    let mhtml = `MIME-Version: 1.0\r\nContent-Type: multipart/related; boundary="${B}"\r\n\r\n--${B}\r\nContent-Type: text/html; charset="utf-8"\r\nContent-Location: doc.html\r\n\r\n${html}\r\n`;
+    parts.forEach(p => {
+      if (!p.b64) return;
+      mhtml += `--${B}\r\nContent-Type: image/jpeg\r\nContent-Transfer-Encoding: base64\r\nContent-Location: ${p.name}\r\n\r\n${p.b64}\r\n`;
+    });
+    mhtml += `--${B}--`;
+    const blob = new Blob([mhtml], { type: 'application/msword' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'justificatifs-' + (moisStr.trim() || 'tout') + '.doc';
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    showToast('📎 ' + receipts.length + ' justificatif(s) exportés en Word', 'ok');
+    auditLog('Export justificatifs', (moisStr.trim() || 'tout') + ' · ' + receipts.length + ' pièces');
+  } catch (e) { showToast('Export échoué : ' + e.message, 'error'); }
+  if (btn) enableBtn(btn);
 }
 
 /* Export comptable CSV (Excel FR : séparateur ; + BOM UTF-8).
@@ -7779,6 +7917,7 @@ function saveRolePins(evt) {
   if (uniq.size !== Object.keys(newPins).length) { showToast('Deux rôles ont le même code — ils doivent être distincts', 'warn'); if (btn) enableBtn(btn); return; }
   state.rolePins = newPins;
   saveStateToDB();
+  auditLog('🔑 Codes d\'accès modifiés', 'les 7 codes de rôle ont été redéfinis');
   showToast('🔑 Codes d\'accès enregistrés', 'ok');
   if (btn) setTimeout(() => enableBtn(btn), 400);
 }
@@ -8019,6 +8158,80 @@ function a5FilterPlan(filter, el) {
   document.querySelectorAll('.a5-filter-btn').forEach(b => b.classList.remove('active'));
   if (el) el.classList.add('active');
   a5RenderPlan();
+}
+
+/* ============================================================
+   MODE JOURNÉE TERRAIN — écran unique plein format, gros boutons
+   (lisible en plein soleil) : chrono, site du jour, journal rapide.
+   ============================================================ */
+let _terrainInterval = null;
+function openTerrainMode() {
+  let ov = document.getElementById('terrain-mode-overlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'terrain-mode-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:9550;background:var(--bg-deep);display:none;flex-direction:column;padding:20px 16px calc(20px + var(--safe-bottom,0px));gap:14px;overflow-y:auto';
+    document.body.appendChild(ov);
+  }
+  const dayNum = Math.min(state.daysDone + 1, MISSION.joursTerrain);
+  const site = (a5State.dayRef && a5State.dayRef.site) || getPlannedSiteForDay(dayNum);
+  ov.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-family:var(--font-display);font-size:0.85rem;font-weight:800;color:var(--gold)">🏕 JOUR ${dayNum}/${MISSION.joursTerrain}</div>
+      <button onclick="closeTerrainMode()" style="cursor:pointer;font-size:1rem;padding:8px 14px;border-radius:12px;border:1px solid var(--border);background:var(--bg-card-2);color:var(--text-secondary)">✕</button>
+    </div>
+    <div style="text-align:center;padding:6px 0">
+      <div style="font-size:1rem;font-weight:700;color:var(--text-primary)">${site ? escapeHtml(site.name) : 'Session libre'}</div>
+      <div style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);margin-top:4px">${site ? 'Zone ' + site.zone + ' · ~' + site.km + ' km' : ''}</div>
+      <div id="terrain-meteo" style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-secondary);margin-top:4px"></div>
+    </div>
+    <div id="terrain-chrono" style="text-align:center;font-family:var(--font-display);font-size:3.2rem;font-weight:900;font-variant-numeric:tabular-nums;color:var(--gold)">00:00:00</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <button onclick="a5ChronoStart();_terrainSync()" style="cursor:pointer;padding:22px;border-radius:16px;border:1px solid rgba(0,230,118,0.4);background:rgba(0,230,118,0.12);color:var(--emerald);font-size:1.1rem;font-weight:700">▶ DÉMARRER</button>
+      <button onclick="a5ChronoPause();_terrainSync()" style="cursor:pointer;padding:22px;border-radius:16px;border:1px solid rgba(255,171,64,0.4);background:rgba(255,171,64,0.1);color:var(--amber);font-size:1.1rem;font-weight:700">⏸ PAUSE</button>
+    </div>
+    <button onclick="a5ValiderJour()" style="cursor:pointer;padding:22px;border-radius:16px;border:1px solid rgba(214,165,58,0.5);background:rgba(214,165,58,0.15);color:var(--gold);font-size:1.15rem;font-weight:800">✅ VALIDER LE JOUR</button>
+    <div style="margin-top:6px">
+      <div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted);letter-spacing:0.1em;margin-bottom:6px">📝 NOTE RAPIDE (JOURNAL)</div>
+      <textarea id="terrain-note" placeholder="Observation, incident, lumière…" style="width:100%;min-height:90px;background:var(--bg-card-2);border:1px solid var(--border);border-radius:12px;padding:12px;color:var(--text-primary);font-size:0.95rem"></textarea>
+      <button onclick="terrainQuickNote()" style="cursor:pointer;width:100%;margin-top:8px;padding:16px;border-radius:12px;border:1px solid var(--border);background:var(--bg-card-2);color:var(--text-secondary);font-size:0.95rem;font-weight:600">💾 Enregistrer la note</button>
+    </div>`;
+  ov.style.display = 'flex';
+  _terrainSync();
+  clearInterval(_terrainInterval);
+  _terrainInterval = setInterval(_terrainSync, 500);
+  // météo du site (si clé configurée)
+  try {
+    if (a14State.apiKey && site && site.coords) {
+      fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${site.coords[0]}&lon=${site.coords[1]}&units=metric&lang=fr&appid=${a14State.apiKey}`)
+        .then(r => r.json()).then(w => {
+          const el = document.getElementById('terrain-meteo');
+          if (el && w && w.main) el.textContent = `🌤 ${Math.round(w.main.temp)}°C · ${w.weather?.[0]?.description || ''} · vent ${Math.round((w.wind?.speed || 0) * 3.6)} km/h`;
+        }).catch(() => {});
+    }
+  } catch (e) {}
+}
+function _terrainSync() {
+  const src = document.getElementById('a5-chrono-display');
+  const dst = document.getElementById('terrain-chrono');
+  if (src && dst) dst.textContent = src.textContent;
+}
+function closeTerrainMode() {
+  clearInterval(_terrainInterval); _terrainInterval = null;
+  const ov = document.getElementById('terrain-mode-overlay');
+  if (ov) ov.style.display = 'none';
+}
+function terrainQuickNote() {
+  const ta = document.getElementById('terrain-note');
+  const note = (ta?.value || '').trim();
+  if (!note) { showToast('Note vide', 'warn'); return; }
+  const dayNum = Math.min(state.daysDone + 1, MISSION.joursTerrain);
+  const site = (a5State.dayRef && a5State.dayRef.site) || getPlannedSiteForDay(dayNum);
+  const entry = { siteId: site?.id || null, siteName: site?.name || 'Terrain', note, shots: 0, conditions: '', jour: dayNum, ts: Date.now() };
+  dbWrite('state', { id: 'journal_' + Date.now(), data: entry });
+  if (ta) ta.value = '';
+  addActivity('📝', `Note terrain J${dayNum} : ${site?.name || ''}`, now());
+  showToast('📝 Note enregistrée au journal', 'ok');
 }
 
 function a5ChronoStart(planItem) {

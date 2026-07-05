@@ -7,11 +7,11 @@
  *  - Tuiles OSM : cache opportuniste plafonné (les zones visitées restent visibles hors-ligne)
  *  - /api/, Supabase, Make : réseau uniquement (jamais de cache — la file SupaSync gère l'offline)
  */
-const VERSION = 'mission-ctrl-v63';
+const VERSION = 'mission-ctrl-v64';
 const SHELL_CACHE = `shell-${VERSION}`;
 const RUNTIME_CACHE = `runtime-${VERSION}`;
 const TILE_CACHE = `tiles-${VERSION}`;
-const TILE_MAX_ENTRIES = 600;
+const TILE_MAX_ENTRIES = 2500; // couvre les packs hors-ligne des 6 zones + navigation
 
 const SHELL_ASSETS = [
   './',
