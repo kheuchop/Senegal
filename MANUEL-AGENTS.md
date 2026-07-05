@@ -38,6 +38,7 @@ Les codes d'accès sont stockés **localement sur chaque appareil** (jamais dans
 
 C'est l'écran d'accueil, la vue d'ensemble.
 
+- **☀️ Brief du Jour** *(en tête d'écran)* : l'essentiel en un coup d'œil — jour X/54, **site du jour** (planning), **météo du site** (si clé configurée), disponible trésorerie, approbations en attente, risques actifs. Bouton **📣 Envoyer à l'équipe** → le brief part dans le groupe Telegram. Le rituel du matin.
 - **Avancement Mission** : anneau de progression + indicateurs (sites, jours, km).
 - **Barre DISPO** (bandeau du haut) : le **cash réellement disponible** (encaissé − dépensé, voir Financier/Trésorerie) — visible sur tous les écrans.
 - **Check-list du Jour** : le rituel quotidien, **filtré selon ton poste** (chacun ne voit que ses tâches ; la Direction les voit toutes). Cliquer sur une ligne pour la cocher. Se réinitialise chaque jour.
@@ -323,7 +324,11 @@ Gère les autorisations de tournage et les droits.
 
 **✅ Checklist Juridique Pré-Site *(IA)* :** choisir un site → **✅ Générer la checklist**.
 
-**📜 Contrat Cession de Droits *(IA)* :** décrire le contexte + type de cédant → **📜 Générer le contrat**.
+**📜 Contrat Cession de Droits *(IA)* :** décrire le contexte + type de cédant → **📜 Générer le contrat** (export Word).
+
+**📑 Registre des Cessions Signées :** après chaque signature sur le terrain, enregistrer le signataire (nom, type, site). Le compteur suit l'objectif des **55 contrats** du bilan. Suppression protégée par PIN Direction.
+
+> 🔗 Le Risk Manager surveille automatiquement : sponsors sans réponse depuis 7 jours, et **site à venir sans autorisation validée** (croisement planning × autorisations).
 
 ---
 
@@ -336,7 +341,8 @@ Gère le parc et les backups.
 
 **Check-In / Check-Out :**
 1. Choisir l'**Équipement** et l'**Opération** (Check-Out départ / Check-In retour / maintenance).
-2. **✅ Valider Opération**.
+2. Indiquer **qui prend le matériel** (obligatoire au Check-Out) — le nom s'affiche sur la fiche 👤 jusqu'au retour.
+3. **✅ Valider Opération**.
 
 **Validation Backups Cloud :** les cartes mémoire à sauvegarder.
 - **☁️ Synchroniser Toutes** pour tout valider.
@@ -363,7 +369,7 @@ Gère les points de vente et le stock (2 000 Standard à 50 000 F · 500 Luxe à
 
 **Suivi du stock :** deux jauges (Standard / Luxe) montrant alloué vs vendu.
 
-**Enregistrer une vente :** sélectionner le point → **🛒 Valider Vente**.
+**Enregistrer une vente :** sélectionner le point → **🛒 Valider Vente** → l'app **propose de créer l'encaissement Trésorerie** correspondant (remise déduite) : accepter pour que le cash entre dans le Disponible.
 
 **Tableau de Bord Financier :** chiffre d'affaires et potentiel.
 **⚠️ Alertes Stock Critique :** signale les stocks faibles.
@@ -400,6 +406,7 @@ Outils numériques du livre.
 - **Prévisions 5 Jours**.
 - **Alertes Climatiques** : chaleur, vent, visibilité.
 - **Fenêtres Photographiques Optimales** : les golden hours (matin/soir).
+- **🌪 Alerte veille de tournage** *(automatique)* : chaque soir, l'app vérifie la météo du **site du lendemain** — vent fort ou forte pluie → notification + alerte Direction. La météo du site du jour apparaît aussi dans le **Brief du Jour**.
 - **Simuler un Bulletin** : Site + Saison → **🌤 Générer Bulletin** (sans clé, à titre indicatif).
 
 ---
@@ -413,7 +420,7 @@ Outils numériques du livre.
 
 **Ajouter un devis manuellement :** Prestataire, Catégorie, Montant reçu, Estimation, Note → **➕ Enregistrer Devis**.
 
-**Comparateur Devis :** liste filtrable par catégorie.
+**Comparateur Devis :** liste filtrable par catégorie. Sur chaque devis : **💸 Engager (créer la dépense)** → la dépense pré-remplie entre dans le budget en passant par l'**approbation CPF** si ≥ 200 000 F.
 **Synthèse Négociation :** totaux et économies.
 
 **Argumentaire de Négociation *(IA)* :** choisir un prestataire → **✦ Générer avec Claude**.
@@ -449,6 +456,7 @@ Surveille en continu — **tout est calculé en direct sur les vraies données d
 - **Registre des Risques dynamique** : un risque n'apparaît **que s'il est réel** — trésorerie (découvert, seuil critique, seuil terrain 15 M), budget par catégorie dépassé ou presque épuisé, dérive planning, autorisations à relancer (A10), stocks faibles (A12), devis en dépassement (A15). Si tout va bien : « ✅ Aucun risque actif ».
 - **💡 Recommandations d'Optimisation** : en cas de retard → **⚡ Appliquer Recalibration** (mobilise des jours de repos, regroupe des sites).
 - **🚨 Plan B Critique** : si retard grave → **🚨 Activer Plan B** (fusion de sites, surcoût injecté au budget).
+- **🎲 Simulation « Et si ? »** : simuler un **retard terrain** (X jours) et/ou un **retard de la subvention MCAT** → impact chiffré (jours absorbés par les repos, surcoût ~804 k/jour, disponible après impact, plans B du bilan).
 - **Contrôle Watcher Financier** : surveille les transactions (**⚙️ Forcer Cycle** pour relancer).
 - **Log Risk Manager** : historique des analyses.
 

@@ -4042,6 +4042,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
               <option value="retour">✅ Retour maintenance</option>
             </select>
           </div>
+          <div class="input-group"><label class="input-label">Personne (qui prend / rend)</label><input type="text" class="input-field" id="a11-co-person" placeholder="Nom du membre de l'équipe" autocomplete="off"></div>
           <div class="input-group"><label class="input-label">Note</label><input type="text" class="input-field" id="a11-co-note" placeholder="Remarque optionnelle…" autocomplete="off"></div>
           <button class="btn btn-primary btn-full" onclick="a11CheckOp(event)"><div class="spinner"></div><span class="btn-text">✅ Valider Opération</span></button>
         </div>
@@ -4655,6 +4656,20 @@ textarea.input-field { resize: vertical; min-height: 80px; }
         <div class="card">
           <div class="card-title">Matrice des Risques</div>
           <div id="a17-risk-matrix"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">🎲 Simulation « Et si ? »</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:end">
+            <div>
+              <label class="input-label">Retard terrain (jours)</label>
+              <input type="number" class="input-field" id="a17-sim-jours" value="5" min="0" max="30" autocomplete="off">
+            </div>
+            <label style="display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:0.55rem;color:var(--text-secondary);padding-bottom:10px;cursor:pointer">
+              <input type="checkbox" id="a17-sim-mcat"> Subvention MCAT (35 M) en retard
+            </label>
+          </div>
+          <button class="btn btn-primary btn-full" style="margin-top:8px" onclick="a17Simulate()">🎲 Simuler l'impact</button>
+          <div id="a17-sim-result" style="margin-top:10px"></div>
         </div>
         <div class="card" id="a17-optim-card" style="display:none">
           <div class="card-title">💡 Recommandations d'Optimisation</div>
@@ -5517,6 +5532,12 @@ function onGpsPosition(pos) {
   lastGpsTs = now_ts;
   resetGpsWatchdog();
   const { latitude: lat, longitude: lon, accuracy } = pos.coords;
+  // Cumul des km réellement parcourus (session en cours) — précision raisonnable seulement
+  if (state.gpsBuffer.length > 0 && accuracy < 60) {
+    const prev = state.gpsBuffer[state.gpsBuffer.length - 1];
+    const dKm = _haversineKm(prev.lat, prev.lon, lat, lon);
+    if (dKm > 0.005 && dKm < 5) a5State.gpsKm = (a5State.gpsKm || 0) + dKm; // ignore le bruit et les sauts GPS
+  }
   state.gpsBuffer.push({ lat, lon, ts: now_ts });
   if (state.gpsBuffer.length > 3) state.gpsBuffer.shift();
   const avgLat = state.gpsBuffer.reduce((s,p) => s+p.lat, 0) / state.gpsBuffer.length;
@@ -5535,6 +5556,12 @@ function onGpsPosition(pos) {
   if (state.leafletMap) { state.leafletMap.setView([avgLat, avgLon], state.leafletMap.getZoom()); }
 }
 
+function _haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371, toRad = x => x * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
 function findNearestSite(lat, lon) {
   let best = null, bestDist = Infinity;
   SITES.forEach(s => { const d = haversine(lat, lon, s.coords[0], s.coords[1]); if (d < bestDist) { bestDist = d; best = s; } });
@@ -7762,6 +7789,8 @@ async function init() {
 
   // Rapport mensuel automatique (1er-3 du mois, une fois, dédup cloud)
   setTimeout(() => { try { finAutoMonthlyReport(); } catch (e) { console.warn('[Rapport]', e); } }, 8000);
+  // Météo du lendemain sur le prochain site (contrôle en soirée, 1×/jour)
+  setTimeout(() => { try { a14CheckTomorrowWeather(); } catch (e) {} }, 12000);
 
   setStatus('Initialisation WakeLock…');
   await requestWakeLock();
@@ -8007,8 +8036,10 @@ function a5ValiderJour() {
     siteName: ref && ref.site ? ref.site.name : 'Session libre',
     duree: dureeStr, dureeMs: elMs,
     ts: Date.now(), gpsUsed: state.gpsActive,
+    km: Math.round((a5State.gpsKm || 0) * 10) / 10,
     coords: state.gpsBuffer.length > 0 ? state.gpsBuffer[state.gpsBuffer.length - 1] : null
   };
+  a5State.gpsKm = 0;
   a5State.sessions.unshift(session);
   state.daysDone = Math.min(state.daysDone + 1, MISSION.joursTerrain);
   state.sitesDone = a5State.planData.filter(p => p.status === 'done').length + 1;
@@ -8061,7 +8092,7 @@ function a5RenderSessionLog() {
     div.innerHTML = `<div class="a5-log-icon">${s.gpsUsed ? '📍' : '⏱'}</div>
       <div class="a5-log-detail">
         <div class="a5-log-title">Jour ${s.day} — ${s.siteName}</div>
-        <div class="a5-log-meta">Durée : ${s.duree} · ${s.gpsUsed ? 'GPS actif' : 'GPS inactif'} · ${new Date(s.ts).toLocaleDateString('fr-FR')}</div>
+        <div class="a5-log-meta">Durée : ${s.duree} · ${s.gpsUsed ? 'GPS actif' : 'GPS inactif'}${s.km ? ' · ' + s.km + ' km' : ''} · ${new Date(s.ts).toLocaleDateString('fr-FR')}</div>
       </div>`;
     log.appendChild(div);
   });
@@ -8075,9 +8106,9 @@ function a5SaveJournal() {
   const cond = document.getElementById('a5-journal-conditions')?.value;
   if (!siteId || !note) { showToast('Sélectionner un site et saisir une note', 'warn'); enableBtn(btn); return; }
   const site = SITES.find(s => s.id == siteId);
-  const entry = { siteId, siteName: site ? site.name : siteId, note, shots, conditions: cond, ts: Date.now() };
+  const entry = { siteId, siteName: site ? site.name : siteId, note, shots, conditions: cond, jour: Math.min(state.daysDone + 1, MISSION.joursTerrain), ts: Date.now() };
   dbWrite('state', { id: 'journal_' + Date.now(), data: entry });
-  addActivity('📝', `Journal : ${site ? site.name : ''} — ${shots} prises`, now());
+  addActivity('📝', `Journal J${entry.jour} : ${site ? site.name : ''} — ${shots} prises`, now());
   showToast('📝 Entrée de terrain enregistrée', 'ok');
   document.getElementById('a5-journal-note').value = '';
   document.getElementById('a5-journal-shots').value = '';
@@ -8813,6 +8844,7 @@ function a6RenderBook() {
         <div class="a6-bp-info">
           <div class="a6-bp-type" style="color:${col}">${lab}</div>
           <div class="a6-bp-site">${escapeHtml(p.siteName || p.chapter || '')}</div>
+          ${p.textFr ? `<div style="font-family:var(--font-mono);font-size:0.4rem;color:${p.textFr.length > 2200 ? 'var(--red)' : p.textFr.length > 1800 ? 'var(--amber)' : 'var(--text-muted)'}">${p.textFr.length} signes${p.textFr.length > 1800 ? ' ⚠️' : ''}</div>` : ''}
         </div>
         <div class="a6-bp-st ${sCls}">${sLab}</div>
       </div>
@@ -9062,6 +9094,24 @@ function a6BookExport() {
     })
   ];
   navigator.clipboard?.writeText(lines.join('\n')).then(() => showToast('📋 Maquette complète copiée', 'ok'));
+  // Export Word structuré pour le graphiste (textes complets, page par page)
+  const fullLines = [
+    `MAQUETTE DU LIVRE — ${pages.length} pages · ${withPhoto} photos placées · ${withCaption} légendes`,
+    `Document de travail pour la conception graphique (InDesign). Ordre des pages définitif.`,
+    ''
+  ];
+  pages.forEach(p => {
+    fullLines.push(`PAGE ${String(p.num).padStart(2, '0')} · ${(A6_TYPE_LABEL[p.type] || p.type).toUpperCase()}${p.siteName || p.chapter ? ' · ' + (p.siteName || p.chapter) : ''}`);
+    if (p.thumbnail) fullLines.push('[PHOTO VALIDÉE — voir Galerie du Livre]');
+    if (p.textFr) fullLines.push('TEXTE FR (' + p.textFr.length + ' signes) :\n' + p.textFr);
+    if (p.caption_fr) fullLines.push('LÉGENDE FR : ' + p.caption_fr);
+    if (p.caption_en) fullLines.push('LÉGENDE EN : ' + p.caption_en);
+    if (p.caption_ar) fullLines.push('LÉGENDE AR : ' + p.caption_ar);
+    if (p.qrUrl) fullLines.push('QR CODE : ' + p.qrUrl);
+    if (p.notes_da) fullLines.push('NOTE DA : ' + p.notes_da);
+    fullLines.push('');
+  });
+  exportWordDoc('maquette-livre-' + new Date().toISOString().slice(0, 10), 'Maquette du livre — document graphiste', fullLines.join('\n\n'), { objet: false, signature: false });
 }
 
 /* --- Maquette du Livre --- */
@@ -10621,8 +10671,8 @@ function a11RenderEquipment() {
     const div = document.createElement('div'); div.className = `a11-equip-item st-${e.status}`;
     div.innerHTML = `<div class="a11-equip-icon">${e.icon}</div>
       <div class="a11-equip-info">
-        <div class="a11-equip-name">${e.name}</div>
-        <div class="a11-equip-meta">${e.type} · ${e.serial}${e.note ? ' · ' + e.note : ''}</div>
+        <div class="a11-equip-name">${escapeHtml(e.name)}${e.holder ? ` <span style="font-family:var(--font-mono);font-size:0.46rem;padding:1px 7px;border-radius:10px;background:rgba(214,165,58,0.12);border:1px solid rgba(214,165,58,0.3);color:var(--gold)">👤 ${escapeHtml(e.holder)}</span>` : ''}</div>
+        <div class="a11-equip-meta">${escapeHtml(e.type)} · ${escapeHtml(e.serial || '')}${e.note ? ' · ' + escapeHtml(e.note) : ''}</div>
       </div>
       <div class="a11-equip-status">${statusLabel[e.status]}</div>
       <button onclick="a11DeleteEquip('${e.id}')" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:4px;margin-left:4px;flex-shrink:0" title="Supprimer">🗑</button>`;
@@ -10660,6 +10710,11 @@ function a11CheckOp(evt) {
   if (!eq) { enableBtn(btn); return; }
   const opMap = { checkout: 'tournage', checkin: 'operationnel', maintenance: 'maintenance', retour: 'operationnel' };
   const opLabel = { checkout: 'Check-Out terrain', checkin: 'Check-In base', maintenance: 'Envoi maintenance', retour: 'Retour maintenance' };
+  // Traçabilité nominative : qui détient le matériel
+  const person = document.getElementById('a11-co-person')?.value.trim() || '';
+  if (op === 'checkout' && !person) { showToast('Indique QUI prend le matériel (traçabilité)', 'warn'); enableBtn(btn); return; }
+  eq.holder = op === 'checkout' ? person : (op === 'checkin' || op === 'retour') ? '' : eq.holder;
+  const pEl = document.getElementById('a11-co-person'); if (pEl) pEl.value = '';
   eq.status = opMap[op] || eq.status;
   if (note) eq.note = note;
   a11RenderEquipment();
@@ -12540,6 +12595,35 @@ function renderMorningBrief() {
     }
   } catch (e) { /* météo optionnelle */ }
 }
+/* Météo du LENDEMAIN sur le prochain site : alerte Direction si conditions à risque
+   (vent fort / forte pluie). Vérifié une fois par jour, en soirée. */
+function a14CheckTomorrowWeather() {
+  try {
+    if (!a14State.apiKey) return;
+    if (new Date().getHours() < 17) return; // contrôle en soirée uniquement
+    const dayKey = new Date().toISOString().slice(0, 10);
+    if (localStorage.getItem('meteoCheck') === dayKey) return; // une fois par jour
+    const site = getPlannedSiteForDay(Math.min(state.daysDone + 1, MISSION.joursTerrain));
+    if (!site || !site.coords) return;
+    localStorage.setItem('meteoCheck', dayKey);
+    fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${site.coords[0]}&lon=${site.coords[1]}&units=metric&lang=fr&appid=${a14State.apiKey}`)
+      .then(r => r.json())
+      .then(f => {
+        if (!f || !Array.isArray(f.list)) return;
+        const demain = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+        const slots = f.list.filter(x => (x.dt_txt || '').startsWith(demain));
+        if (!slots.length) return;
+        const ventMax = Math.round(Math.max(...slots.map(x => (x.wind?.speed || 0) * 3.6)));
+        const pluie = slots.reduce((s, x) => s + (x.rain?.['3h'] || 0), 0);
+        const desc = slots[Math.floor(slots.length / 2)]?.weather?.[0]?.description || '';
+        if (ventMax >= 40 || pluie >= 5) {
+          raiseAlert('meteo_' + demain, `🌪 MÉTÉO À RISQUE demain sur ${site.name} : ${desc}, vent max ${ventMax} km/h${pluie >= 5 ? ', pluie cumulée ' + Math.round(pluie) + ' mm' : ''}. Prévoir repli ou réorganisation du planning.`, false);
+          addNotification({ type: 'warn', text: `🌪 Météo à risque demain — ${site.name} (vent ${ventMax} km/h)`, time: now() });
+        }
+      }).catch(() => {});
+  } catch (e) { /* météo optionnelle */ }
+}
+
 async function sendMorningBrief(evt) {
   const btn = evt && evt.currentTarget; if (btn) disableBtn(btn);
   try {
@@ -12861,6 +12945,38 @@ function a17RenderRisks() {
   });
 }
 
+/* Simulation « et si ? » : impact chiffré d'un retard terrain et/ou d'un
+   retard de la subvention MCAT — chiffres du bilan financier. */
+function a17Simulate() {
+  const jours = Math.max(0, parseInt(document.getElementById('a17-sim-jours')?.value, 10) || 0);
+  const mcatRetard = document.getElementById('a17-sim-mcat')?.checked;
+  const out = document.getElementById('a17-sim-result');
+  if (!out) return;
+  const COUT_JOUR = Math.round(43401900 / MISSION.joursTerrain); // production terrain / 54j ≈ 804k
+  const reposDispo = Math.max(0, MISSION.joursRepos - Math.max(0, -(a17CalcDrift().deltaDays || 0)));
+  const joursAbsorbes = Math.min(jours, reposDispo);
+  const joursSurcout = Math.max(0, jours - joursAbsorbes);
+  const surcout = joursSurcout * COUT_JOUR;
+  const t = treasuryCompute();
+  const dispoApres = t.disponible - surcout;
+  const lignes = [];
+  if (jours > 0) {
+    lignes.push(['gold', `⏱ Retard simulé : ${jours} jour(s). ${joursAbsorbes} absorbé(s) par les jours de repos (${reposDispo} disponibles)${joursSurcout > 0 ? `, ${joursSurcout} en surcoût réel.` : ' : aucun surcoût.'}`]);
+    if (joursSurcout > 0) {
+      lignes.push([dispoApres < 0 ? 'red' : 'amber', `💸 Surcoût estimé : ${fmtFCFA(surcout)} (~${fmtFCFA(COUT_JOUR)}/jour de production). Disponible après impact : ${fmtFCFA(dispoApres)}.`]);
+      if (dispoApres < TREASURY_SEUIL_CRISE) lignes.push(['red', `🚨 Ce scénario passe sous le seuil critique de ${fmtFCFA(TREASURY_SEUIL_CRISE)} → comité de crise + gel des dépenses non vitales.`]);
+    }
+  }
+  if (mcatRetard) {
+    lignes.push(['red', `🏛 MCAT (35 M) en retard : le corridor critique M10 (solde plancher ~4,3 M) se prolonge. L'impression ARTRON (25,5 M en M11) devient non finançable sans les 35 M.`]);
+    lignes.push(['amber', `🛟 Plans B du bilan : préfinancement bancaire sur cession de créance MCAT (CBAO / Ecobank) · report de l'impression au T1 2028 · accélération des précommandes B2B.`]);
+  }
+  if (lignes.length === 0) lignes.push(['emerald', '✅ Aucun paramètre de simulation actif — situation nominale.']);
+  const colorMap = { red: '255,82,82', amber: '255,171,64', gold: '214,165,58', emerald: '0,230,118' };
+  out.innerHTML = lignes.map(([c, msg]) =>
+    `<div style="padding:8px 10px;margin-bottom:6px;border-radius:var(--r-sm);background:rgba(${colorMap[c]},0.08);border:1px solid rgba(${colorMap[c]},0.3);font-family:var(--font-mono);font-size:0.56rem;line-height:1.6;color:rgb(${colorMap[c]})">${msg}</div>`).join('');
+  a17AddLog(`Simulation : retard ${jours}j${mcatRetard ? ' + MCAT retardée' : ''}`);
+}
 function a17AddLog(text) {
   a17State.log.unshift({ text, time: now() });
   const list = document.getElementById('a17-log-list'); if (!list) return;
