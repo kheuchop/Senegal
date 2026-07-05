@@ -2274,6 +2274,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
             <button class="btn btn-ghost btn-sm" onclick="renderMorningBrief()">🔄 Actualiser</button>
             <button class="btn btn-primary btn-sm" onclick="sendMorningBrief(event)"><div class="spinner"></div><span class="btn-text">📣 Envoyer à l'équipe</span></button>
           </div>
+          <button class="btn btn-ghost btn-sm btn-full" id="push-enable-btn" style="margin-top:8px;display:none" onclick="enablePushNotifications()">🔔 Activer les notifications sur cet appareil</button>
         </div>
 
         <!-- Mission Progress Ring -->
@@ -5177,6 +5178,52 @@ function exportWordFromReg(key) {
 }
 
 /* ============================================================
+   NOTIFICATIONS PUSH — reçues même app fermée.
+   Abonnement stocké dans Supabase (push_subscriptions, RLS authenticated) ;
+   envoi via /api/push (VAPID, clés en variables Vercel).
+   ============================================================ */
+const PUSH_PUBLIC_KEY = 'BPTrGjDRMSiaYuMR58YYgzk-jx553k768gJM1gzYKmv4YMAUNJWSp1mp8235FqxKbYNd8BWnngjJvF8sFnbtxGA';
+function _pushB64ToU8(b64) {
+  const pad = '='.repeat((4 - b64.length % 4) % 4);
+  const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  const arr = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+  return arr;
+}
+async function _pushSubscribe(silent) {
+  try {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) { if (!silent) showToast('Push non supporté sur ce navigateur', 'warn'); return false; }
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: _pushB64ToU8(PUSH_PUBLIC_KEY) });
+    const client = (typeof _getAuthClient === 'function') ? _getAuthClient() : null;
+    if (!client) { if (!silent) showToast('Connexion requise pour activer les notifications', 'warn'); return false; }
+    const id = btoa(sub.endpoint).replace(/[^a-zA-Z0-9]/g, '').slice(-60);
+    const { error } = await client.from('push_subscriptions').upsert({ id, sub: sub.toJSON() }, { onConflict: 'id' });
+    if (error) { if (!silent) showToast('Table push absente ? (SQL à exécuter) : ' + error.message, 'warn'); return false; }
+    if (!silent) showToast('🔔 Notifications activées sur cet appareil', 'ok');
+    const b = document.getElementById('push-enable-btn'); if (b) b.style.display = 'none';
+    return true;
+  } catch (e) { if (!silent) showToast('Activation impossible : ' + e.message, 'warn'); return false; }
+}
+async function enablePushNotifications() {
+  if (!('Notification' in window)) { showToast('Notifications non supportées', 'warn'); return; }
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') { showToast('Permission refusée — notifications désactivées', 'warn'); return; }
+  await _pushSubscribe(false);
+}
+/* Envoie une notification push à TOUS les appareils abonnés de l'équipe (best-effort) */
+function sendPushToTeam(title, body, tag) {
+  try {
+    if (!navigator.onLine) return;
+    apiFetch('/api/push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, body, tag })
+    }).catch(() => {});
+  } catch (e) {}
+}
+
+/* ============================================================
    SAUVEGARDE COMPLÈTE CHIFFRÉE (AES-GCM 256 + PBKDF2 150k)
    Exporte TOUT l'appareil (état, livre, reçus, coffre) dans un
    fichier .mctrl protégé par mot de passe. Restauration inverse.
@@ -6804,6 +6851,7 @@ function addExpense(evt) {
     });
     saveStateToDB();
     renderApprovals();
+    sendPushToTeam('🛃 Approbation CPF requise', tx.description + ' — ' + fmtFCFA(amt), 'cpf');
     showToast('🛃 ' + fmtFCFA(amt) + ' ≥ 200 000 F → envoyée en approbation CPF (Superviseur)', 'warn');
     setTimeout(() => enableBtn(btn), 500);
     return;
@@ -7681,6 +7729,7 @@ function raiseAlert(key, msg, sensitive) {
     sendTelegramTo(cfg.chatIdDirection, '🔔 NOTIFICATION DIRECTION — MISSION SÉNÉGAL\n\n' + msg)
       .then(() => addActivity('📨', `Notif direction : ${msg.substring(0, 40)}…`, now()))
       .catch(e => console.warn('[Direction]', e.message));
+    sendPushToTeam('🔔 Alerte Direction', msg.substring(0, 140), 'direction');
   }
 
   // 2. Équipe : opérationnel uniquement, avec confirmation
@@ -12331,6 +12380,7 @@ function a15EngagerDevis(id) {
     const niveau = tx.amount >= CPF_SEUIL_MAJEUR ? 'NIVEAU 3 — délibération CPF + PV requis' : 'NIVEAU 2 — bon de commande, 2 signatures';
     state.approvals.unshift({ id: 'apr_' + Date.now(), type: 'expense', tx, source: '💸 Devis ' + (CAT_LABELS[tx.cat] || tx.cat), msg: tx.description + ' — ' + fmtFCFA(tx.amount) + ' · ' + niveau, time: now(), status: 'pending' });
     saveStateToDB(); renderApprovals();
+    sendPushToTeam('🛃 Approbation CPF requise', tx.description + ' — ' + fmtFCFA(tx.amount), 'cpf');
     showToast('🛃 Envoyé en approbation CPF (Superviseur)', 'warn');
   } else {
     state.transactionQueue.push(tx);
@@ -12868,6 +12918,9 @@ function buildMorningBrief() {
 function renderMorningBrief() {
   const el = document.getElementById('brief-content');
   if (!el) return;
+  // Propose l'activation des notifications si pas encore accordées
+  const pb = document.getElementById('push-enable-btn');
+  if (pb && 'Notification' in window) pb.style.display = Notification.permission === 'granted' ? 'none' : 'block';
   try { el.textContent = buildMorningBrief(); } catch (e) { el.textContent = 'Brief indisponible : ' + e.message; return; }
   // Météo du site du jour (si la clé OpenWeatherMap est configurée dans l'agent 14)
   try {
@@ -13332,6 +13385,10 @@ function _getAuthClient() {
 
 /** Appelée à chaque login ET à chaque refresh de token */
 function _onSessionReady(session) {
+  // Réabonnement push silencieux (si la permission a déjà été accordée)
+  if ('Notification' in window && Notification.permission === 'granted') {
+    setTimeout(() => _pushSubscribe(true), 5000);
+  }
   // 1. Partage la session avec SupaSync → les writes Supabase seront authentifiés
   if (typeof SupaSync !== 'undefined') {
     SupaSync.setSession(session);

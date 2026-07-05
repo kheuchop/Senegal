@@ -7,7 +7,7 @@
  *  - Tuiles OSM : cache opportuniste plafonné (les zones visitées restent visibles hors-ligne)
  *  - /api/, Supabase, Make : réseau uniquement (jamais de cache — la file SupaSync gère l'offline)
  */
-const VERSION = 'mission-ctrl-v64';
+const VERSION = 'mission-ctrl-v65';
 const SHELL_CACHE = `shell-${VERSION}`;
 const RUNTIME_CACHE = `runtime-${VERSION}`;
 const TILE_CACHE = `tiles-${VERSION}`;
@@ -127,6 +127,34 @@ async function tileStrategy(req) {
     return new Response('', { status: 408 });
   }
 }
+
+/* ── NOTIFICATIONS PUSH ──────────────────────────────────────
+   Reçoit les notifications même app fermée (approbations CPF,
+   alertes trésorerie/météo envoyées via /api/push). */
+self.addEventListener('push', (event) => {
+  let data = { title: 'Mission CTRL', body: '', tag: 'mctrl' };
+  try { if (event.data) data = { ...data, ...event.data.json() }; } catch (e) {}
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      tag: data.tag,
+      icon: './icons/icon-192.png',
+      badge: './icons/icon-192.png',
+      vibrate: [100, 50, 100],
+      data: { url: './' },
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {
+      for (const w of wins) { if ('focus' in w) return w.focus(); }
+      return self.clients.openWindow('./');
+    })
+  );
+});
 
 async function trimTileCache(cache) {
   const keys = await cache.keys();

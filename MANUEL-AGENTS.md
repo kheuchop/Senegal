@@ -38,7 +38,9 @@ Les codes d'accès sont stockés **localement sur chaque appareil** (jamais dans
 
 C'est l'écran d'accueil, la vue d'ensemble.
 
-- **☀️ Brief du Jour** *(en tête d'écran)* : l'essentiel en un coup d'œil — jour X/54, **site du jour** (planning), **météo du site** (si clé configurée), disponible trésorerie, approbations en attente, risques actifs. Bouton **📣 Envoyer à l'équipe** → le brief part dans le groupe Telegram. Le rituel du matin.
+- **☀️ Brief du Jour** *(en tête d'écran)* : l'essentiel en un coup d'œil — jour X/54 (ou **⏳ J-XXX** avant le départ), **site du jour** (planning), **météo du site** (si clé configurée), disponible trésorerie, approbations en attente, risques actifs. Bouton **📣 Envoyer à l'équipe** → le brief part dans le groupe Telegram. Le rituel du matin.
+- **🔔 Notifications push** : bouton **« Activer les notifications »** (une fois par appareil) → les alertes importantes (approbation CPF à valider, alertes Direction, météo à risque) arrivent **même app fermée**.
+- **📜 Journal d'Audit** : trace horodatée de toutes les actions sensibles — qui a supprimé/modifié/approuvé quoi, PIN refusés inclus. Export Word.
 - **Avancement Mission** : anneau de progression + indicateurs (sites, jours, km).
 - **Barre DISPO** (bandeau du haut) : le **cash réellement disponible** (encaissé − dépensé, voir Financier/Trésorerie) — visible sur tous les écrans.
 - **Check-list du Jour** : le rituel quotidien, **filtré selon ton poste** (chacun ne voit que ses tâches ; la Direction les voit toutes). Cliquer sur une ligne pour la cocher. Se réinitialise chaque jour.
@@ -59,7 +61,7 @@ Stockage sécurisé, protégé par un code PIN, **local à chaque appareil** (ri
 3. En bas : **🔑 Changer PIN** et **📤 Exporter** (sauvegarde).
 4. À conserver ici : les **URL des réseaux sociaux** (pour le bouton « Ouvrir » du CM), la **clé météo**, et vos mots de passe de services.
 
-**💾 Sauvegarde Complète** *(carte en bas du Coffre-Fort)* : exporte **tout l'appareil** (dépenses, trésorerie, livre, reçus, coffre, réglages) dans un **fichier chiffré** par mot de passe. À faire **chaque semaine en mission** et à ranger en lieu sûr (Drive, clé USB). **♻️ Restaurer** remet tout en place sur un appareil neuf (PIN Direction + mot de passe requis).
+**💾 Sauvegarde Complète** *(carte en bas du Coffre-Fort)* : exporte **tout l'appareil** (dépenses, trésorerie, livre, reçus, coffre, réglages) dans un **fichier chiffré** par mot de passe. À faire **chaque semaine en mission** et à ranger en lieu sûr (Drive, clé USB). **✅ Vérifier** contrôle qu'une sauvegarde est intègre et lisible **sans rien toucher** (à faire après chaque export !). **♻️ Restaurer** remet tout en place sur un appareil neuf (PIN Direction + mot de passe requis).
 
 > ⚠️ **Telegram et la clé IA (Claude) ne se mettent PLUS dans l'app.** Le token du bot Telegram, les groupes et la clé Claude sont configurés **côté serveur** (Vercel), jamais dans le navigateur — c'est nettement plus sûr. Le PIN et le contenu du coffre restent **sur l'appareil** et doivent être définis sur chaque téléphone utilisé.
 
@@ -118,6 +120,8 @@ Le **budget global**, la **répartition par catégorie** et la **dérive** se re
 - **Supprimer une dépense** : bouton **✕** sur la ligne dans l'Historique → le budget est recalculé.
 - **🔍 Rechercher** : champ de recherche + filtre par catégorie au-dessus de l'Historique.
 - **📊 Exporter CSV (comptable)** : télécharge toutes les dépenses ET les encaissements en un fichier Excel — pour le comptable externe et les bilans trimestriels CPF.
+- **📎 Justificatifs du mois (Word + photos)** : un document Word avec **les photos des reçus intégrées** (n°, montant, catégorie, date sous chaque pièce) — le dossier à remettre au comptable / aux bailleurs.
+- **🍽 Journée per diem** : un clic crée la dépense per diem du jour (6 pers × 15 000 F, ou 18 000 F en zones E/F, + 2 chauffeurs × 10 000 F), site du jour détecté automatiquement, anti-doublon.
 - **📄 Rapport mensuel → Telegram Direction** : envoie la synthèse du mois (dépenses par catégorie, encaissements, disponible) dans le canal Direction. Un rapport du mois écoulé part aussi **automatiquement** entre le 1er et le 3 du mois.
 - **🗑 Réinitialiser la finance** : efface toutes les dépenses (double confirmation) — le budget repart de 100 M.
 
@@ -164,7 +168,11 @@ Le cœur du suivi terrain.
 **Chronomètre GPS (sur chaque site) :**
 1. En arrivant, cliquer **▶ Démarrer**.
 2. **⏸ Pause** si besoin.
-3. En fin de journée, **✅ Valider Jour** (incrémente les jours faits).
+3. En fin de journée, **✅ Valider Jour** (incrémente les jours faits, enregistre les **km GPS réels** de la session).
+
+> 🚦 **Clause des 15 M** : valider un jour en zone B-F alors que moins de 15 M sont encaissés déclenche un avertissement — la dérogation exige le **PIN Direction** (clause d'activation terrain du bilan).
+
+**🏕 Mode Journée Terrain** : bouton sous le chronomètre → **écran plein format à gros boutons** (lisible en plein soleil) : jour, site, météo, chrono, Démarrer/Pause/Valider, note rapide vers le journal.
 
 **Planning Mission :** liste des 54 jours de terrain avec leur statut.
 
@@ -472,6 +480,7 @@ Onglet **Carte** (icône ⬡, ou bouton **Carte** en bas).
 - Chaque site est un point : cliquer dessus affiche son **nom**, sa **zone** et ses **coordonnées GPS**. Les sites offshore (Sangomar, GTA) sont signalés à part.
 - Bouton **GPS** : suit ta position en temps réel et indique le **site le plus proche** et la distance.
 - Les zones déjà consultées restent visibles **hors-ligne** sur le terrain.
+- **📥 Cartes hors-ligne par zone** : avant chaque départ, appuyer sur le bouton de la zone (A à F) en Wi-Fi → les cartes de tous les sites de la zone sont préchargées et resteront disponibles sans réseau.
 
 ---
 
