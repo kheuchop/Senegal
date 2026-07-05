@@ -2289,6 +2289,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
         <!-- Diagnostic de synchronisation -->
         <div class="card">
           <div class="card-title">🩺 Diagnostic Synchronisation</div>
+          <div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted);margin-bottom:4px">Version active sur CET appareil : <b id="sw-version-display" style="color:var(--gold)">vérification…</b></div>
           <div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted);margin-bottom:8px;line-height:1.5">Si les données n'apparaissent pas sur un autre appareil, lance ce test : il montre exactement ce qui bloque (réseau, session, droits, etc.) au lieu de rien dire.</div>
           <button class="btn btn-primary btn-full" id="sync-diag-btn" onclick="runSyncDiagnostic(event)"><div class="spinner"></div><span class="btn-text">🩺 Tester la synchronisation</span></button>
           <div id="sync-diag-result" style="display:none;margin-top:10px"></div>
@@ -6299,6 +6300,7 @@ function initSuperviseur() {
   renderNotifications();
   renderChecklist();
   setTimeout(() => { try { renderMorningBrief(); } catch (e) { console.warn('[Brief]', e); } }, 1500);
+  setTimeout(() => { try { displaySwVersion(); } catch (e) {} }, 1000);
   const feed = document.getElementById('activity-feed');
   if (feed) INITIAL_ACTIVITY.forEach(a => { const div=document.createElement('div'); div.className='activity-item'; div.innerHTML=`<div class="activity-icon">${a.icon}</div><div class="activity-detail"><div class="act-title">${a.title}</div><div class="act-time">${a.time}</div></div>`; feed.appendChild(div); });
   updateCOORing();
@@ -13164,6 +13166,34 @@ async function sendMorningBrief(evt) {
   if (btn) enableBtn(btn);
 }
 
+/* Version RÉELLEMENT active du Service Worker (pas supposée) — répond
+   "aucun Service Worker actif" si le navigateur n'a jamais installé/contrôlé
+   la page avec un SW (première visite, ou navigateur qui bloque les SW). */
+let _swVersionCache = null;
+function querySwVersion() {
+  return new Promise((resolve) => {
+    if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
+      resolve('aucun Service Worker actif (première visite ou SW non pris en charge)');
+      return;
+    }
+    const onMsg = (event) => {
+      if (event.data?.type === 'SW_VERSION') {
+        navigator.serviceWorker.removeEventListener('message', onMsg);
+        _swVersionCache = event.data.version;
+        resolve(event.data.version);
+      }
+    };
+    navigator.serviceWorker.addEventListener('message', onMsg);
+    navigator.serviceWorker.controller.postMessage({ type: 'GET_VERSION' });
+    setTimeout(() => { navigator.serviceWorker.removeEventListener('message', onMsg); resolve(_swVersionCache || 'pas de réponse (SW bloqué ou en cours de mise à jour)'); }, 2000);
+  });
+}
+function displaySwVersion() {
+  const el = document.getElementById('sw-version-display');
+  if (!el) return;
+  querySwVersion().then(v => { el.textContent = v; });
+}
+
 /* Diagnostic de synchronisation — montre EXACTEMENT ce qui bloque (réseau,
    session expirée, droits Supabase…) au lieu de laisser échouer en silence.
    Copiable pour être signalé tel quel. */
@@ -13172,13 +13202,17 @@ async function runSyncDiagnostic(evt) {
   const out = document.getElementById('sync-diag-result');
   if (out) { out.style.display = 'block'; out.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted)">Test en cours…</div>'; }
   try {
+    const swVersion = await querySwVersion();
     if (typeof SupaSync === 'undefined' || typeof SupaSync.diagnose !== 'function') {
-      if (out) out.innerHTML = '<div style="color:var(--red);font-size:0.6rem">Module de synchronisation non chargé.</div>';
+      const msg = `❌ Module de synchronisation non chargé (version active : ${swVersion}). Ferme complètement l'appli (pas juste actualiser) puis rouvre-la — une mise à jour est en attente.`;
+      window._lastSyncDiagText = msg;
+      if (out) out.innerHTML = `<div style="color:var(--red);font-size:0.6rem;line-height:1.6">${escapeHtml(msg)}</div>
+        <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="navigator.clipboard?.writeText(window._lastSyncDiagText||'').then(()=>showToast('📋 Diagnostic copié','ok'))">📋 Copier le diagnostic</button>`;
       if (btn) enableBtn(btn);
       return;
     }
     const result = await SupaSync.diagnose();
-    const lines = result.steps.map(s => `${s.ok ? '✅' : '❌'} ${s.step} : ${s.detail}`);
+    const lines = [`ℹ️ Version active : ${swVersion}`, ...result.steps.map(s => `${s.ok ? '✅' : '❌'} ${s.step} : ${s.detail}`)];
     const text = lines.join('\n');
     window._lastSyncDiagText = text;
     if (out) {
@@ -13736,12 +13770,32 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 <script src="agentCommercial.js"></script>
 <script>
-/* Service Worker — mode hors-ligne terrain */
+/* Service Worker — mode hors-ligne terrain.
+   MISE À JOUR AUTOMATIQUE : avant, l'app ne vérifiait jamais activement s'il
+   existait une nouvelle version — sur mobile, "fermer/rouvrir" ne suffit
+   souvent pas à déclencher cette vérification, et l'appareil pouvait
+   continuer à exécuter du code vieux de plusieurs versions indéfiniment
+   (c'était la cause probable du "la synchronisation ne marche toujours pas"
+   après un correctif déjà déployé). Ici : vérification à chaque ouverture +
+   toutes les heures, et rechargement automatique dès qu'une mise à jour
+   prend le contrôle — plus besoin d'y penser. */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js')
-      .then(reg => console.log('[SW] Enregistré — scope:', reg.scope))
+      .then(reg => {
+        console.log('[SW] Enregistré — scope:', reg.scope);
+        reg.update().catch(() => {});
+        setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
+      })
       .catch(err => console.warn('[SW] Échec enregistrement:', err));
+
+    let _swReloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (_swReloaded) return;
+      _swReloaded = true;
+      console.log('[SW] Nouvelle version active — rechargement automatique');
+      location.reload();
+    });
   });
 }
 </script>

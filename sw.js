@@ -7,7 +7,7 @@
  *  - Tuiles OSM : cache opportuniste plafonné (les zones visitées restent visibles hors-ligne)
  *  - /api/, Supabase, Make : réseau uniquement (jamais de cache — la file SupaSync gère l'offline)
  */
-const VERSION = 'mission-ctrl-v67';
+const VERSION = 'mission-ctrl-v68';
 const SHELL_CACHE = `shell-${VERSION}`;
 const RUNTIME_CACHE = `runtime-${VERSION}`;
 const TILE_CACHE = `tiles-${VERSION}`;
@@ -49,6 +49,15 @@ self.addEventListener('activate', (event) => {
       ))
       .then(() => self.clients.claim())
   );
+});
+
+/* Répond à la page avec la VERSION réellement active — permet d'afficher
+   dans l'app un numéro de version vérifiable (au lieu de supposer qu'une
+   mise à jour a bien été prise en compte). */
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'GET_VERSION') {
+    event.source?.postMessage({ type: 'SW_VERSION', version: VERSION });
+  }
 });
 
 self.addEventListener('fetch', (event) => {
