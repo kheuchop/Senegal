@@ -6,6 +6,8 @@ Guide pratique et détaillé : comment utiliser concrètement chaque agent, écr
 
 > 📷 **Uploader une photo / un fichier :** partout où il y a une zone en pointillés ou un bouton « + Ajouter », il suffit de **cliquer dessus** → la galerie photo du téléphone s'ouvre → choisir l'image. Sur mobile, on peut aussi prendre la photo directement.
 
+> 📄 **Documents sortants en Word :** tous les courriers générés par l'IA (relances, contrats, formulaires, dossiers, bons de commande, emails…) s'exportent en **document Word** mis en page : papier à en-tête THR doré, date à Dakar, objet, corps justifié, signature des co-gérants et pied de page contact. Bouton **📄 Word** à côté de chaque document généré. La rédaction suit un **style humain naturel** (courrier français classique, sans tics d'IA).
+
 ---
 
 ## CONNEXION & ACCÈS PAR RÔLE

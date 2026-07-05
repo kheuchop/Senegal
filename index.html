@@ -3349,7 +3349,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
             <button class="btn btn-primary btn-sm" onclick="a7SaveToLibrary()">
               <div class="spinner"></div><span class="btn-text">📚 Archiver Trilingue</span>
             </button>
-            <button class="btn btn-ghost btn-sm" onclick="a7ExportDocx()">📄 Exporter .txt</button>
+            <button class="btn btn-ghost btn-sm" onclick="a7ExportDocx()">📄 Exporter Word</button>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
             <button class="btn btn-ghost btn-sm" onclick="a7ToCorrector()">🔎 Corriger (A8)</button>
@@ -3804,7 +3804,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
             <button class="btn btn-ghost btn-sm" onclick="a9CopyDossier()">📋 Copier</button>
             <button class="btn btn-primary btn-sm" onclick="a9ExportDossier()">
-              <div class="spinner"></div><span class="btn-text">📤 Exporter .txt</span>
+              <div class="spinner"></div><span class="btn-text">📄 Exporter Word</span>
             </button>
           </div>
         </div>
@@ -5037,6 +5037,67 @@ function saveStateToDB() {
 
   // Détection de problèmes → proposition d'alerte équipe Telegram (débouncée)
   if (typeof scheduleMissionAlertCheck === 'function') scheduleMissionAlertCheck();
+}
+
+/* ============================================================
+   DOCUMENTS SORTANTS — export Word (.doc) + rédaction humaine
+   Tous les courriers/contrats/formulaires générés par Claude
+   sortent en Word avec papier à en-tête THR, prêts à envoyer.
+   ============================================================ */
+const HUMAN_DOC_STYLE = `
+
+RÈGLES DE RÉDACTION (impératives) :
+- Écris comme un professionnel sénégalais expérimenté écrirait lui-même, jamais comme une IA.
+- INTERDIT : tirets longs (—) et demi-cadratins (–). Utilise des virgules, des deux-points ou des parenthèses à la place.
+- INTERDIT : gras markdown (**), titres avec #, émojis dans le corps du document, listes à puces excessives.
+- Phrases naturelles, de longueur variée. Aucune formule creuse ("Il est important de noter", "Dans un monde où", "N'hésitez pas").
+- Conventions du courrier français : lieu et date, objet, formule d'appel, corps structuré en paragraphes, formule de politesse, bloc signature.
+- Le document doit être PRÊT À ENVOYER tel quel, sans retouche.`;
+
+/* Filet de sécurité : élimine les tics IA restants avant affichage/export */
+function humanizeDocText(t) {
+  return String(t || '')
+    .replace(/[  ]*—[  ]*/g, ', ')
+    .replace(/[  ]*–[  ]*/g, ', ')
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/^#{1,5}[ \t]*/gm, '')
+    .replace(/^[ \t]*[•▪◦][ \t]*/gm, '- ');
+}
+
+/* Export .doc (HTML Word) : A4, marges courrier, en-tête THR or, date à Dakar,
+   objet, corps justifié, signature co-gérants, pied de page contact. */
+function exportWordDoc(filename, title, text, opts = {}) {
+  const clean = humanizeDocText(text);
+  const paras = clean.split(/\n{2,}/).map(p =>
+    `<p style="margin:0 0 12pt 0;text-align:justify;line-height:150%">${escapeHtml(p).replace(/\n/g, '<br>')}</p>`).join('');
+  const dateStr = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]--><style>@page{size:A4;margin:2.5cm 2.2cm}body{font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#1a1a1a}</style></head><body>
+<table width="100%" style="border-bottom:2pt solid #C4872A"><tr>
+<td style="font-family:Cambria,Georgia,serif;font-size:14pt;font-weight:bold;color:#C4872A;padding-bottom:6pt">SÉNÉGAL, TERRE D'HISTOIRE ET DE RENCONTRES</td>
+<td align="right" style="font-size:8.5pt;color:#555555;padding-bottom:6pt">THR Éditions SARL<br>contact@senegalthr.com<br>Dakar, Sénégal</td></tr></table>
+<p style="text-align:right;margin:16pt 0 4pt 0">Dakar, le ${dateStr}</p>
+${opts.objet === false ? '' : `<p style="margin:14pt 0 16pt 0"><b>Objet : ${escapeHtml(opts.objet || title)}</b></p>`}
+${paras}
+${opts.signature === false ? '' : `<p style="margin-top:28pt">Attab Sonko &nbsp;·&nbsp; Cheikh Anta Diop<br><span style="font-size:9.5pt;color:#555555">Co-gérants, THR Éditions · Mission « Sénégal, Terre d'Histoire et de Rencontres »</span></p>`}
+<p style="margin-top:24pt;border-top:0.5pt solid #bbbbbb;padding-top:6pt;font-size:8pt;color:#888888">THR Éditions SARL · contact@senegalthr.com · +221 77 612 82 21 / 77 336 11 42 · Dakar, Sénégal</p>
+</body></html>`;
+  const blob = new Blob(['﻿' + html], { type: 'application/msword' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename.replace(/\.doc$/i, '') + '.doc';
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  showToast('📄 Document Word téléchargé', 'ok');
+}
+/* Registre : permet aux boutons injectés dans innerHTML d'exporter le dernier doc */
+window._wordDocs = {};
+function wordBtnReg(key, title, text, filename, opts) {
+  window._wordDocs[key] = { title, text, filename, opts: opts || {} };
+  return `<button class="btn btn-primary btn-sm" onclick="exportWordFromReg('${key}')">📄 Word</button>`;
+}
+function exportWordFromReg(key) {
+  const d = window._wordDocs[key];
+  if (d) exportWordDoc(d.filename, d.title, d.text, d.opts);
 }
 
 /* ============================================================
@@ -9192,12 +9253,8 @@ function a7SaveToLibrary() {
 
 function a7ExportDocx() {
   const o = a7State.lastOutput;
-  const txt = `=== FRANÇAIS ===\n${o.fr}\n\n=== ENGLISH ===\n${o.en}\n\n=== عربية ===\n${o.ar}`;
-  const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = `texte_trilangue_${Date.now()}.txt`; a.click();
-  URL.revokeObjectURL(url);
-  showToast('📄 Fichier texte exporté', 'ok');
+  const txt = `FRANÇAIS\n\n${o.fr}\n\nENGLISH\n\n${o.en}\n\nعربية\n\n${o.ar}`;
+  exportWordDoc('texte-trilingue-' + Date.now(), 'Texte trilingue FR · EN · AR', txt, { objet: false, signature: false });
 }
 
 /* ── A7 : Tableau de bord rédactionnel ── */
@@ -10026,11 +10083,7 @@ function a9ExportDossier() {
   const btn = event.currentTarget; disableBtn(btn);
   const el = document.getElementById('a9-dossier-output');
   const text = el ? el.innerText : 'Aucun dossier généré';
-  const blob = new Blob([text], { type:'text/plain;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = `dossier_impact_${Date.now()}.txt`; a.click();
-  URL.revokeObjectURL(url);
-  showToast('📤 Dossier exporté', 'ok');
+  exportWordDoc('dossier-impact-' + new Date().toISOString().slice(0, 10), 'Dossier d\'Impact — Proposition de partenariat', text, { objet: 'Proposition de partenariat · Mission documentaire « Sénégal, Terre d\'Histoire et de Rencontres »' });
   setTimeout(() => enableBtn(btn), 800);
 }
 
@@ -10291,12 +10344,15 @@ async function a10GenRelanceClaude(btn) {
   const levelLabel = {1:'première relance — ton cordial mais ferme', 2:'deuxième relance — ton plus pressant, rappel des délais', 3:'troisième relance — ton urgent, mention des contraintes de calendrier terrain'}[level];
   const langInstr  = lang === 'ar' ? 'Génère d\'abord la version française PUIS la version arabe formelle sous le titre "النسخة العربية".' : 'Génère uniquement la version française.';
   try {
-    const text = await a10CallClaude('Rédige des courriers de relance officiels. Pas de listes à puces. Registre formel. Adapte le protocole selon le type d\'organisme.',
+    const raw = await a10CallClaude('Rédige des courriers de relance officiels. Pas de listes à puces. Registre formel. Adapte le protocole selon le type d\'organisme.' + HUMAN_DOC_STYLE,
       `Site : ${auth.site}\nOrganisme : ${auth.org}\nRéférence : ${auth.ref}\nDate demande initiale : ${auth.date}\nContact : ${auth.contact}\nNiveau : ${levelLabel}\n\n${langInstr}\n\nRédige le courrier de relance complet. Adapte le protocole (Présidence = très formel, Dahira/Mouride = respect islamique, UNESCO = académique, Mairie = administratif, Parc National = environnemental). Mission : livre collector "Sénégal, Terre d'Histoire et de Rencontres", 500 exemplaires, budget 100M FCFA.`, 1100);
+    const text = humanizeDocText(raw);
+    const wBtn = wordBtnReg('a10rel', 'Relance autorisation · ' + auth.site, text, 'relance-' + (auth.ref || auth.id), { objet: 'Relance — demande d\'autorisation ' + auth.ref + ' (' + auth.site + ')' });
     if (div) div.innerHTML = `<div class="a10-doc-output">${escapeHtml(text)}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        ${wBtn}
         <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard?.writeText(${JSON.stringify(JSON.stringify(text))}).then(()=>showToast('📋 Copié','ok'))">📋 Copier</button>
-        <button class="btn btn-primary btn-sm" onclick="a10MarkRelanceSentDirect('${auth.id}')">📤 Marquer envoyé</button>
+        <button class="btn btn-ghost btn-sm" onclick="a10MarkRelanceSentDirect('${auth.id}')">📤 Envoyé</button>
       </div>`;
     a10AddJournal(`Relance Claude (niveau ${level}) générée : ${auth.site}`);
     addActivity('✉️', `Relance juridique ${level}ère — ${auth.site}`, now());
@@ -10321,10 +10377,15 @@ async function a10GenDroitImage(btn) {
   const typeLabel  = {adulte:'personne adulte', mineur:'mineur (signature tuteur légal)', groupe:'groupe ou communauté', artisan:'artisan ou commerçant'}[type];
   const usageLabel = {livre:'livre collector 500 exemplaires numérotés', expo:'exposition photographique', presse:'presse et digital', all:'tous supports (livre, expo, presse, digital)'}[usage];
   try {
-    const text = await a10CallClaude('Rédige des formulaires juridiques courts et pratiques pour le terrain. Bilingue français + wolof simple. Court, clair, signable sur place.',
+    const raw = await a10CallClaude('Rédige des formulaires juridiques courts et pratiques pour le terrain. Bilingue français + wolof simple. Court, clair, signable sur place.' + HUMAN_DOC_STYLE,
       `Génère un formulaire de droit à l'image pour :\n- Site : ${site}\n- Type : ${typeLabel}\n- Usage : ${usageLabel}\n- Mission : "Sénégal, Terre d'Histoire et de Rencontres" — édition de prestige, non commerciale, culturelle\n\nFormat : formulaire terrain court (1 page max), avec zones de signature, date, nom. Commence en français, puis version wolof simplifiée. Inclure clause de rétractation 30j.`, 900);
+    const text = humanizeDocText(raw);
+    const wBtn = wordBtnReg('a10di', 'Autorisation de droit à l\'image · ' + site, text, 'droit-image-' + site.replace(/\W+/g, '-').substring(0, 30), { objet: false, signature: false });
     if (div) div.innerHTML = `<div class="a10-doc-output">${escapeHtml(text)}</div>
-      <button class="btn btn-ghost btn-sm btn-full" onclick="navigator.clipboard?.writeText(${JSON.stringify(JSON.stringify(text))}).then(()=>showToast('📋 Copié','ok'))">📋 Copier le formulaire</button>`;
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        ${wBtn}
+        <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard?.writeText(${JSON.stringify(JSON.stringify(text))}).then(()=>showToast('📋 Copié','ok'))">📋 Copier</button>
+      </div>`;
     addActivity('📝', `Droit à l\'image généré — ${site} (${type})`, now());
   } catch(e) { if(div) div.innerHTML = `<div style="color:var(--red);font-size:12px">${e.message}</div>`; }
   enableBtn(btn);
@@ -10364,10 +10425,15 @@ async function a10GenCession(btn) {
   if (!context) { showToast('Décrire le contexte de la cession', 'warn'); enableBtn(btn); return; }
   const typeLabel = {gardien:'Gardien de site / Autorité coutumière', artisan:'Artisan (œuvre artisanale)', ayant_droit:'Ayant droit / Descendant', institution:'Institution culturelle'}[type];
   try {
-    const text = await a10CallClaude('Rédige des contrats de cession de droits courts, clairs et juridiquement valides selon le droit sénégalais. Français, signable sur place.',
+    const raw = await a10CallClaude('Rédige des contrats de cession de droits courts, clairs et juridiquement valides selon le droit sénégalais. Français, signable sur place.' + HUMAN_DOC_STYLE,
       `Type de cédant : ${typeLabel}\nContexte : ${context}\n\nRédige un contrat de cession de droits photographiques et d'exploitation d'image/œuvre pour la Mission Documentaire SÉNÉGAL V3. Usage : livre collector 500 exemplaires + exposition culturelle. Rémunération : citation nominative + exemplaire offert. Durée : illimitée territoire mondial. Inclure clauses : objet, cédant/cessionnaire, usage autorisé, territoire, durée, contreparties, droit moral, signatures.`, 1000);
+    const text = humanizeDocText(raw);
+    const wBtn = wordBtnReg('a10ces', 'Contrat de cession de droits · ' + typeLabel, text, 'contrat-cession-' + type, { objet: false, signature: false });
     if (div) div.innerHTML = `<div class="a10-doc-output">${escapeHtml(text)}</div>
-      <button class="btn btn-ghost btn-sm btn-full" onclick="navigator.clipboard?.writeText(${JSON.stringify(JSON.stringify(text))}).then(()=>showToast('📋 Copié','ok'))">📋 Copier le contrat</button>`;
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        ${wBtn}
+        <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard?.writeText(${JSON.stringify(JSON.stringify(text))}).then(()=>showToast('📋 Copié','ok'))">📋 Copier</button>
+      </div>`;
     addActivity('📜', `Contrat cession généré — ${typeLabel}`, now());
   } catch(e) { if(div) div.innerHTML = `<div style="color:var(--red);font-size:12px">${e.message}</div>`; }
   enableBtn(btn);
@@ -10955,12 +11021,17 @@ async function a12GenBonCommande(evt) {
   if (out) out.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted)">Rédaction en cours…</div>';
   const totalFCFA = qtyStd * A12_PRICE_STD * (1-remise/100) + qtyLuxe * A12_PRICE_LUXE * (1-remise/100);
   const prompt = `Génère un bon de commande professionnel bilingue FR/EN pour : Institution: ${institution}. Contact: ${contact||'N/A'}. Ville: ${ville||'N/A'}, Pays: ${pays||'Sénégal'}. Commande:${qtyStd>0?` ${qtyStd} ex. Standard à ${A12_PRICE_STD} FCFA`:''}${qtyLuxe>0?` ${qtyLuxe} ex. Luxe à ${A12_PRICE_LUXE} FCFA`:''}. Remise: ${remise}%. Total: ${fmtFCFA(totalFCFA)}. Inclure : références SÉNÉGAL V3, conditions livraison Sénégal/international, délai règlement 30 jours. Ton professionnel adapté à une institution culturelle.`;
-  const text = await a12CallClaude(A12_IDENTITY + '\nRédige le bon de commande complet et formaté, prêt à copier/imprimer.', prompt, 1200);
+  const raw = await a12CallClaude(A12_IDENTITY + '\nRédige le bon de commande complet et formaté, prêt à copier/imprimer.' + HUMAN_DOC_STYLE, prompt, 1200);
   if (!out) { enableBtn(btn); return; }
-  if (!text) { out.innerHTML = '<div style="color:var(--red);font-size:0.6rem">Erreur — vérifiez la clé API Claude</div>'; enableBtn(btn); return; }
+  if (!raw) { out.innerHTML = '<div style="color:var(--red);font-size:0.6rem">Erreur — vérifiez la clé API Claude</div>'; enableBtn(btn); return; }
+  const text = humanizeDocText(raw);
   const encText = encodeURIComponent(text);
+  const wBtn = wordBtnReg('a12bc', 'Bon de commande · ' + institution, text, 'bon-commande-' + institution.replace(/\W+/g, '-').substring(0, 30), { objet: 'Bon de commande — livre « Sénégal, Terre d\'Histoire et de Rencontres »' });
   out.innerHTML = `<pre style="font-family:var(--font-mono);font-size:0.55rem;line-height:1.7;white-space:pre-wrap;color:var(--text-1);background:var(--bg-input);padding:12px;border-radius:6px">${text.replace(/</g,'&lt;')}</pre>
-    <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="navigator.clipboard?.writeText(decodeURIComponent('${encText}')).then(()=>showToast('📋 Copié','ok'))">📋 Copier le bon de commande</button>`;
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      ${wBtn}
+      <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard?.writeText(decodeURIComponent('${encText}')).then(()=>showToast('📋 Copié','ok'))">📋 Copier</button>
+    </div>`;
   addActivity('📄', `Bon de commande généré : ${institution}`, now());
   enableBtn(btn);
 }
@@ -11396,12 +11467,17 @@ async function a13GenPageVente(evt) {
   const canalLabel = { newsletter:'newsletter email', instagram:'post Instagram/Facebook', presse:'communiqué de presse', email_institution:'email institutionnel', whatsapp:'message diaspora WhatsApp/Telegram' };
   const edLabel = edition==='luxe' ? 'Édition Luxe numérotée 500 ex. — 85 000 FCFA / ~130€' : edition==='std' ? 'Édition Standard 2000 ex. — 50 000 FCFA / ~76€' : 'Standard 50 000 F et Luxe numéroté 85 000 F (2 500 ex. total)';
   const prompt = `Écris un texte de vente pour ${canalLabel[canal]||canal} en ${langue}. Produit : livre d'art documentaire photographique SÉNÉGAL V3. ${edLabel}. 224 pages trilingue FR/EN/AR. Terrain dans toutes les régions du Sénégal. Texte percutant, humain, authentique. Ton parfaitement adapté au canal.`;
-  const text = await a13CallClaude('Tu es expert en marketing culturel et communication éditoriale pour livres d\'art.', prompt, 900);
+  const raw = await a13CallClaude('Tu es expert en marketing culturel et communication éditoriale pour livres d\'art.' + HUMAN_DOC_STYLE, prompt, 900);
   if (!out) { enableBtn(btn); return; }
-  if (!text) { out.innerHTML = '<div style="color:var(--red);font-size:0.6rem">Erreur — vérifiez la clé API Claude</div>'; enableBtn(btn); return; }
+  if (!raw) { out.innerHTML = '<div style="color:var(--red);font-size:0.6rem">Erreur — vérifiez la clé API Claude</div>'; enableBtn(btn); return; }
+  const text = humanizeDocText(raw);
   const encText = encodeURIComponent(text);
+  const wBtn = wordBtnReg('a13pv', 'Texte de vente · ' + (canalLabel[canal] || canal), text, 'page-vente-' + canal, { objet: false, signature: false });
   out.innerHTML = `<div style="background:var(--bg-input);border-radius:6px;padding:12px;font-size:0.62rem;line-height:1.7;color:var(--text-1);white-space:pre-wrap">${text.replace(/</g,'&lt;')}</div>
-    <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="navigator.clipboard?.writeText(decodeURIComponent('${encText}')).then(()=>showToast('📋 Copié','ok'))">📋 Copier</button>`;
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      ${wBtn}
+      <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard?.writeText(decodeURIComponent('${encText}')).then(()=>showToast('📋 Copié','ok'))">📋 Copier</button>
+    </div>`;
   enableBtn(btn);
 }
 
@@ -11416,11 +11492,13 @@ async function a13GenSequenceLancement(evt) {
   const fmt = d => d.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
   const dates = { j30:fmt(new Date(dl-30*86400000)), j15:fmt(new Date(dl-15*86400000)), j7:fmt(new Date(dl-7*86400000)), j0:fmt(dl) };
   const prompt = `Séquence 4 emails pré-lancement pour le livre SÉNÉGAL V3 (224 pages, trilingue FR/EN/AR, 2 000 Standard à 50 000 FCFA et 500 Luxe numérotés à 85 000 FCFA). Audiences : ${audiences.join(', ')||'général'}. Dates : J-30 (${dates.j30}), J-15 (${dates.j15}), J-7 (${dates.j7}), Jour J (${dates.j0}). Chaque email : objet + corps. Arc narratif : mystère → révélation → urgence → lancement.`;
-  const sys = 'Tu es expert en email marketing culturel et lancement de livres d\'art. Réponds en JSON : {"emails":[{"etape":"J-30","date":"...","objet":"...","corps":"..."}]}';
+  const sys = 'Tu es expert en email marketing culturel et lancement de livres d\'art.' + HUMAN_DOC_STYLE + '\nRéponds en JSON : {"emails":[{"etape":"J-30","date":"...","objet":"...","corps":"..."}]}';
   const data = await a13CallClaudeJSON(sys, prompt, 1800);
   if (!out) { enableBtn(btn); return; }
   if (!data.emails?.length) { out.innerHTML = '<div style="color:var(--red);font-size:0.6rem">Erreur — vérifiez la clé API Claude</div>'; enableBtn(btn); return; }
-  let html = '';
+  data.emails.forEach(em => { em.corps = humanizeDocText(em.corps); em.objet = humanizeDocText(em.objet); });
+  const seqText = data.emails.map(em => `EMAIL ${em.etape || ''} (${em.date || ''})\nObjet : ${em.objet || ''}\n\n${em.corps || ''}`).join('\n\n\n');
+  let html = '<div style="margin-bottom:8px">' + wordBtnReg('a13seq', 'Séquence de pré-lancement (4 emails)', seqText, 'sequence-lancement', { objet: false, signature: false }) + '</div>';
   data.emails.forEach((em, i) => {
     const bodyEnc = encodeURIComponent('Objet : ' + em.objet + '\n\n' + (em.corps||''));
     html += `<div style="border:1px solid var(--border);border-radius:6px;margin-bottom:8px;overflow:hidden">
@@ -11928,11 +12006,25 @@ async function a15GenArgumentaire(evt) {
   if (out)  out.textContent = 'Rédaction en cours…';
   const delta = d.est - d.reel;
   const pct = d.est > 0 ? Math.abs(Math.round(delta/d.est*100)) : 0;
-  const text = await a15CallClaude(
-    `Tu es négociateur expert pour missions documentaires en Afrique de l'Ouest. Tu connais les tarifs du marché sénégalais (imprimeurs Dakar, transporteurs 4x4, guides terrain, hôtels région). Génère un argumentaire structuré, en français, professionnel et persuasif.`,
+  const raw = await a15CallClaude(
+    `Tu es négociateur expert pour missions documentaires en Afrique de l'Ouest. Tu connais les tarifs du marché sénégalais (imprimeurs Dakar, transporteurs 4x4, guides terrain, hôtels région). Génère un argumentaire structuré, en français, professionnel et persuasif.` + HUMAN_DOC_STYLE,
     `Prestataire : ${d.nom}. Catégorie : ${d.cat}. Notre estimation : ${fmtFCFA(d.est)}. Devis reçu : ${fmtFCFA(d.reel)}. Écart : ${delta>=0?'économie':'dépassement'} de ${fmtFCFA(Math.abs(delta))} (${pct}%). Note : ${d.note||'aucune'}. Mission : ${MISSION.sites} sites Sénégal, ${MISSION.joursTerrain}j terrain, budget global ${(MISSION.budget/1000000).toFixed(0)}M FCFA. Génère un argumentaire de négociation professionnel adapté à la catégorie "${d.cat}" au Sénégal.`,
     900);
-  if (out) out.textContent = text || 'Erreur — vérifiez la clé API Claude';
+  const text = humanizeDocText(raw);
+  if (out) {
+    out.textContent = text || 'Erreur — vérifiez la clé API Claude';
+    if (text) {
+      wordBtnReg('a15arg', 'Argumentaire de négociation · ' + d.nom, text, 'argumentaire-' + d.nom.replace(/\W+/g, '-').substring(0, 30), { objet: 'Négociation — ' + d.nom, signature: false });
+      let wb = document.getElementById('a15-arg-word');
+      if (!wb) {
+        wb = document.createElement('button');
+        wb.id = 'a15-arg-word'; wb.className = 'btn btn-primary btn-sm btn-full'; wb.style.marginTop = '8px';
+        wb.textContent = '📄 Exporter Word';
+        wb.onclick = () => exportWordFromReg('a15arg');
+        out.parentNode.appendChild(wb);
+      }
+    }
+  }
   enableBtn(btn);
 }
 
@@ -11949,15 +12041,20 @@ async function a15GenEmailRelance(evt) {
   const out = document.getElementById('a15-email-result');
   if (!d) { showToast('Sélectionner un prestataire', 'warn'); enableBtn(btn); return; }
   if (out) out.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted)">Rédaction en cours…</div>';
-  const text = await a15CallClaude(
-    `Tu es chargé de négociation pour une mission documentaire photographique au Sénégal (budget 100M FCFA, 32 sites). Rédige des emails courts et efficaces.`,
+  const raw = await a15CallClaude(
+    `Tu es chargé de négociation pour une mission documentaire photographique au Sénégal (budget 100M FCFA, 32 sites). Rédige des emails courts et efficaces.` + HUMAN_DOC_STYLE,
     `Prestataire : ${d.nom}. Catégorie : ${d.cat}. Estimation : ${fmtFCFA(d.est)}. Devis : ${fmtFCFA(d.reel)}. Écart : ${fmtFCFA(Math.abs(d.est-d.reel))} (${d.reel>d.est?'dépassement':'économie'}). Ton : ${ton}. Note : ${d.note||'aucune'}. Rédige un email de relance/négociation professionnel en français, prêt à envoyer.`,
     700);
   if (!out) { enableBtn(btn); return; }
-  if (!text) { out.innerHTML = '<div style="color:var(--red);font-size:0.6rem">Erreur — vérifiez la clé API Claude</div>'; enableBtn(btn); return; }
+  if (!raw) { out.innerHTML = '<div style="color:var(--red);font-size:0.6rem">Erreur — vérifiez la clé API Claude</div>'; enableBtn(btn); return; }
+  const text = humanizeDocText(raw);
   const enc = encodeURIComponent(text);
+  const wBtn = wordBtnReg('a15email', 'Relance prestataire · ' + d.nom, text, 'relance-' + d.nom.replace(/\W+/g, '-').substring(0, 30), { objet: false, signature: false });
   out.innerHTML = `<div style="background:var(--bg-input);border-radius:6px;padding:12px;font-size:0.6rem;line-height:1.7;white-space:pre-wrap;color:var(--text-1)">${text.replace(/</g,'&lt;')}</div>
-    <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="navigator.clipboard?.writeText(decodeURIComponent('${enc}')).then(()=>showToast('📋 Copié','ok'))">📋 Copier l'email</button>`;
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      ${wBtn}
+      <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard?.writeText(decodeURIComponent('${enc}')).then(()=>showToast('📋 Copié','ok'))">📋 Copier</button>
+    </div>`;
   enableBtn(btn);
 }
 
@@ -12165,15 +12262,20 @@ async function a16GenRemerciement(evt) {
   const out = document.getElementById('a16-rem-result');
   if (!b) { showToast('Aucun contributeur', 'warn'); enableBtn(btn); return; }
   if (out) out.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted)">Rédaction en cours…</div>';
-  const text = await a16CallClaude(
-    `Tu écris de la correspondance sincère et chaleureuse pour une mission documentaire photographique sénégalaise. Jamais générique.`,
+  const raw = await a16CallClaude(
+    `Tu écris de la correspondance sincère et chaleureuse pour une mission documentaire photographique sénégalaise. Jamais générique.` + HUMAN_DOC_STYLE,
     `Contributeur : ${b.name}. Pays : ${b.pays}. Palier : ${b.palier}. Montant : ${fmtFCFA(b.amount)}. Campagne SÉNÉGAL V3. Rédige un email de remerciement chaleureux et personnel (8-12 lignes max), adapté à la diaspora sénégalaise. Mentionne sa contribution spécifique.`,
     500);
   if (!out) { enableBtn(btn); return; }
-  if (!text) { out.innerHTML = '<div style="color:var(--red);font-size:0.6rem">Erreur — vérifiez la clé API Claude</div>'; enableBtn(btn); return; }
+  if (!raw) { out.innerHTML = '<div style="color:var(--red);font-size:0.6rem">Erreur — vérifiez la clé API Claude</div>'; enableBtn(btn); return; }
+  const text = humanizeDocText(raw);
   const enc = encodeURIComponent(text);
+  const wBtn = wordBtnReg('a16rem', 'Remerciement · ' + b.name, text, 'remerciement-' + b.name.replace(/\W+/g, '-').substring(0, 30), { objet: false });
   out.innerHTML = `<div style="background:var(--bg-input);border-radius:6px;padding:12px;font-size:0.6rem;line-height:1.7;white-space:pre-wrap;color:var(--text-1)">${text.replace(/</g,'&lt;')}</div>
-    <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="navigator.clipboard?.writeText(decodeURIComponent('${enc}')).then(()=>showToast('📋 Copié','ok'))">📋 Copier</button>`;
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      ${wBtn}
+      <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard?.writeText(decodeURIComponent('${enc}')).then(()=>showToast('📋 Copié','ok'))">📋 Copier</button>
+    </div>`;
   enableBtn(btn);
 }
 
