@@ -2469,6 +2469,20 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           </div>
         </div>
 
+        <!-- Sauvegarde complète chiffrée (tout l'appareil) -->
+        <div class="card">
+          <div class="card-title">💾 Sauvegarde Complète</div>
+          <div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted);line-height:1.6;margin-bottom:10px">
+            Exporte <b>tout l'appareil</b> dans un fichier <b>chiffré</b> (dépenses, trésorerie, livre, reçus, coffre, réglages). À faire régulièrement : si le téléphone est perdu ou cassé, ce fichier restaure tout.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="backupExportAll(event)"><div class="spinner"></div><span class="btn-text">💾 Exporter tout</span></button>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('backup-restore-file').click()">♻️ Restaurer</button>
+          </div>
+          <input type="file" id="backup-restore-file" accept=".mctrl,application/json" style="display:none" onchange="backupRestoreAll(this)">
+          <div id="backup-status" style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted);margin-top:8px"></div>
+        </div>
+
       </div><!-- /agent-coffre -->
 
       <!-- =====================================================
@@ -2654,7 +2668,12 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <div id="treasury-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px"></div>
           <input type="text" id="treasury-add-source" class="input-field" placeholder="Source (ex. Sponsor X, don…)" autocomplete="off" style="margin-top:8px">
           <div style="display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:8px;margin-top:8px">
-            <input type="number" id="treasury-add-montant" class="input-field" placeholder="Montant FCFA" min="0" autocomplete="off">
+            <input type="number" id="treasury-add-montant" class="input-field" placeholder="Montant" min="0" autocomplete="off">
+            <select class="input-field" id="treasury-add-devise">
+              <option value="XOF">FCFA</option>
+              <option value="EUR">€ Euro</option>
+              <option value="USD">$ Dollar</option>
+            </select>
             <select class="input-field" id="treasury-add-mois">
               <option value="0">Avant M1</option>
               <option value="1">M1 Jan</option>
@@ -2781,12 +2800,29 @@ textarea.input-field { resize: vertical; min-height: 80px; }
         <!-- Transaction History -->
         <div class="card">
           <div class="card-title">Historique des Transactions</div>
+          <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:8px;margin-bottom:10px">
+            <input type="text" class="input-field" id="tx-search" placeholder="🔍 Rechercher…" autocomplete="off" oninput="renderTransactions()">
+            <select class="input-field" id="tx-filter-cat" onchange="renderTransactions()">
+              <option value="">Toutes catégories</option>
+              <option value="transport">🚗 Transport</option>
+              <option value="carburant">⛽ Carburant</option>
+              <option value="hebergement">🏨 Hébergement</option>
+              <option value="nourriture">🍽 Nourriture</option>
+              <option value="equipement">📷 Équipement</option>
+              <option value="api">🔌 API Cloud</option>
+              <option value="impression">🖨️ Impression</option>
+              <option value="communication">📣 Communication</option>
+              <option value="divers">📦 Divers</option>
+            </select>
+          </div>
           <div id="transaction-list">
             <div style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);text-align:center;padding:20px 0">
               Aucune transaction enregistrée
             </div>
           </div>
-          <button class="btn btn-ghost btn-full" style="margin-top:10px;border-color:rgba(255,82,82,0.3);color:var(--red)" onclick="resetFinance()">🗑 Réinitialiser la finance (tout effacer)</button>
+          <button class="btn btn-ghost btn-full" style="margin-top:10px" onclick="finExportCSV()">📊 Exporter CSV (comptable)</button>
+          <button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="finMonthlyReport(event)">📄 Rapport mensuel → Telegram Direction</button>
+          <button class="btn btn-ghost btn-full" style="margin-top:8px;border-color:rgba(255,82,82,0.3);color:var(--red)" onclick="resetFinance()">🗑 Réinitialiser la finance (tout effacer)</button>
         </div>
 
         <!-- Galerie des reçus / factures -->
@@ -4975,6 +5011,7 @@ function saveStateToDB() {
       dailyChecklist: state.dailyChecklist,
       rolePins:       state.rolePins,
       a17MissionStartTs: state.a17MissionStartTs || null,
+      lastMonthlyReport: state.lastMonthlyReport || null,
     }
   }).catch(e => console.error('[DB] saveState échoué:', e));
 
@@ -4988,6 +5025,7 @@ function saveStateToDB() {
       printRate: state.printRate,
       treasury:  state.treasury,   // encaissements partagés entre coporteurs
       printCfg:  state.printCfg,   // tarif imprimeur ARTRON partagé
+      lastMonthlyReport: state.lastMonthlyReport || null, // dédup rapport mensuel
     }).catch(e => console.warn('[Sync] syncState:', e.message));
     // SÉCURITÉ : vault, vaultPin, rolePins et clés API restent LOCAUX (IndexedDB).
     // Ils ne transitent plus jamais par Supabase.
@@ -4998,6 +5036,105 @@ function saveStateToDB() {
 
   // Détection de problèmes → proposition d'alerte équipe Telegram (débouncée)
   if (typeof scheduleMissionAlertCheck === 'function') scheduleMissionAlertCheck();
+}
+
+/* ============================================================
+   SAUVEGARDE COMPLÈTE CHIFFRÉE (AES-GCM 256 + PBKDF2 150k)
+   Exporte TOUT l'appareil (état, livre, reçus, coffre) dans un
+   fichier .mctrl protégé par mot de passe. Restauration inverse.
+   ============================================================ */
+function _b64FromBuf(buf) {
+  const bytes = new Uint8Array(buf); let s = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+function _bufFromB64(b64) {
+  const s = atob(b64); const bytes = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i++) bytes[i] = s.charCodeAt(i);
+  return bytes;
+}
+async function _backupKey(password, salt) {
+  const mat = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 150000, hash: 'SHA-256' },
+    mat, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+  );
+}
+async function backupExportAll(evt) {
+  const btn = evt && evt.currentTarget; if (btn) disableBtn(btn);
+  const statusEl = document.getElementById('backup-status');
+  try {
+    const pwd = prompt('Mot de passe de la sauvegarde (à NE PAS oublier — il protège tout) :');
+    if (!pwd) { if (btn) enableBtn(btn); return; }
+    if (pwd.length < 6) { showToast('Mot de passe trop court (6 caractères min.)', 'warn'); if (btn) enableBtn(btn); return; }
+    if (prompt('Confirme le mot de passe :') !== pwd) { showToast('Les mots de passe ne correspondent pas', 'warn'); if (btn) enableBtn(btn); return; }
+    if (statusEl) statusEl.textContent = 'Préparation des données…';
+
+    const stateRows = await dbReadAll('state');
+    const payload = {
+      format: 'mctrl-backup', version: 2, ts: Date.now(),
+      state:    stateRows && stateRows[0] ? stateRows[0].data : null,
+      book:     { gallery: a6State.bookGallery, pages: a6State.bookPages },
+      receipts: await dbReadAll('receipts'),
+    };
+    if (statusEl) statusEl.textContent = 'Chiffrement…';
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv   = crypto.getRandomValues(new Uint8Array(12));
+    const key  = await _backupKey(pwd, salt);
+    const enc  = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(JSON.stringify(payload)));
+    const file = JSON.stringify({ mctrl: 2, salt: _b64FromBuf(salt), iv: _b64FromBuf(iv), data: _b64FromBuf(enc) });
+
+    const blob = new Blob([file], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'mission-sauvegarde-' + new Date().toISOString().slice(0, 10) + '.mctrl';
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    if (statusEl) statusEl.textContent = '✅ Sauvegarde chiffrée téléchargée (' + (blob.size / 1048576).toFixed(1) + ' Mo). Range-la en lieu sûr (Drive, clé USB…).';
+    showToast('💾 Sauvegarde complète exportée', 'ok');
+  } catch (e) {
+    if (statusEl) statusEl.textContent = '❌ ' + e.message;
+    showToast('Sauvegarde échouée : ' + e.message, 'error');
+  }
+  if (btn) enableBtn(btn);
+}
+async function backupRestoreAll(input) {
+  const file = input.files && input.files[0];
+  input.value = '';
+  if (!file) return;
+  const statusEl = document.getElementById('backup-status');
+  try {
+    if (!requireDirectionPin('restaurer une sauvegarde complète')) return;
+    const raw = JSON.parse(await file.text());
+    if (!raw || raw.mctrl !== 2) throw new Error('Fichier de sauvegarde invalide');
+    const pwd = prompt('Mot de passe de cette sauvegarde :');
+    if (!pwd) return;
+    if (statusEl) statusEl.textContent = 'Déchiffrement…';
+    const key = await _backupKey(pwd, _bufFromB64(raw.salt));
+    let payload;
+    try {
+      const dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: _bufFromB64(raw.iv) }, key, _bufFromB64(raw.data));
+      payload = JSON.parse(new TextDecoder().decode(dec));
+    } catch { throw new Error('Mot de passe incorrect (ou fichier corrompu)'); }
+    if (payload.format !== 'mctrl-backup') throw new Error('Contenu de sauvegarde invalide');
+
+    const dateStr = new Date(payload.ts).toLocaleString('fr-FR');
+    if (!confirm('⚠️ RESTAURER la sauvegarde du ' + dateStr + ' ?\n\nTOUTES les données actuelles de CET appareil seront remplacées (dépenses, trésorerie, livre, reçus, coffre).')) return;
+    if (!confirm('Dernière confirmation : remplacer les données actuelles ?')) return;
+
+    if (statusEl) statusEl.textContent = 'Restauration…';
+    if (payload.state) await dbWrite('state', { id: 1, data: payload.state });
+    if (payload.book)  await dbWrite('bookstore', { id: 1, gallery: payload.book.gallery || [], pages: payload.book.pages || [] });
+    if (Array.isArray(payload.receipts)) {
+      for (const r of payload.receipts) { if (r && r.id) await dbWrite('receipts', r); }
+    }
+    if (statusEl) statusEl.textContent = '✅ Restauré — rechargement…';
+    showToast('♻️ Sauvegarde restaurée — rechargement de l\'app', 'ok');
+    setTimeout(() => location.reload(), 1200);
+  } catch (e) {
+    if (statusEl) statusEl.textContent = '❌ ' + e.message;
+    showToast('Restauration échouée : ' + e.message, 'error');
+  }
 }
 
 /* ---- LIVRE : stockage séparé (store 'bookstore') ------------------------
@@ -5072,6 +5209,7 @@ async function loadStateFromDB() {
     if (d.dailyChecklist && typeof d.dailyChecklist === 'object') state.dailyChecklist = { date: d.dailyChecklist.date || '', checked: d.dailyChecklist.checked || {} };
     if (d.rolePins && typeof d.rolePins === 'object') state.rolePins = d.rolePins;
     if (d.a17MissionStartTs) state.a17MissionStartTs = d.a17MissionStartTs;
+    if (d.lastMonthlyReport) state.lastMonthlyReport = d.lastMonthlyReport;
   }
   // Livre : store dédié (prioritaire) — les champs a6Book* du blob ci-dessus
   // ne servent plus que de migration depuis les anciennes versions.
@@ -5514,13 +5652,31 @@ function renderApprovals() {
   state.approvals.forEach(a => {
     const div = document.createElement('div');
     div.className = `approval-item${a.status !== 'pending' ? ' appr-done' + (a.status==='rejected'?' appr-rejected':'') : ''}`;
-    div.innerHTML = `<div class="appr-left"><div class="appr-source">${a.source}</div><div class="appr-msg">${a.msg}</div><div class="appr-time">${a.time}</div></div><div class="appr-actions">${a.status==='pending'?`<button class="btn btn-success btn-sm" onclick="approveItem('${a.id}',event)"><div class="spinner"></div><span class="btn-text">✓</span></button><button class="btn btn-danger btn-sm" onclick="rejectItem('${a.id}',event)"><div class="spinner"></div><span class="btn-text">✗</span></button>`:'<span class="pill '+(a.status==='approved'?'pill-green':'pill-red')+'">'+(a.status==='approved'?'Approuvé':'Refusé')+'</span>'}</div>`;
+    div.innerHTML = `<div class="appr-left"><div class="appr-source">${escapeHtml(a.source)}</div><div class="appr-msg">${escapeHtml(a.msg)}</div><div class="appr-time">${escapeHtml(a.time)}</div></div><div class="appr-actions">${a.status==='pending'?`<button class="btn btn-success btn-sm" onclick="approveItem('${a.id}',event)"><div class="spinner"></div><span class="btn-text">✓</span></button><button class="btn btn-danger btn-sm" onclick="rejectItem('${a.id}',event)"><div class="spinner"></div><span class="btn-text">✗</span></button>`:'<span class="pill '+(a.status==='approved'?'pill-green':'pill-red')+'">'+(a.status==='approved'?'Approuvé':'Refusé')+'</span>'}</div>`;
     list.appendChild(div);
   });
 }
 function approveItem(id, evt) {
-  const btn = evt.currentTarget; disableBtn(btn);
-  setTimeout(() => { const a = state.approvals.find(x=>x.id===id); if(a){a.status='approved'; addActivity('✅', `Approbation accordée : ${a.source}`, 'À l\'instant'); saveStateToDB(); renderApprovals(); } enableBtn(btn); }, 800);
+  const btn = evt.currentTarget;
+  const item = state.approvals.find(x => x.id === id);
+  // Dépense CPF : l'approbation est un acte de Direction → PIN exigé
+  if (item && item.type === 'expense' && !requireDirectionPin('approuver cette dépense CPF')) return;
+  disableBtn(btn);
+  setTimeout(() => {
+    const a = state.approvals.find(x=>x.id===id);
+    if (a) {
+      a.status='approved';
+      addActivity('✅', `Approbation accordée : ${a.source}`, 'À l\'instant');
+      // Dépense approuvée → elle entre maintenant réellement dans le budget
+      if (a.type === 'expense' && a.tx) {
+        state.transactionQueue.push(a.tx);
+        processTransactionQueue();
+        showToast('✅ Dépense CPF approuvée : ' + fmtFCFA(a.tx.amount), 'ok');
+      }
+      saveStateToDB(); renderApprovals();
+    }
+    enableBtn(btn);
+  }, 800);
 }
 function rejectItem(id, evt) {
   const btn = evt.currentTarget; disableBtn(btn);
@@ -6331,6 +6487,8 @@ const TREASURY_DECAISSEMENTS_SEED = [
 ];
 const TREASURY_SEUIL_TERRAIN = 15000000; // clause d'activation zones B-F (vérif fin M3)
 const TREASURY_SEUIL_CRISE   = 2000000;  // comité de crise si solde < 2M (bilan)
+const CPF_SEUIL_APPROBATION  = 200000;   // gouvernance CPF : ≥200k → approbation Direction
+const CPF_SEUIL_MAJEUR       = 1000000;  // ≥1M → délibération CPF formelle + PV
 const MOIS_LABELS = ['Avant M1','M1 Jan','M2 Fév','M3 Mar','M4 Avr','M5 Mai','M6 Juin','M7 Juil','M8 Août','M9 Sep','M10 Oct','M11 Nov','M12 Déc'];
 
 function addExpense(evt) {
@@ -6378,9 +6536,27 @@ function addExpense(evt) {
     }).then(() => renderReceiptGallery()).catch(e => console.warn('[Reçus]', e));
     finClearReceipt();
   }
-  state.transactionQueue.push(tx);
   document.getElementById('exp-amount').value = '';
   document.getElementById('exp-desc').value   = '';
+
+  // GOUVERNANCE CPF (bilan financier) : ≥ 200 000 F → approbation Direction requise
+  // (Niveau 2 : bon de commande 2 signatures · Niveau 3 ≥ 1M : délibération CPF + PV)
+  if (amt >= CPF_SEUIL_APPROBATION) {
+    const niveau = amt >= CPF_SEUIL_MAJEUR ? 'NIVEAU 3 — délibération CPF + PV requis' : 'NIVEAU 2 — bon de commande, 2 signatures';
+    state.approvals.unshift({
+      id: 'apr_' + Date.now(), type: 'expense', tx,
+      source: '💸 Dépense ' + (CAT_LABELS[cat] || cat),
+      msg: tx.description + ' — ' + fmtFCFA(amt) + ' · ' + niveau,
+      time: now(), status: 'pending'
+    });
+    saveStateToDB();
+    renderApprovals();
+    showToast('🛃 ' + fmtFCFA(amt) + ' ≥ 200 000 F → envoyée en approbation CPF (Superviseur)', 'warn');
+    setTimeout(() => enableBtn(btn), 500);
+    return;
+  }
+
+  state.transactionQueue.push(tx);
   showToast(`➕ Dépense ajoutée : ${fmtFCFA(amt)}`, 'ok');
   processTransactionQueue();
   setTimeout(() => enableBtn(btn), 500);
@@ -6487,8 +6663,16 @@ function renderTransactions() {
   const list = document.getElementById('transaction-list');
   if (!list) return;
   if (state.transactions.length === 0) { list.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);text-align:center;padding:20px 0">Aucune transaction enregistrée</div>'; return; }
+  // Filtres recherche (texte + catégorie)
+  const q = (document.getElementById('tx-search')?.value || '').trim().toLowerCase();
+  const fCat = document.getElementById('tx-filter-cat')?.value || '';
+  const filtering = q || fCat;
+  let items = state.transactions;
+  if (fCat) items = items.filter(tx => tx.cat === fCat);
+  if (q) items = items.filter(tx => (tx.description || '').toLowerCase().includes(q) || String(tx.amount).includes(q));
+  if (items.length === 0) { list.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);text-align:center;padding:20px 0">Aucun résultat pour ce filtre</div>'; return; }
   list.innerHTML = '';
-  state.transactions.slice(0, 15).forEach(tx => {
+  items.slice(0, filtering ? 100 : 15).forEach(tx => {
     const div = document.createElement('div'); div.className = 'tx-item';
     const color = CAT_COLORS[tx.cat] || '#90a4ae';
     const time = new Date(tx.ts).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
@@ -6530,6 +6714,88 @@ function deleteTransaction(id) {
     SupaSync.deleteTransaction(String(id)).catch(e => console.warn('[Sync] delete tx:', e.message));
   }
   showToast('🗑 Dépense supprimée — budget recalculé', 'ok');
+}
+/* Export comptable CSV (Excel FR : séparateur ; + BOM UTF-8).
+   Deux sections : DÉPENSES puis ENCAISSEMENTS — pour le comptable externe / CPF. */
+function finExportCSV() {
+  const csvCell = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const lines = [];
+  lines.push('MISSION CTRL SENEGAL V3 — EXPORT COMPTABLE;' + new Date().toLocaleString('fr-FR'));
+  lines.push('');
+  lines.push('=== DEPENSES ===');
+  lines.push('Date;Heure;Categorie;Description;Montant FCFA;Recu joint');
+  [...state.transactions].sort((a, b) => a.ts - b.ts).forEach(tx => {
+    const d = new Date(tx.ts);
+    lines.push([
+      d.toLocaleDateString('fr-FR'), d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+      csvCell(CAT_LABELS[tx.cat] || tx.cat), csvCell(tx.description), tx.amount, tx.receiptId ? 'OUI' : 'non'
+    ].join(';'));
+  });
+  lines.push('TOTAL DEPENSES;;;;' + state.spent + ';');
+  lines.push('');
+  lines.push('=== ENCAISSEMENTS ===');
+  lines.push('Mois plan;Source;Statut;Montant FCFA;Date encaissement');
+  const enc = (state.treasury && state.treasury.encaissements || []).slice().sort((a, b) => a.mois - b.mois);
+  let totEnc = 0;
+  enc.forEach(e => {
+    if (e.statut === 'recu') totEnc += e.montant;
+    lines.push([
+      MOIS_LABELS[e.mois] || e.mois, csvCell(e.source), e.statut === 'recu' ? 'RECU' : 'attendu',
+      e.montant, e.dateRecu ? new Date(e.dateRecu).toLocaleDateString('fr-FR') : ''
+    ].join(';'));
+  });
+  lines.push('TOTAL ENCAISSE;;;' + totEnc + ';');
+  lines.push('');
+  lines.push('DISPONIBLE (encaisse - depense);;;' + (totEnc - state.spent) + ';');
+  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'mission-comptable-' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  showToast('📊 Export CSV téléchargé', 'ok');
+}
+/* Rapport financier mensuel → canal Telegram Direction.
+   Bouton : mois en cours (à date). Auto : les 3 premiers jours du mois,
+   rapport du mois précédent (une seule fois, dédupliqué via le cloud). */
+function finBuildMonthlyReport(year, month) {
+  const monthName = new Date(year, month, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  const txs = state.transactions.filter(t => { const d = new Date(t.ts); return d.getFullYear() === year && d.getMonth() === month; });
+  const totalMois = txs.reduce((s, t) => s + t.amount, 0);
+  const parCat = {};
+  txs.forEach(t => { parCat[t.cat] = (parCat[t.cat] || 0) + t.amount; });
+  const topCats = Object.entries(parCat).sort((a, b) => b[1] - a[1]).slice(0, 5)
+    .map(([c, v]) => `  • ${CAT_LABELS[c] || c} : ${fmtFCFA(v)}`).join('\n') || '  • aucune dépense';
+  const encMois = (state.treasury?.encaissements || []).filter(e => {
+    if (e.statut !== 'recu' || !e.dateRecu) return false;
+    const d = new Date(e.dateRecu); return d.getFullYear() === year && d.getMonth() === month;
+  });
+  const totalEncMois = encMois.reduce((s, e) => s + e.montant, 0);
+  const t = treasuryCompute();
+  return `📊 RAPPORT FINANCIER — ${monthName.toUpperCase()}\nMISSION SÉNÉGAL V3\n\n💸 Dépenses du mois : ${fmtFCFA(totalMois)} (${txs.length} transaction${txs.length > 1 ? 's' : ''})\n${topCats}\n\n💰 Encaissé ce mois : ${fmtFCFA(totalEncMois)}${encMois.length ? '\n' + encMois.map(e => '  • ' + e.source + ' : ' + fmtFCFA(e.montant)).join('\n') : ''}\n\n🏦 SITUATION GLOBALE\n  • Encaissé total : ${fmtFCFA(t.encaisse)}\n  • Dépensé total : ${fmtFCFA(state.spent)}\n  • DISPONIBLE : ${fmtFCFA(t.disponible)}\n  • Enveloppe plan consommée : ${Math.round(state.spent / state.budget * 100)}% de 100M\n\n(Rapport généré automatiquement par Mission CTRL)`;
+}
+async function finMonthlyReport(evt) {
+  const btn = evt && evt.currentTarget; if (btn) disableBtn(btn);
+  try {
+    const nowD = new Date();
+    await sendTelegramTo('direction', finBuildMonthlyReport(nowD.getFullYear(), nowD.getMonth()));
+    showToast('📄 Rapport envoyé au canal Direction', 'ok');
+  } catch (e) {
+    showToast('Envoi impossible : ' + e.message, 'error');
+  }
+  if (btn) enableBtn(btn);
+}
+function finAutoMonthlyReport() {
+  const nowD = new Date();
+  if (nowD.getDate() > 3) return; // fenêtre d'envoi : 1er au 3 du mois
+  const curKey = nowD.getFullYear() + '-' + String(nowD.getMonth() + 1).padStart(2, '0');
+  if (state.lastMonthlyReport === curKey) return; // déjà envoyé (cet appareil ou un autre via cloud)
+  const prev = new Date(nowD.getFullYear(), nowD.getMonth() - 1, 1);
+  state.lastMonthlyReport = curKey;
+  saveStateToDB(); // partage la clé via le cloud → pas de doublon entre appareils
+  sendTelegramTo('direction', finBuildMonthlyReport(prev.getFullYear(), prev.getMonth()))
+    .then(() => addActivity('📄', 'Rapport mensuel envoyé à la Direction', 'À l\'instant'))
+    .catch(e => console.warn('[Rapport mensuel]', e.message));
 }
 function editTransaction(id) {
   const tx = state.transactions.find(t => String(t.id) === String(id));
@@ -6824,7 +7090,20 @@ function treasuryAddEncaissement(ev) {
   const statut = (statutEl && statutEl.value === 'attendu') ? 'attendu' : 'recu';
   if (!src) { showToast('Indique une source', 'warn'); return; }
   if (montant <= 0) { showToast('Montant invalide', 'warn'); return; }
-  state.treasury.encaissements.push({ id: 'enc-man-' + Date.now(), mois, montant, source: src, statut, dateRecu: statut === 'recu' ? Date.now() : null, manual: true });
+  // Conversion devise → FCFA (€ parité fixe ; $ taux saisi)
+  const devise = (document.getElementById('treasury-add-devise')?.value || 'XOF').toUpperCase();
+  let montantFCFA = montant, noteDevise = '';
+  if (devise === 'EUR') {
+    montantFCFA = Math.round(montant * FX_EUR_XOF);
+    noteDevise = ` (${montant.toLocaleString('fr-FR')} € → FCFA)`;
+  } else if (devise === 'USD') {
+    const tauxStr = prompt('Taux USD → FCFA appliqué :', '605');
+    if (tauxStr === null) return;
+    const taux = Math.round(parseFloat(tauxStr) || 605);
+    montantFCFA = Math.round(montant * taux);
+    noteDevise = ` (${montant.toLocaleString('fr-FR')} $ × ${taux})`;
+  }
+  state.treasury.encaissements.push({ id: 'enc-man-' + Date.now(), mois, montant: montantFCFA, montantOriginal: montant, devise, source: (src + noteDevise).substring(0, 120), statut, dateRecu: statut === 'recu' ? Date.now() : null, manual: true });
   if (srcEl) srcEl.value = '';
   if (montEl) montEl.value = '';
   saveStateToDB();
@@ -7331,10 +7610,17 @@ async function init() {
         if (cloud.printCfg && typeof cloud.printCfg === 'object' && cloud.printCfg.std) {
           state.printCfg = { ...state.printCfg, ...cloud.printCfg };
         }
+        // Dédup rapport mensuel : si un autre appareil l'a déjà envoyé ce mois-ci
+        if (cloud.lastMonthlyReport && (!state.lastMonthlyReport || cloud.lastMonthlyReport > state.lastMonthlyReport)) {
+          state.lastMonthlyReport = cloud.lastMonthlyReport;
+        }
       }
     } catch (e) { console.warn('[Sync] fetchState:', e.message); }
   }
 
+
+  // Rapport mensuel automatique (1er-3 du mois, une fois, dédup cloud)
+  setTimeout(() => { try { finAutoMonthlyReport(); } catch (e) { console.warn('[Rapport]', e); } }, 8000);
 
   setStatus('Initialisation WakeLock…');
   await requestWakeLock();

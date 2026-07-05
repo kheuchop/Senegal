@@ -56,6 +56,8 @@ Stockage sécurisé, protégé par un code PIN, **local à chaque appareil** (ri
 3. En bas : **🔑 Changer PIN** et **📤 Exporter** (sauvegarde).
 4. À conserver ici : les **URL des réseaux sociaux** (pour le bouton « Ouvrir » du CM), la **clé météo**, et vos mots de passe de services.
 
+**💾 Sauvegarde Complète** *(carte en bas du Coffre-Fort)* : exporte **tout l'appareil** (dépenses, trésorerie, livre, reçus, coffre, réglages) dans un **fichier chiffré** par mot de passe. À faire **chaque semaine en mission** et à ranger en lieu sûr (Drive, clé USB). **♻️ Restaurer** remet tout en place sur un appareil neuf (PIN Direction + mot de passe requis).
+
 > ⚠️ **Telegram et la clé IA (Claude) ne se mettent PLUS dans l'app.** Le token du bot Telegram, les groupes et la clé Claude sont configurés **côté serveur** (Vercel), jamais dans le navigateur — c'est nettement plus sûr. Le PIN et le contenu du coffre restent **sur l'appareil** et doivent être définis sur chaque téléphone utilisé.
 
 ---
@@ -111,7 +113,14 @@ Le **budget global**, la **répartition par catégorie** et la **dérive** se re
 - **File de Transactions** / **Historique** : suivi de tous les mouvements.
 - **Modifier une dépense** : bouton **✏️** sur la ligne (montant + description) — PIN Direction requis, budget et reçu mis à jour.
 - **Supprimer une dépense** : bouton **✕** sur la ligne dans l'Historique → le budget est recalculé.
+- **🔍 Rechercher** : champ de recherche + filtre par catégorie au-dessus de l'Historique.
+- **📊 Exporter CSV (comptable)** : télécharge toutes les dépenses ET les encaissements en un fichier Excel — pour le comptable externe et les bilans trimestriels CPF.
+- **📄 Rapport mensuel → Telegram Direction** : envoie la synthèse du mois (dépenses par catégorie, encaissements, disponible) dans le canal Direction. Un rapport du mois écoulé part aussi **automatiquement** entre le 1er et le 3 du mois.
 - **🗑 Réinitialiser la finance** : efface toutes les dépenses (double confirmation) — le budget repart de 100 M.
+
+**🛃 Gouvernance CPF (approbations)** — conforme au bilan financier :
+- Dépense **< 200 000 F** : enregistrée directement (Niveau 1).
+- Dépense **≥ 200 000 F** : part dans la **File d'Approbations** (Superviseur). La Direction approuve (✓ + **PIN Direction**) ou refuse (✗). La dépense n'entre dans le budget **qu'après approbation** (Niveau 2 ; ≥ 1 M = Niveau 3, PV CPF requis).
 
 > 🔐 **Verrou Direction** : supprimer une dépense, supprimer un encaissement ou réinitialiser la finance exige le **PIN Direction**. Le rôle Finance peut saisir librement, mais pas effacer seul.
 
@@ -128,7 +137,7 @@ Trois indicateurs en haut :
 
 **Ajouter un encaissement** (à chaque confirmation ou versement) :
 1. Clique une **puce source** (Sponsoring, MCAT, Mécènes, International, B2B…) pour pré-remplir le nom — ou tape ta propre source.
-2. Saisis le **Montant réel**, choisis le **mois**, puis **✓ Reçu** (compte dans le Disponible) ou **⏳ Attendu** (promis mais pas encore versé).
+2. Saisis le **Montant** et sa **devise** (FCFA, **€** converti à la parité fixe, **$** converti au taux que tu confirmes), choisis le **mois**, puis **✓ Reçu** (compte dans le Disponible) ou **⏳ Attendu** (promis mais pas encore versé).
 3. **➕ Ajouter l'encaissement**. Le ✕ supprime une ligne.
 
 > 🔑 Rien n'est pré-rempli : les montants du plan de financement sont des **hypothèses** (sponsors et subventions non confirmés). On ne saisit que le **réel**.
