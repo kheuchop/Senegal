@@ -696,6 +696,68 @@
         queueSize:         _queueSize(),
         heartbeatActive:   _heartbeatTimer !== null
       };
+    },
+
+    /**
+     * Diagnostic complet, sans rien avaler silencieusement : pour chaque
+     * étape (client, session, lecture, écriture), renvoie true/false + le
+     * message d'erreur EXACT s'il y en a un. Utilisé par le bouton
+     * "Forcer la synchronisation" pour qu'un utilisateur non-technique
+     * puisse lire et rapporter l'erreur réelle au lieu d'un simple "ça marche pas".
+     */
+    async diagnose() {
+      const steps = [];
+      const client = _buildClient();
+      steps.push({ step: 'Client Supabase', ok: !!client, detail: client ? 'instancié' : 'SDK non chargé ou clés manquantes' });
+      if (!client) return { steps, overallOk: false };
+
+      steps.push({ step: 'Connexion réseau', ok: navigator.onLine, detail: navigator.onLine ? 'en ligne' : 'hors-ligne (rien ne peut se synchroniser)' });
+
+      let sessionOk = false, sessionDetail = 'aucune session';
+      try {
+        const { data, error } = await client.auth.getSession();
+        if (error) { sessionDetail = 'erreur : ' + error.message; }
+        else if (data?.session?.access_token) {
+          sessionOk = true;
+          const exp = data.session.expires_at ? new Date(data.session.expires_at * 1000) : null;
+          sessionDetail = 'connecté, jeton valide' + (exp ? ` jusqu'à ${exp.toLocaleTimeString('fr-FR')}` : '');
+        } else {
+          sessionDetail = 'pas de session active sur ce client de synchronisation (setSession jamais appelé ou expiré)';
+        }
+      } catch (e) { sessionDetail = 'exception : ' + e.message; }
+      steps.push({ step: 'Session authentifiée', ok: sessionOk, detail: sessionDetail });
+
+      let readOk = false, readDetail = '';
+      try {
+        const { data, error } = await client.from('mission_state').select('data, updated_at').eq('id', 1).maybeSingle();
+        if (error) { readDetail = `${error.code || ''} ${error.message}`.trim(); }
+        else if (!data) { readDetail = 'aucune ligne trouvée (mission_state vide ou id=1 absent)'; readOk = true; }
+        else {
+          readOk = true;
+          const nTx = Array.isArray(data.data?.transactions) ? data.data.transactions.length : 0;
+          readDetail = `OK — ${nTx} transaction(s) dans le cloud, mis à jour le ${new Date(data.updated_at).toLocaleString('fr-FR')}`;
+        }
+      } catch (e) { readDetail = 'exception : ' + e.message; }
+      steps.push({ step: 'Lecture (mission_state)', ok: readOk, detail: readDetail });
+
+      // Test d'écriture RÉEL : on réécrit la ligne id=1 avec EXACTEMENT le même
+      // contenu qu'on vient de lire (no-op côté données, mais passe par le
+      // même chemin UPDATE + RLS que la vraie synchronisation — un update sur
+      // un id inexistant ne prouve rien : Postgrest le rapporte comme réussi
+      // même si la policy RLS interdirait l'écriture sur la vraie ligne).
+      let writeOk = false, writeDetail = '';
+      try {
+        const { data: cur } = await client.from('mission_state').select('data').eq('id', 1).maybeSingle();
+        const payload = cur?.data ?? { schema_version: SCHEMA_VERSION };
+        const { error } = await client.from('mission_state').upsert({ id: 1, data: payload }, { onConflict: 'id' });
+        if (error) { writeDetail = `${error.code || ''} ${error.message}`.trim(); }
+        else { writeOk = true; writeDetail = 'droit d\'écriture confirmé (RLS OK)'; }
+      } catch (e) { writeDetail = 'exception : ' + e.message; }
+      steps.push({ step: 'Droit d\'écriture (RLS)', ok: writeOk, detail: writeDetail });
+
+      steps.push({ step: 'File d\'attente hors-ligne', ok: _queueSize() === 0, detail: _queueSize() + ' opération(s) en attente de renvoi' });
+
+      return { steps, overallOk: steps.every(s => s.ok) };
     }
   };
 

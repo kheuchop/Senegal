@@ -2286,6 +2286,14 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <button class="btn btn-ghost btn-sm btn-full" id="push-enable-btn" style="margin-top:8px;display:none" onclick="enablePushNotifications()">🔔 Activer les notifications sur cet appareil</button>
         </div>
 
+        <!-- Diagnostic de synchronisation -->
+        <div class="card">
+          <div class="card-title">🩺 Diagnostic Synchronisation</div>
+          <div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted);margin-bottom:8px;line-height:1.5">Si les données n'apparaissent pas sur un autre appareil, lance ce test : il montre exactement ce qui bloque (réseau, session, droits, etc.) au lieu de rien dire.</div>
+          <button class="btn btn-primary btn-full" id="sync-diag-btn" onclick="runSyncDiagnostic(event)"><div class="spinner"></div><span class="btn-text">🩺 Tester la synchronisation</span></button>
+          <div id="sync-diag-result" style="display:none;margin-top:10px"></div>
+        </div>
+
         <!-- Mission Progress Ring -->
         <div class="card">
           <div class="card-title">Avancement Mission</div>
@@ -13153,6 +13161,34 @@ async function sendMorningBrief(evt) {
     showToast('📣 Brief envoyé au groupe équipe', 'ok');
     addActivity('☀️', 'Brief du jour envoyé à l\'équipe', now());
   } catch (e) { showToast('Envoi impossible : ' + e.message, 'error'); }
+  if (btn) enableBtn(btn);
+}
+
+/* Diagnostic de synchronisation — montre EXACTEMENT ce qui bloque (réseau,
+   session expirée, droits Supabase…) au lieu de laisser échouer en silence.
+   Copiable pour être signalé tel quel. */
+async function runSyncDiagnostic(evt) {
+  const btn = evt && evt.currentTarget; if (btn) disableBtn(btn);
+  const out = document.getElementById('sync-diag-result');
+  if (out) { out.style.display = 'block'; out.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted)">Test en cours…</div>'; }
+  try {
+    if (typeof SupaSync === 'undefined' || typeof SupaSync.diagnose !== 'function') {
+      if (out) out.innerHTML = '<div style="color:var(--red);font-size:0.6rem">Module de synchronisation non chargé.</div>';
+      if (btn) enableBtn(btn);
+      return;
+    }
+    const result = await SupaSync.diagnose();
+    const lines = result.steps.map(s => `${s.ok ? '✅' : '❌'} ${s.step} : ${s.detail}`);
+    const text = lines.join('\n');
+    window._lastSyncDiagText = text;
+    if (out) {
+      out.innerHTML = `<div style="font-family:var(--font-mono);font-size:0.56rem;line-height:1.9;color:var(--text-primary);background:var(--bg-card-2);border:1px solid ${result.overallOk ? 'rgba(0,230,118,0.3)' : 'rgba(255,82,82,0.35)'};border-radius:8px;padding:10px;white-space:pre-wrap">${escapeHtml(text)}</div>
+        <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="navigator.clipboard?.writeText(window._lastSyncDiagText||'').then(()=>showToast('📋 Diagnostic copié','ok'))">📋 Copier le diagnostic</button>`;
+    }
+    addActivity(result.overallOk ? '✅' : '⚠️', 'Diagnostic synchronisation : ' + (result.overallOk ? 'tout est OK' : 'problème détecté'), now());
+  } catch (e) {
+    if (out) out.innerHTML = `<div style="color:var(--red);font-size:0.6rem">Erreur inattendue : ${escapeHtml(e.message)}</div>`;
+  }
   if (btn) enableBtn(btn);
 }
 

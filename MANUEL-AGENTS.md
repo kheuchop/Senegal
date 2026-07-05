@@ -36,6 +36,7 @@ C'est l'écran d'accueil, la vue d'ensemble.
 
 - **☀️ Brief du Jour** *(en tête d'écran)* : l'essentiel en un coup d'œil — jour X/54 (ou **⏳ J-XXX** avant le départ), **site du jour** (planning), **météo du site** (si clé configurée), disponible trésorerie, approbations en attente, risques actifs. Bouton **📣 Envoyer à l'équipe** → le brief part dans le groupe Telegram. Le rituel du matin.
 - **🔔 Notifications push** : bouton **« Activer les notifications »** (une fois par appareil) → les alertes importantes (approbation CPF à valider, alertes Direction, météo à risque) arrivent **même app fermée**.
+- **🩺 Diagnostic Synchronisation** : si des données ajoutées sur un appareil n'apparaissent pas sur un autre, appuie sur **« Tester la synchronisation »**. Le test vérifie dans l'ordre : connexion réseau, session, lecture, droit d'écriture, file d'attente hors-ligne — et affiche exactement lequel bloque (avec le message d'erreur exact). Bouton **📋 Copier le diagnostic** pour le transmettre tel quel si besoin d'aide.
 - **📜 Journal d'Audit** : trace horodatée de toutes les actions sensibles — qui a supprimé/modifié/approuvé quoi, PIN refusés inclus. Export Word.
 - **Avancement Mission** : anneau de progression + indicateurs (sites, jours, km).
 - **Barre DISPO** (bandeau du haut) : le **cash réellement disponible** (encaissé − dépensé, voir Financier/Trésorerie) — visible sur tous les écrans.
