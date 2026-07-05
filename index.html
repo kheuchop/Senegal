@@ -2485,11 +2485,13 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted);line-height:1.6;margin-bottom:10px">
             Exporte <b>tout l'appareil</b> dans un fichier <b>chiffré</b> (dépenses, trésorerie, livre, reçus, coffre, réglages). À faire régulièrement : si le téléphone est perdu ou cassé, ce fichier restaure tout.
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <button class="btn btn-primary btn-sm" onclick="backupExportAll(event)"><div class="spinner"></div><span class="btn-text">💾 Exporter tout</span></button>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="backupExportAll(event)"><div class="spinner"></div><span class="btn-text">💾 Exporter</span></button>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('backup-verify-file').click()">✅ Vérifier</button>
             <button class="btn btn-ghost btn-sm" onclick="document.getElementById('backup-restore-file').click()">♻️ Restaurer</button>
           </div>
           <input type="file" id="backup-restore-file" accept=".mctrl,application/json" style="display:none" onchange="backupRestoreAll(this)">
+          <input type="file" id="backup-verify-file" accept=".mctrl,application/json" style="display:none" onchange="backupVerify(this)">
           <div id="backup-status" style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted);margin-top:8px"></div>
         </div>
 
@@ -2796,6 +2798,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <button class="btn btn-primary btn-full" onclick="addExpense(event)">
             <div class="spinner"></div><span class="btn-text">➕ Enregistrer</span>
           </button>
+          <button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="finPerDiemToday(event)"><div class="spinner"></div><span class="btn-text">🍽 Journée per diem (équipe + chauffeurs)</span></button>
         </div>
 
         <!-- Queue Status -->
@@ -5209,6 +5212,42 @@ async function backupExportAll(evt) {
   }
   if (btn) enableBtn(btn);
 }
+/* Vérifie l'intégrité d'une sauvegarde SANS rien modifier :
+   déchiffre et affiche ce qu'elle contient. */
+async function backupVerify(input) {
+  const file = input.files && input.files[0];
+  input.value = '';
+  if (!file) return;
+  const statusEl = document.getElementById('backup-status');
+  try {
+    const raw = JSON.parse(await file.text());
+    if (!raw || raw.mctrl !== 2) throw new Error('Fichier de sauvegarde invalide');
+    const pwd = prompt('Mot de passe de cette sauvegarde :');
+    if (!pwd) return;
+    if (statusEl) statusEl.textContent = 'Vérification…';
+    const key = await _backupKey(pwd, _bufFromB64(raw.salt));
+    let payload;
+    try {
+      const dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: _bufFromB64(raw.iv) }, key, _bufFromB64(raw.data));
+      payload = JSON.parse(new TextDecoder().decode(dec));
+    } catch { throw new Error('Mot de passe incorrect (ou fichier corrompu)'); }
+    if (payload.format !== 'mctrl-backup') throw new Error('Contenu invalide');
+    const s = payload.state || {};
+    const resume = [
+      '✅ SAUVEGARDE VALIDE — ' + new Date(payload.ts).toLocaleString('fr-FR'),
+      '💸 ' + (s.transactions?.length || 0) + ' transaction(s) · dépensé ' + fmtFCFA(s.spent || 0),
+      '💰 ' + (s.treasury?.encaissements?.length || 0) + ' encaissement(s)',
+      '📖 ' + (payload.book?.pages?.length || 0) + ' page(s) de livre · ' + (payload.book?.gallery?.length || 0) + ' photo(s)',
+      '🧾 ' + (payload.receipts?.length || 0) + ' reçu(s) archivé(s)',
+      '🔐 Coffre : ' + (s.vault ? 'présent' : 'absent')
+    ].join('\n');
+    if (statusEl) { statusEl.textContent = resume; statusEl.style.whiteSpace = 'pre-wrap'; statusEl.style.color = 'var(--emerald)'; }
+    showToast('✅ Sauvegarde intègre et lisible', 'ok');
+  } catch (e) {
+    if (statusEl) { statusEl.textContent = '❌ ' + e.message; statusEl.style.color = 'var(--red)'; }
+    showToast('Vérification échouée : ' + e.message, 'error');
+  }
+}
 async function backupRestoreAll(input) {
   const file = input.files && input.files[0];
   input.value = '';
@@ -6867,6 +6906,30 @@ function deleteTransaction(id) {
   }
   showToast('🗑 Dépense supprimée — budget recalculé', 'ok');
 }
+/* Per diem quotidien en un clic — taux du bilan : 15 000 F/pers (zones A-D),
+   18 000 F/pers (zones E-F, +20% terrain isolé), 6 personnes + 2 chauffeurs à 10 000 F. */
+function finPerDiemToday(evt) {
+  const btn = evt && evt.currentTarget; if (btn) disableBtn(btn);
+  const dayNum = Math.min(state.daysDone + 1, MISSION.joursTerrain);
+  const site = getPlannedSiteForDay(dayNum);
+  const zone = site?.zone || 'A';
+  const majore = zone === 'E' || zone === 'F';
+  const tauxEquipe = majore ? 18000 : 15000;
+  const total = 6 * tauxEquipe + 2 * 10000;
+  const desc = `Per diem J${dayNum} · ${site ? site.name : 'terrain'} (6×${tauxEquipe.toLocaleString('fr-FR')}${majore ? ' zone ' + zone + ' +20%' : ''} + 2 chauffeurs×10 000)`;
+  if (!confirm('🍽 Enregistrer le per diem du jour ?\n\n' + desc + '\nTotal : ' + fmtFCFA(total))) { if (btn) enableBtn(btn); return; }
+  // Doublon même jour ? (protection contre le double clic quotidien)
+  const today = new Date().toDateString();
+  if (state.transactions.some(t => t.description.startsWith('Per diem J' + dayNum) && new Date(t.ts).toDateString() === today)) {
+    if (!confirm('⚠️ Un per diem J' + dayNum + ' existe déjà aujourd\'hui. Enregistrer quand même ?')) { if (btn) enableBtn(btn); return; }
+  }
+  const tx = { id: 'tx_' + Date.now(), cat: 'nourriture', amount: total, description: desc.substring(0, 200), ts: Date.now(), type: 'debit' };
+  state.transactionQueue.push(tx);
+  processTransactionQueue();
+  showToast('🍽 Per diem enregistré : ' + fmtFCFA(total), 'ok');
+  if (btn) setTimeout(() => enableBtn(btn), 500);
+}
+
 /* Export comptable CSV (Excel FR : séparateur ; + BOM UTF-8).
    Deux sections : DÉPENSES puis ENCAISSEMENTS — pour le comptable externe / CPF. */
 function finExportCSV() {
@@ -8026,6 +8089,18 @@ function a5ChronoReset() {
 
 function a5ValiderJour() {
   const btn = event.currentTarget; disableBtn(btn);
+  // CLAUSE D'ACTIVATION TERRAIN (bilan) : zones B-F interdites tant que
+  // 15M ne sont pas encaissés. Dérogation possible : PIN Direction.
+  const dayNum = Math.min(state.daysDone + 1, MISSION.joursTerrain);
+  const daySite = (a5State.dayRef && a5State.dayRef.site) || getPlannedSiteForDay(dayNum);
+  if (daySite && daySite.zone && daySite.zone !== 'A') {
+    const t = treasuryCompute();
+    if (t.encaisse < TREASURY_SEUIL_TERRAIN) {
+      if (!confirm('🚦 CLAUSE D\'ACTIVATION TERRAIN NON SATISFAITE\n\nZone ' + daySite.zone + ' (' + daySite.name + ') : le bilan exige ' + fmtFCFA(TREASURY_SEUIL_TERRAIN) + ' encaissés avant tout engagement hors Zone A.\nEncaissé actuel : ' + fmtFCFA(t.encaisse) + ' (manque ' + fmtFCFA(TREASURY_SEUIL_TERRAIN - t.encaisse) + ').\n\nValider ce jour quand même (dérogation Direction) ?')) { enableBtn(btn); return; }
+      if (!requireDirectionPin('déroger à la clause des 15M (zones B-F)')) { enableBtn(btn); return; }
+      addActivity('🚦', `Dérogation clause 15M : jour ${dayNum} validé en zone ${daySite.zone}`, now());
+    }
+  }
   const elMs = a5State.elapsedMs;
   const h = Math.floor(elMs / 3600000);
   const m = Math.floor((elMs % 3600000) / 60000);
@@ -12554,7 +12629,8 @@ function buildMorningBrief() {
   const dateStr = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const lines = ['☀️ BRIEF DU JOUR — ' + dateStr.toUpperCase(), 'MISSION SÉNÉGAL V3', ''];
   if (state.daysDone === 0) {
-    lines.push('🗓 Phase : PRÉ-MISSION (départ terrain 2027)');
+    const jMoins = Math.max(0, Math.ceil((new Date('2027-01-01') - Date.now()) / 86400000));
+    lines.push('🗓 Phase : PRÉ-MISSION — ⏳ J-' + jMoins + ' avant M1 (janvier 2027)');
     const first = getPlannedSiteForDay(1);
     if (first) lines.push('📍 Premier site prévu : ' + first.name + ' (Zone ' + first.zone + ')');
   } else {
