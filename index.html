@@ -13212,7 +13212,13 @@ async function runSyncDiagnostic(evt) {
       return;
     }
     const result = await SupaSync.diagnose();
-    const lines = [`ℹ️ Version active : ${swVersion}`, ...result.steps.map(s => `${s.ok ? '✅' : '❌'} ${s.step} : ${s.detail}`)];
+    const rtState = _realtimeChan?.state || 'jamais connecté';
+    const rtOk = rtState === 'joined';
+    const lines = [
+      `ℹ️ Version active : ${swVersion}`,
+      ...result.steps.map(s => `${s.ok ? '✅' : '❌'} ${s.step} : ${s.detail}`),
+      `${rtOk ? '✅' : '❌'} Canal temps réel (WebSocket) : ${rtState}${rtOk ? '' : ' — sans "joined", les mises à jour n\'arrivent qu\'au rechargement de l\'app, pas en instantané'}`,
+    ];
     const text = lines.join('\n');
     window._lastSyncDiagText = text;
     if (out) {
