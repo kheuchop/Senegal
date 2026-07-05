@@ -8,6 +8,8 @@ Guide pratique et détaillé : comment utiliser concrètement chaque agent, écr
 
 > 📄 **Documents sortants en Word :** tous les courriers générés par l'IA (relances, contrats, formulaires, dossiers, bons de commande, emails…) s'exportent en **document Word** mis en page : papier à en-tête THR doré, date à Dakar, objet, corps justifié, signature des co-gérants et pied de page contact. Bouton **📄 Word** à côté de chaque document généré. La rédaction suit un **style humain naturel** (courrier français classique, sans tics d'IA).
 
+> ☁️ **Synchronisation temps réel :** dépenses, encaissements, PIN du Coffre-Fort, codes de rôle, clé météo, sponsors, autorisations, matériel, devis… tout ce que tu saisis sur un appareil apparaît automatiquement sur les autres (quelques secondes en direct si les deux apps sont ouvertes, immédiatement au prochain lancement sinon). Seul le **contenu** du Coffre-Fort (les clés/valeurs ajoutées manuellement) reste strictement local à chaque appareil.
+
 ---
 
 ## CONNEXION & ACCÈS PAR RÔLE
@@ -20,17 +22,11 @@ Ensuite, un **code d'accès à 4 chiffres** ouvre ton espace selon ton **rôle**
 
 > La **Direction** définit et communique ces codes : Superviseur → **🔐 Gestion des Accès** → modifier chaque code → **💾 Enregistrer**. Bouton **🔒 Changer d'accès** pour reverrouiller et changer de rôle.
 
-**📱 Installation d'un nouvel appareil (procédure obligatoire)**
+**📱 Nouvel appareil**
 
-Les codes d'accès sont stockés **localement sur chaque appareil** (jamais dans le cloud, par sécurité). Un téléphone jamais configuré garde donc les **codes par défaut** — il faut les remplacer **avant** de confier l'appareil :
+Les **7 codes de rôle** (et le PIN du Coffre-Fort) se synchronisent désormais automatiquement entre tous les appareils de l'équipe connectés au même compte : pas besoin de les ressaisir sur un nouveau téléphone, ils arrivent tout seuls dès la connexion. Il reste juste à laisser chaque membre entrer **son** code (**🔒 Changer d'accès**) sur son appareil.
 
-1. Ouvrir l'app sur le nouvel appareil et se connecter (compte équipe).
-2. **La Direction** entre son code → Superviseur → **🔐 Gestion des Accès**.
-3. Saisir **les 7 nouveaux codes** (les mêmes que sur les autres appareils) → **💾 Enregistrer**.
-4. **🔒 Changer d'accès** → laisser le membre entrer **son** code de rôle.
-5. Le **PIN Direction reste secret** (coporteurs uniquement) : c'est lui qui autorise les suppressions en finance.
-
-> ⚠️ Sans cette étape, l'appareil accepte les codes par défaut (9999, 1111…) et le verrou finance peut être contourné avec `9999`. **Nouvel appareil = Gestion des Accès d'abord.**
+> ⚠️ Le **contenu** du Coffre-Fort (les clés/valeurs ajoutées avec « + Ajouter clé ») n'est PAS synchronisé — chacun doit les ressaisir une fois sur un nouvel appareil, pour rester strictement local et confidentiel.
 
 ---
 
@@ -54,12 +50,14 @@ C'est l'écran d'accueil, la vue d'ensemble.
 
 ## 02 · COFFRE-FORT — Clés et identifiants
 
-Stockage sécurisé, protégé par un code PIN, **local à chaque appareil** (rien n'est envoyé dans le cloud).
+Stockage sécurisé, protégé par un code PIN.
 
 1. Saisir le PIN pour déverrouiller. Au **premier usage, changer le PIN par défaut**.
 2. Chaque catégorie a un bouton **« + Ajouter clé »** : renseigner un **Nom** et une **Valeur**.
 3. En bas : **🔑 Changer PIN** et **📤 Exporter** (sauvegarde).
-4. À conserver ici : les **URL des réseaux sociaux** (pour le bouton « Ouvrir » du CM), la **clé météo**, et vos mots de passe de services.
+4. À conserver ici : les **URL des réseaux sociaux** (pour le bouton « Ouvrir » du CM) et vos mots de passe de services.
+
+> ☁️ Le **PIN du coffre se synchronise** désormais entre tous les appareils de l'équipe (change-le une fois, il est identique partout). Seul le **contenu** des catégories (les clés/valeurs elles-mêmes) reste local à chaque appareil, par sécurité.
 
 **💾 Sauvegarde Complète** *(carte en bas du Coffre-Fort)* : exporte **tout l'appareil** (dépenses, trésorerie, livre, reçus, coffre, réglages) dans un **fichier chiffré** par mot de passe. À faire **chaque semaine en mission** et à ranger en lieu sûr (Drive, clé USB). **✅ Vérifier** contrôle qu'une sauvegarde est intègre et lisible **sans rien toucher** (à faire après chaque export !). **♻️ Restaurer** remet tout en place sur un appareil neuf (PIN Direction + mot de passe requis).
 
@@ -410,6 +408,8 @@ Outils numériques du livre.
 
 **Connexion :** entrer la clé OpenWeatherMap (une fois) → **🔑 Enregistrer la clé**.
 
+> ☁️ Cette clé se **synchronise automatiquement** avec tous les appareils de l'équipe : une seule personne l'enregistre, tout le monde en profite immédiatement (ou au prochain lancement de l'app).
+
 - **Conditions Actuelles** : météo en direct (bouton 🔄 Actualiser).
 - **Prévisions 5 Jours**.
 - **Alertes Climatiques** : chaleur, vent, visibilité.
@@ -477,8 +477,9 @@ Surveille en continu — **tout est calculé en direct sur les vraies données d
 Onglet **Carte** (icône ⬡, ou bouton **Carte** en bas).
 
 - Bascule **Satellite / Plan / Satellite + noms** (sélecteur en haut à droite de la carte).
-- Chaque site est un point : cliquer dessus affiche son **nom**, sa **zone** et ses **coordonnées GPS**. Les sites offshore (Sangomar, GTA) sont signalés à part.
+- Chaque site est un point **coloré selon sa zone** (A à F — voir la légende **⬡ ZONES** sous la carte). Cliquer sur un point affiche son **nom**, sa **zone** et ses **coordonnées GPS**. Les sites offshore (Sangomar, GTA) sont signalés à part.
 - Bouton **GPS** : suit ta position en temps réel et indique le **site le plus proche** et la distance.
+- **🧭 Navigation GPS** : choisis une destination dans la liste déroulante (ou clique **« 🧭 Naviguer ici »** dans la fiche d'un site) → **🧭 Naviguer**. La carte affiche une ligne vers le site et un repère 🎯 ; la distance et le **cap** (ex. « 2,3 km · cap 118° (ESE) ») se mettent à jour en direct à mesure que tu te déplaces. C'est un guidage **à vol d'oiseau** (comme une boussole), pas un calcul d'itinéraire routier — utile en brousse où les routes ne sont pas toujours cartographiées. **⏹ Arrêter** pour effacer la navigation.
 - Les zones déjà consultées restent visibles **hors-ligne** sur le terrain.
 - **📥 Cartes hors-ligne par zone** : avant chaque départ, appuyer sur le bouton de la zone (A à F) en Wi-Fi → les cartes de tous les sites de la zone sont préchargées et resteront disponibles sans réseau.
 

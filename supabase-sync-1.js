@@ -273,21 +273,14 @@
         {
           id:   1, // Singleton — une seule ligne pour toute la mission
           data: {
-            spent:          stateData.spent          ?? 0,
-            catSpend:       stateData.catSpend        ?? {},
-            daysDone:       stateData.daysDone        ?? 0,
-            sitesDone:      stateData.sitesDone       ?? 0,
-            printRate:      stateData.printRate       ?? 150,
-            treasury:       stateData.treasury        ?? null, // encaissements partagés (pas un secret)
-            printCfg:       stateData.printCfg        ?? null, // tarif imprimeur ARTRON partagé
-            lastMonthlyReport: stateData.lastMonthlyReport ?? null, // dédup rapport mensuel inter-appareils
-            approvals:      stateData.approvals       ?? null, // file d'approbations CPF partagée
-            // SÉCURITÉ : plus AUCUN secret dans le cloud.
-            // vault, vaultPin, rolePins, a14ApiKey restent en local (IndexedDB).
-            a14ApiKey:      null,
+            // Tout ce que le client envoie est synchronisé (spent, transactions,
+            // treasury, printCfg, vaultPin, rolePins, a14ApiKey, les listes des
+            // agents, etc.) — un seul point de vérité, plus de champ oublié.
+            ...stateData,
+            // SÉCURITÉ (plancher défensif) : le CONTENU du Coffre-Fort (clés et
+            // valeurs ajoutées manuellement par l'équipe) ne transite JAMAIS par
+            // le cloud, quoi que l'appelant ait pu passer par erreur.
             vault:          null,
-            vaultPin:       null,
-            rolePins:       null,
             schema_version: SCHEMA_VERSION
           }
           // updated_at : NE PAS passer — généré par now() Supabase RLS
