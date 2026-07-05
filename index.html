@@ -5026,6 +5026,7 @@ function saveStateToDB() {
       treasury:  state.treasury,   // encaissements partagés entre coporteurs
       printCfg:  state.printCfg,   // tarif imprimeur ARTRON partagé
       lastMonthlyReport: state.lastMonthlyReport || null, // dédup rapport mensuel
+      approvals: (state.approvals || []).slice(0, 50),    // file CPF partagée entre appareils
     }).catch(e => console.warn('[Sync] syncState:', e.message));
     // SÉCURITÉ : vault, vaultPin, rolePins et clés API restent LOCAUX (IndexedDB).
     // Ils ne transitent plus jamais par Supabase.
@@ -5655,6 +5656,32 @@ function renderApprovals() {
     div.innerHTML = `<div class="appr-left"><div class="appr-source">${escapeHtml(a.source)}</div><div class="appr-msg">${escapeHtml(a.msg)}</div><div class="appr-time">${escapeHtml(a.time)}</div></div><div class="appr-actions">${a.status==='pending'?`<button class="btn btn-success btn-sm" onclick="approveItem('${a.id}',event)"><div class="spinner"></div><span class="btn-text">✓</span></button><button class="btn btn-danger btn-sm" onclick="rejectItem('${a.id}',event)"><div class="spinner"></div><span class="btn-text">✗</span></button>`:'<span class="pill '+(a.status==='approved'?'pill-green':'pill-red')+'">'+(a.status==='approved'?'Approuvé':'Refusé')+'</span>'}</div>`;
     list.appendChild(div);
   });
+}
+/* Fusion des approbations reçues du cloud (Direction valide depuis SON téléphone).
+   Règles : par id ; un statut décidé (approved/rejected) gagne toujours sur
+   'pending' (aucun retour en arrière) ; les locales toutes fraîches sont gardées.
+   IMPORTANT : la dépense n'est traitée QUE sur l'appareil qui clique ✓ —
+   ici on ne fait que refléter les statuts. */
+function mergeApprovalsFromCloud(cloudApr) {
+  if (!Array.isArray(cloudApr)) return false;
+  const before = JSON.stringify(state.approvals.map(a => a.id + a.status));
+  const pendingBefore = state.approvals.filter(a => a.status === 'pending').length;
+  const byId = {};
+  state.approvals.forEach(a => { byId[a.id] = a; });
+  cloudApr.forEach(c => {
+    const loc = byId[c.id];
+    if (!loc) { byId[c.id] = c; return; }
+    // statut décidé localement mais cloud encore pending → on garde le décidé
+    if (loc.status !== 'pending' && c.status === 'pending') return;
+    byId[c.id] = c;
+  });
+  state.approvals = Object.values(byId).sort((x, y) => String(y.id).localeCompare(String(x.id)));
+  const after = JSON.stringify(state.approvals.map(a => a.id + a.status));
+  if (after === before) return false;
+  renderApprovals();
+  const pendingAfter = state.approvals.filter(a => a.status === 'pending').length;
+  if (pendingAfter > pendingBefore) showToast('🛃 Nouvelle demande d\'approbation reçue', 'warn');
+  return true;
 }
 function approveItem(id, evt) {
   const btn = evt.currentTarget;
@@ -7614,6 +7641,8 @@ async function init() {
         if (cloud.lastMonthlyReport && (!state.lastMonthlyReport || cloud.lastMonthlyReport > state.lastMonthlyReport)) {
           state.lastMonthlyReport = cloud.lastMonthlyReport;
         }
+        // File d'approbations CPF partagée (demandes en attente d'autres appareils)
+        if (mergeApprovalsFromCloud(cloud.approvals)) saveStateToDB();
       }
     } catch (e) { console.warn('[Sync] fetchState:', e.message); }
   }
@@ -12614,6 +12643,9 @@ function _onSessionReady(session) {
             printCfgPopulate();
             changed = true;
           }
+          // File d'approbations CPF partagée : la Direction valide depuis SON téléphone
+          if (mergeApprovalsFromCloud(d.approvals)) changed = true;
+          if (d.lastMonthlyReport && (!state.lastMonthlyReport || d.lastMonthlyReport > state.lastMonthlyReport)) state.lastMonthlyReport = d.lastMonthlyReport;
           // SÉCURITÉ : les secrets (vault/PIN/clés API) ne circulent plus via le cloud.
           if (changed) {
             // Persiste en local SANS repousser vers le cloud (anti ping-pong)

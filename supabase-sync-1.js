@@ -281,6 +281,7 @@
             treasury:       stateData.treasury        ?? null, // encaissements partagés (pas un secret)
             printCfg:       stateData.printCfg        ?? null, // tarif imprimeur ARTRON partagé
             lastMonthlyReport: stateData.lastMonthlyReport ?? null, // dédup rapport mensuel inter-appareils
+            approvals:      stateData.approvals       ?? null, // file d'approbations CPF partagée
             // SÉCURITÉ : plus AUCUN secret dans le cloud.
             // vault, vaultPin, rolePins, a14ApiKey restent en local (IndexedDB).
             a14ApiKey:      null,

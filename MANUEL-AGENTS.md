@@ -121,6 +121,7 @@ Le **budget global**, la **répartition par catégorie** et la **dérive** se re
 **🛃 Gouvernance CPF (approbations)** — conforme au bilan financier :
 - Dépense **< 200 000 F** : enregistrée directement (Niveau 1).
 - Dépense **≥ 200 000 F** : part dans la **File d'Approbations** (Superviseur). La Direction approuve (✓ + **PIN Direction**) ou refuse (✗). La dépense n'entre dans le budget **qu'après approbation** (Niveau 2 ; ≥ 1 M = Niveau 3, PV CPF requis).
+- ☁️ La file est **partagée entre les téléphones** : une demande saisie par le comptable apparaît sur le téléphone de la Direction (🛃 notification), qui valide **depuis son propre appareil**.
 
 > 🔐 **Verrou Direction** : supprimer une dépense, supprimer un encaissement ou réinitialiser la finance exige le **PIN Direction**. Le rôle Finance peut saisir librement, mais pas effacer seul.
 
