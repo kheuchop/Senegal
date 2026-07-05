@@ -2266,6 +2266,16 @@ textarea.input-field { resize: vertical; min-height: 80px; }
            ===================================================== -->
       <div class="agent-panel" id="agent-superviseur">
 
+        <!-- Brief du matin -->
+        <div class="card">
+          <div class="card-title">☀️ Brief du Jour</div>
+          <pre id="brief-content" style="font-family:var(--font-mono);font-size:0.6rem;line-height:1.8;white-space:pre-wrap;color:var(--text-primary);background:var(--bg-card-2);border:1px solid var(--border);border-radius:8px;padding:12px;margin:0">Chargement…</pre>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+            <button class="btn btn-ghost btn-sm" onclick="renderMorningBrief()">🔄 Actualiser</button>
+            <button class="btn btn-primary btn-sm" onclick="sendMorningBrief(event)"><div class="spinner"></div><span class="btn-text">📣 Envoyer à l'équipe</span></button>
+          </div>
+        </div>
+
         <!-- Mission Progress Ring -->
         <div class="card">
           <div class="card-title">Avancement Mission</div>
@@ -3960,6 +3970,29 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <div id="a10-ces-result" style="margin-top:10px"></div>
         </div>
 
+        <!-- Registre des cessions signées (objectif : 55 contrats) -->
+        <div class="card">
+          <div class="card-title">📑 Registre des Cessions Signées</div>
+          <div style="text-align:center;margin-bottom:10px">
+            <span id="a10-reg-count" style="font-family:var(--font-display);font-size:1.3rem;font-weight:800;color:var(--gold)">0</span>
+            <span style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted)"> / 55 contrats signés (objectif bilan)</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:8px">
+            <input type="text" class="input-field" id="a10-reg-nom" placeholder="Nom du signataire" autocomplete="off">
+            <select class="input-field" id="a10-reg-type">
+              <option value="temoin">Témoin / Guide</option>
+              <option value="interprete">Interprète</option>
+              <option value="artisan">Artisan</option>
+              <option value="autorite">Autorité / Gardien</option>
+              <option value="equipe">Équipe technique</option>
+              <option value="autre">Autre</option>
+            </select>
+          </div>
+          <input type="text" class="input-field" id="a10-reg-site" placeholder="Site concerné (optionnel)" autocomplete="off" style="margin-top:8px">
+          <button class="btn btn-success btn-full" style="margin-top:8px" onclick="a10AddCession(event)"><div class="spinner"></div><span class="btn-text">✍️ Enregistrer la signature</span></button>
+          <div id="a10-reg-list" style="margin-top:10px"></div>
+        </div>
+
       </div>
 
       <!-- =====================================================
@@ -4989,6 +5022,7 @@ function saveStateToDB() {
       a9Sponsors:     a9State.sponsors,
       a10Auths:       a10State.auths,
       a10Journal:     a10State.journal,
+      a10Cessions:    a10State.cessions || [],
       a11Equipment:   a11State.equipment,
       a11Backups:     a11State.backups,
       a12Points:      a12State.points,
@@ -5249,6 +5283,7 @@ async function loadStateFromDB() {
     if (Array.isArray(d.a9Sponsors))   a9State.sponsors      = d.a9Sponsors;
     if (Array.isArray(d.a10Auths))     a10State.auths         = d.a10Auths;
     if (Array.isArray(d.a10Journal))   a10State.journal       = d.a10Journal;
+    if (Array.isArray(d.a10Cessions))  a10State.cessions      = d.a10Cessions;
     if (Array.isArray(d.a11Equipment)) a11State.equipment     = d.a11Equipment;
     if (Array.isArray(d.a11Backups))   a11State.backups       = d.a11Backups;
     if (Array.isArray(d.a12Points))    a12State.points        = d.a12Points.map(p => ({ ...p, allocStd:p.allocStd??p.alloc??0, allocLuxe:p.allocLuxe??0, venduStd:p.venduStd??p.vendu??0, venduLuxe:p.venduLuxe??0, remise:p.remise??0 }));
@@ -5591,6 +5626,7 @@ function switchTab(idx) {
     updateFinancialUI();
     printCfgPopulate();
   }
+  if (idx === 0) { try { renderMorningBrief(); } catch (e) {} }
 }
 function scrollTabIntoView(idx) {
   const tabs = document.querySelectorAll('.agent-tab');
@@ -5878,6 +5914,7 @@ function initSuperviseur() {
   renderApprovals();
   renderNotifications();
   renderChecklist();
+  setTimeout(() => { try { renderMorningBrief(); } catch (e) { console.warn('[Brief]', e); } }, 1500);
   const feed = document.getElementById('activity-feed');
   if (feed) INITIAL_ACTIVITY.forEach(a => { const div=document.createElement('div'); div.className='activity-item'; div.innerHTML=`<div class="activity-icon">${a.icon}</div><div class="activity-detail"><div class="act-title">${a.title}</div><div class="act-time">${a.time}</div></div>`; feed.appendChild(div); });
   updateCOORing();
@@ -7141,6 +7178,20 @@ function treasurySeedIfEmpty() {
   // hypothèses, pas des confirmations) → on garantit juste la structure.
   if (!state.treasury || typeof state.treasury !== 'object') state.treasury = { encaissements: [], decaissements: [] };
   if (!Array.isArray(state.treasury.encaissements)) state.treasury.encaissements = [];
+}
+/* Pont universel : propose de créer l'encaissement Trésorerie correspondant
+   à une rentrée d'argent enregistrée ailleurs (vente, sponsor, contribution). */
+function treasuryOfferEncaissement(source, montant) {
+  if (!montant || montant <= 0) return;
+  if (!confirm('💰 Créer l\'encaissement Trésorerie correspondant ?\n\n' + source + '\n' + fmtFCFA(montant) + ' (statut : Reçu)')) return;
+  treasurySeedIfEmpty();
+  state.treasury.encaissements.push({
+    id: 'enc-man-' + Date.now(), mois: 0, montant: Math.round(montant),
+    source: String(source).substring(0, 120), statut: 'recu', dateRecu: Date.now(), manual: true
+  });
+  saveStateToDB();
+  updateFinancialUI();
+  showToast('💰 Encaissement créé — Disponible mis à jour', 'ok');
 }
 function treasuryFillSource(s) {
   const el = document.getElementById('treasury-add-source');
@@ -9885,6 +9936,7 @@ function a9SaveSponsor() {
   if (status === 'verse') {
     addNotification({ type:'ok', text:`💰 Versement reçu : ${name} — ${fmtFCFA(amount)}`, time: now() });
     addActivity('💰', `Sponsor versé : ${name} — ${fmtFCFA(amount)}`, now());
+    treasuryOfferEncaissement(`Sponsoring · ${name}`, amount);
   }
   a9RenderSponsors(); a9ComputeTotals(); a9CancelSponsor();
   saveStateToDB();
@@ -10300,7 +10352,48 @@ function a10AddJournal(text) {
   });
 }
 
+/* Registre des cessions de droits signées — objectif 55 contrats (Poste G du bilan) */
+function a10AddCession(evt) {
+  const btn = evt && evt.currentTarget; if (btn) disableBtn(btn);
+  const nom = document.getElementById('a10-reg-nom')?.value.trim();
+  const type = document.getElementById('a10-reg-type')?.value || 'autre';
+  const site = document.getElementById('a10-reg-site')?.value.trim() || '';
+  if (!nom) { showToast('Nom du signataire requis', 'warn'); if (btn) enableBtn(btn); return; }
+  if (!Array.isArray(a10State.cessions)) a10State.cessions = [];
+  a10State.cessions.unshift({ id: 'ces_' + Date.now(), nom, type, site, ts: Date.now() });
+  document.getElementById('a10-reg-nom').value = '';
+  document.getElementById('a10-reg-site').value = '';
+  saveStateToDB();
+  a10RenderCessions();
+  addActivity('✍️', `Cession signée : ${nom} (${type})`, now());
+  showToast('✍️ Signature enregistrée — ' + a10State.cessions.length + '/55', 'ok');
+  if (btn) setTimeout(() => enableBtn(btn), 400);
+}
+function a10DeleteCession(id) {
+  if (!requireDirectionPin('supprimer une cession signée')) return;
+  a10State.cessions = (a10State.cessions || []).filter(c => c.id !== id);
+  saveStateToDB();
+  a10RenderCessions();
+  showToast('Cession retirée du registre', 'ok');
+}
+function a10RenderCessions() {
+  const cnt = document.getElementById('a10-reg-count');
+  const list = document.getElementById('a10-reg-list');
+  const items = a10State.cessions || [];
+  if (cnt) { cnt.textContent = items.length; cnt.style.color = items.length >= 55 ? 'var(--emerald)' : 'var(--gold)'; }
+  if (!list) return;
+  const typeLabel = { temoin:'Témoin/Guide', interprete:'Interprète', artisan:'Artisan', autorite:'Autorité', equipe:'Équipe', autre:'Autre' };
+  list.innerHTML = items.length === 0
+    ? '<div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted);text-align:center;padding:10px 0">Aucune signature enregistrée. Générer le contrat ci-dessus, faire signer, puis enregistrer ici.</div>'
+    : items.slice(0, 30).map(c => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1;min-width:0"><div style="font-size:0.62rem;font-weight:600">${escapeHtml(c.nom)}</div>
+        <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted)">${typeLabel[c.type] || c.type}${c.site ? ' · ' + escapeHtml(c.site) : ''} · ${new Date(c.ts).toLocaleDateString('fr-FR')}</div></div>
+        <button onclick="a10DeleteCession('${c.id}')" style="flex-shrink:0;cursor:pointer;font-size:0.6rem;padding:4px 8px;border-radius:14px;border:1px solid var(--border);background:var(--bg-card-2);color:var(--text-muted)">✕</button>
+      </div>`).join('');
+}
+
 function initAgent10() {
+  a10RenderCessions();
   ['a10-new-site','a10-claude-site','a10-di-site','a10-cl-site'].forEach(sid => {
     const sel = document.getElementById(sid);
     if (!sel) return;
@@ -10967,6 +11060,7 @@ function a12RecordSale(evt) {
     pv.venduStd = (pv.venduStd||0) + qty;
   }
   const revenue = qty * price * r;
+  treasuryOfferEncaissement(`Vente livre · ${pv.name} (${qty} ex. ${isLuxe?'LUXE':'STD'}${pv.remise?', remise '+pv.remise+'%':''})`, revenue);
   addActivity('🛒', `Vente ${isLuxe?'LUXE':'STD'} : ${qty} ex. — ${pv.name} — ${fmtFCFA(revenue)}`, now());
   addNotification({ type:'ok', text:`💰 Vente ${isLuxe?'LUXE':'STD'} : ${qty} ex. — ${pv.name}`, time:now() });
   a12RenderPoints(); saveStateToDB();
@@ -11832,7 +11926,8 @@ function a15RenderDevis() {
           <div class="a15-bar-val" style="color:${overBudget ? 'var(--red)' : 'var(--emerald)'}">${(d.reel/1000).toFixed(0)}K</div>
         </div>
       </div>
-      <div class="a15-delta-badge ${delta >= 0 ? 'a15-delta-pos' : 'a15-delta-neg'}">${delta >= 0 ? '✅ Économie' : '⚠️ Dépassement'} : ${Math.abs(delta/1000).toFixed(0)}K FCFA${d.note ? ' · ' + escapeHtml(d.note) : ''}</div>`;
+      <div class="a15-delta-badge ${delta >= 0 ? 'a15-delta-pos' : 'a15-delta-neg'}">${delta >= 0 ? '✅ Économie' : '⚠️ Dépassement'} : ${Math.abs(delta/1000).toFixed(0)}K FCFA${d.note ? ' · ' + escapeHtml(d.note) : ''}</div>
+      <button class="btn btn-ghost btn-sm btn-full" style="margin-top:6px" onclick="a15EngagerDevis('${d.id}')">💸 Engager (créer la dépense)</button>`;
     list.appendChild(div);
   });
   a15PopulateArgSelect();
@@ -11874,6 +11969,33 @@ function a15PopulateArgSelect() {
   });
 }
 
+/* Devis accepté → dépense réelle, routée par la gouvernance CPF
+   (≥ 200 000 F : file d'approbations ; sinon enregistrement direct). */
+function a15EngagerDevis(id) {
+  const d = a15State.devis.find(x => x.id === id);
+  if (!d) return;
+  if (!confirm('💸 Engager ce devis ?\n\n' + d.nom + ' — ' + fmtFCFA(d.reel) + '\nLa dépense sera créée' + (d.reel >= CPF_SEUIL_APPROBATION ? ' et passera par l\'approbation CPF (≥ 200 000 F).' : ' directement.'))) return;
+  const catMap = { impression:'impression', transport:'transport', hebergement:'hebergement', pirogue:'transport', guide:'divers', autre:'divers' };
+  const tx = {
+    id: 'tx_' + Date.now(),
+    cat: catMap[d.cat] || 'divers',
+    amount: Math.round(d.reel),
+    description: ('Devis engagé · ' + d.nom + (d.note ? ' — ' + d.note : '')).substring(0, 200),
+    ts: Date.now(),
+    type: 'debit'
+  };
+  if (tx.amount >= CPF_SEUIL_APPROBATION) {
+    const niveau = tx.amount >= CPF_SEUIL_MAJEUR ? 'NIVEAU 3 — délibération CPF + PV requis' : 'NIVEAU 2 — bon de commande, 2 signatures';
+    state.approvals.unshift({ id: 'apr_' + Date.now(), type: 'expense', tx, source: '💸 Devis ' + (CAT_LABELS[tx.cat] || tx.cat), msg: tx.description + ' — ' + fmtFCFA(tx.amount) + ' · ' + niveau, time: now(), status: 'pending' });
+    saveStateToDB(); renderApprovals();
+    showToast('🛃 Envoyé en approbation CPF (Superviseur)', 'warn');
+  } else {
+    state.transactionQueue.push(tx);
+    processTransactionQueue();
+    showToast('➕ Dépense créée : ' + fmtFCFA(tx.amount), 'ok');
+  }
+  addActivity('💸', `Devis engagé : ${d.nom} — ${fmtFCFA(d.reel)}`, now());
+}
 function a15AddDevis(evt) {
   const btn = evt.currentTarget; disableBtn(btn);
   const nom = document.getElementById('a15-prest-name')?.value.trim();
@@ -12123,6 +12245,7 @@ function a16AddContrib(evt) {
   document.getElementById('a16-contrib-name').value = '';
   document.getElementById('a16-contrib-libre').value = '';
   document.getElementById('a16-contrib-pays').value = '';
+  treasuryOfferEncaissement(`Souscriptions mécènes · ${name} (${pays})`, amount);
   addActivity('🚀', `Contribution crowdfunding : ${name} — ${fmtFCFA(amount)}`, now());
   addNotification({ type:'ok', text:`🚀 Contribution reçue : ${name} — ${fmtFCFA(amount)} (${pays})`, time: now() });
   showToast(`💰 ${fmtFCFA(amount)} — Merci ${name} !`, 'ok');
@@ -12360,6 +12483,74 @@ const a17State = {
   fusionSuggestions: []
 };
 
+/* Site planifié pour un jour terrain donné (parcours des 32 sites dans l'ordre) */
+function getPlannedSiteForDay(dayNum) {
+  let acc = 0;
+  for (const s of SITES) { acc += (s.days || 1); if (dayNum <= acc) return s; }
+  return null;
+}
+
+/* ============================================================
+   BRIEF DU MATIN — Superviseur : l'essentiel du jour en un écran,
+   envoyable au groupe Telegram équipe en un bouton.
+   ============================================================ */
+function buildMorningBrief() {
+  const d = new Date();
+  const dateStr = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const lines = ['☀️ BRIEF DU JOUR — ' + dateStr.toUpperCase(), 'MISSION SÉNÉGAL V3', ''];
+  if (state.daysDone === 0) {
+    lines.push('🗓 Phase : PRÉ-MISSION (départ terrain 2027)');
+    const first = getPlannedSiteForDay(1);
+    if (first) lines.push('📍 Premier site prévu : ' + first.name + ' (Zone ' + first.zone + ')');
+  } else {
+    const dayNum = Math.min(state.daysDone + 1, MISSION.joursTerrain);
+    lines.push(`🗓 Jour ${dayNum}/${MISSION.joursTerrain} · ${state.sitesDone}/${MISSION.sites} sites documentés`);
+    const site = getPlannedSiteForDay(dayNum);
+    if (site) lines.push(`📍 Site du jour : ${site.name} (Zone ${site.zone}, ~${site.km} km)`);
+  }
+  const t = treasuryCompute();
+  lines.push(`💰 Disponible : ${fmtFCFA(t.disponible)}`);
+  const pend = state.approvals.filter(a => a.status === 'pending').length;
+  if (pend > 0) lines.push(`🛃 ${pend} approbation(s) CPF en attente`);
+  const risks = a17ComputeRisks();
+  if (risks.length > 0) {
+    lines.push(`⚠️ ${risks.length} risque(s) actif(s) :`);
+    risks.slice(0, 3).forEach(r => lines.push('  • ' + r.name));
+  } else {
+    lines.push('✅ Aucun risque actif');
+  }
+  return lines.join('\n');
+}
+function renderMorningBrief() {
+  const el = document.getElementById('brief-content');
+  if (!el) return;
+  try { el.textContent = buildMorningBrief(); } catch (e) { el.textContent = 'Brief indisponible : ' + e.message; return; }
+  // Météo du site du jour (si la clé OpenWeatherMap est configurée dans l'agent 14)
+  try {
+    const site = getPlannedSiteForDay(Math.min(state.daysDone + 1, MISSION.joursTerrain));
+    if (a14State.apiKey && site && site.coords) {
+      fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${site.coords[0]}&lon=${site.coords[1]}&units=metric&lang=fr&appid=${a14State.apiKey}`)
+        .then(r => r.json())
+        .then(w => {
+          if (w && w.main) {
+            const vent = Math.round((w.wind?.speed || 0) * 3.6);
+            el.textContent += `\n🌤 Météo ${site.name} : ${Math.round(w.main.temp)}°C, ${w.weather?.[0]?.description || ''}, vent ${vent} km/h${vent >= 40 ? ' ⚠️ VENT FORT' : ''}`;
+          }
+        }).catch(() => {});
+    }
+  } catch (e) { /* météo optionnelle */ }
+}
+async function sendMorningBrief(evt) {
+  const btn = evt && evt.currentTarget; if (btn) disableBtn(btn);
+  try {
+    const text = document.getElementById('brief-content')?.textContent || buildMorningBrief();
+    await sendTelegramTo('team', text);
+    showToast('📣 Brief envoyé au groupe équipe', 'ok');
+    addActivity('☀️', 'Brief du jour envoyé à l\'équipe', now());
+  } catch (e) { showToast('Envoi impossible : ' + e.message, 'error'); }
+  if (btn) enableBtn(btn);
+}
+
 /* Registre des risques DYNAMIQUE : chaque risque n'apparaît que s'il est réel,
    calculé depuis les données vivantes de l'app (trésorerie, budget, agents). */
 function a17ComputeRisks() {
@@ -12423,6 +12614,23 @@ function a17ComputeRisks() {
   if (overDevis.length > 0) {
     const totalOver = overDevis.reduce((s, d) => s + (d.reel - d.est), 0);
     risks.push({ level:'medium', name:`${overDevis.length} devis en dépassement`, desc:`Surcoût cumulé ${fmtFCFA(totalOver)} vs estimations.`, mitigation:'Renégociation ou devis concurrents (Agent 15).' });
+  }
+
+  // 7. Sponsors sans mouvement depuis 7 jours (Agent 9)
+  const staleSponsors = a9State.sponsors.filter(s => (s.status === 'prospect' || s.status === 'negocie') && (Date.now() - (s.ts || 0)) > 7 * 86400000);
+  if (staleSponsors.length > 0) {
+    risks.push({ level:'medium', name:`${staleSponsors.length} sponsor(s) à relancer (J+7)`, desc:staleSponsors.slice(0, 3).map(s => s.name).join(' · ') + (staleSponsors.length > 3 ? '…' : ''), mitigation:'Relance commerciale (Agent 9) : rappel, ou passer au prospect suivant.' });
+  }
+
+  // 8. Site à venir sans autorisation validée (croisement planning × Agent 10)
+  if (state.daysDone < MISSION.joursTerrain) {
+    const nextSite = getPlannedSiteForDay(state.daysDone + 1);
+    if (nextSite) {
+      const auth = a10State.auths.find(a => a.site && (a.site.includes(nextSite.name) || nextSite.name.includes(a.site.split('(')[0].trim())));
+      if (auth && auth.status !== 'valide') {
+        risks.push({ level: state.daysDone > 0 ? 'critical' : 'high', name:'Site à venir sans autorisation validée', desc:`${nextSite.name} (jour ${state.daysDone + 1}) : autorisation « ${auth.status} » — ${auth.org}.`, mitigation:'Relance juridique immédiate (Agent 10) avant d\'engager le site.' });
+      }
+    }
   }
 
   const order = { critical:0, high:1, medium:2, low:3 };
