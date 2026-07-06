@@ -13654,14 +13654,22 @@ function _getAuthClient() {
 }
 
 /** Appelée à chaque login ET à chaque refresh de token */
-function _onSessionReady(session) {
+async function _onSessionReady(session) {
   // Réabonnement push silencieux (si la permission a déjà été accordée)
   if ('Notification' in window && Notification.permission === 'granted') {
     setTimeout(() => _pushSubscribe(true), 5000);
   }
-  // 1. Partage la session avec SupaSync → les writes Supabase seront authentifiés
+  // 1. Partage la session avec SupaSync → les writes Supabase seront authentifiés.
+  //    IMPORTANT : ATTENDU. SupaSync.setSession() est asynchrone (elle appelle
+  //    client.auth.setSession() côté Supabase) ; sans ce await, checkAuthSession()
+  //    continuait immédiatement vers fetchState() AVANT que la session soit
+  //    réellement posée sur le client de synchronisation. Résultat : la lecture
+  //    partait non authentifiée, RLS filtrait tout silencieusement (aucune
+  //    erreur, juste "aucune ligne trouvée") → c'était la cause du bug
+  //    "fetchState() a renvoyé null" au démarrage alors que les données
+  //    existaient bien dans le cloud.
   if (typeof SupaSync !== 'undefined') {
-    SupaSync.setSession(session);
+    await SupaSync.setSession(session);
 
     // 2. Active les subscriptions Realtime si pas déjà fait
     if (!_realtimeChan) {
@@ -13768,7 +13776,11 @@ async function checkAuthSession() {
     if (error) throw error;
     if (session) {
       document.getElementById('auth-wall').classList.add('hidden');
-      _onSessionReady(session);
+      // ATTENDU (voir commentaire dans _onSessionReady) : init() appelle
+      // fetchState() juste après checkAuthSession() — sans ce await, la
+      // lecture cloud pouvait partir avant que la session soit posée sur
+      // le client de synchronisation, et RLS renvoyait silencieusement rien.
+      await _onSessionReady(session);
     }
   } catch (e) {
     console.warn('[AUTH] getSession échoué :', e.message);
