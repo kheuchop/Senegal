@@ -3099,7 +3099,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           </button>
           <div id="a6-image-output" style="display:none;margin-top:12px">
             <img id="a6-image-preview" alt="Maquette IA du site" style="width:100%;border-radius:var(--r-sm);border:1px solid var(--border);display:block">
-            <div style="font-family:var(--font-mono);font-size:0.46rem;color:var(--text-muted);text-align:center;margin-top:6px;line-height:1.5">⚠️ Image IA — maquette / prévisualisation uniquement, ce n'est PAS une vraie photo du site</div>
+            <div id="a6-image-caption" style="font-family:var(--font-mono);font-size:0.46rem;color:var(--text-muted);text-align:center;margin-top:6px;line-height:1.5">⚠️ Image IA — maquette / prévisualisation uniquement, ce n'est PAS une vraie photo du site</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
               <button class="btn btn-ghost btn-sm" onclick="a6RegenImage(this)"><div class="spinner"></div><span class="btn-text">🎲 Autre version</span></button>
               <button class="btn btn-primary btn-sm" onclick="a6DownloadImage()">⬇️ Télécharger</button>
@@ -9072,26 +9072,54 @@ function a6VariatePrompt() {
   setTimeout(() => enableBtn(btn), 500);
 }
 
-/* --- Génération d'image (maquette) via Pollinations.ai — gratuit, sans clé --- */
+/* --- Génération d'image : Gemini (fidèle au prompt, clé gratuite) avec
+   repli automatique sur Pollinations.ai (gratuit, sans clé, moins fidèle) --- */
 let a6ImageUrl = null;
-function a6GenerateImage(btn, reseed) {
+async function a6GenerateImage(btn, reseed) {
   const prompt = a6State.currentPrompt;
   if (!prompt) { showToast('Générez d\'abord un prompt', 'warn'); enableBtn(btn); return; }
   disableBtn(btn);
+  const out = document.getElementById('a6-image-output');
+  const img = document.getElementById('a6-image-preview');
+  const cap = document.getElementById('a6-image-caption');
+  out.style.display = 'block';
+  showToast('🎨 Génération en cours (10-25 s)…', 'info');
+
+  try {
+    const res = await apiFetch('/api/gemini-image', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ prompt }),
+    });
+    const data = await res.json();
+    if (res.ok && data.image) {
+      a6ImageUrl = data.image;
+      img.onload = () => { enableBtn(btn); showToast('✅ Image générée (Gemini)', 'ok'); };
+      img.onerror = () => { enableBtn(btn); showToast('Échec de génération — réessayez', 'error'); };
+      if (cap) cap.textContent = '⚠️ Image IA (Gemini) — maquette / prévisualisation uniquement, ce n\'est PAS une vraie photo du site';
+      img.src = data.image;
+      return;
+    }
+  } catch (e) { /* pas de clé, quota dépassé, ou hors-ligne → repli ci-dessous */ }
+
+  // Repli : maquette gratuite Pollinations.ai (moins fidèle au prompt mais toujours disponible)
   const seed = reseed ? Math.floor(Math.random() * 1e6) : 42;
   const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=768&nologo=true&model=flux&seed=${seed}`;
   a6ImageUrl = url;
-  const out = document.getElementById('a6-image-output');
-  const img = document.getElementById('a6-image-preview');
-  out.style.display = 'block';
-  showToast('🎨 Génération en cours (10-25 s)…', 'info');
-  img.onload  = () => { enableBtn(btn); showToast('✅ Maquette générée', 'ok'); };
+  img.onload  = () => { enableBtn(btn); showToast('✅ Maquette générée (Pollinations — repli gratuit)', 'ok'); };
   img.onerror = () => { enableBtn(btn); showToast('Échec de génération — réessayez', 'error'); };
+  if (cap) cap.textContent = '⚠️ Image IA — maquette / prévisualisation uniquement, ce n\'est PAS une vraie photo du site';
   img.src = url;
 }
 function a6RegenImage(btn) { a6GenerateImage(btn, true); }
 async function a6DownloadImage() {
   if (!a6ImageUrl) return;
+  if (a6ImageUrl.startsWith('data:')) {
+    const a = document.createElement('a'); a.href = a6ImageUrl; a.download = `maquette-senegal-${Date.now()}.png`;
+    document.body.appendChild(a); a.click(); a.remove();
+    showToast('⬇️ Image téléchargée', 'ok');
+    return;
+  }
   try {
     const res = await fetch(a6ImageUrl);
     const blob = await res.blob();
