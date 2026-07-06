@@ -6261,6 +6261,39 @@ function applyCloudState(d) {
   return changed;
 }
 
+/* Récupère et applique l'état cloud — appelée depuis _onSessionReady() dès
+   qu'une session devient valide (session déjà active au démarrage, connexion
+   fraîche sur un nouvel appareil, ou refresh de jeton). C'est LE point unique
+   de rattrapage : sans ça, un appareil qui se connecte pour la première fois
+   ne recevrait jamais les données déjà accumulées par l'équipe (PIN, clé
+   météo, dépenses…) — seulement les changements futurs via Realtime. */
+async function pullCloudStateNow(label) {
+  if (typeof SupaSync === 'undefined' || typeof SupaSync.fetchState !== 'function') return;
+  try {
+    const localTxCount = state.transactions.length;
+    const cloud = await SupaSync.fetchState();
+    const cloudTxCount = Array.isArray(cloud?.transactions) ? cloud.transactions.length : null;
+    console.log(`[SYNC-${label}] local: ${localTxCount} transaction(s) · cloud: ${cloudTxCount === null ? 'introuvable' : cloudTxCount + ' transaction(s)'}`);
+    if (!cloud) {
+      console.warn(`[SYNC-${label}] fetchState() a renvoyé null — aucune restauration possible (hors-ligne, ou aucune ligne mission_state).`);
+      return;
+    }
+    const changed = applyCloudState(cloud);
+    console.log(`[SYNC-${label}] applyCloudState → changed=${changed} · local après: ${state.transactions.length} transaction(s)`);
+    if (changed) {
+      window.__skipCloudPush = true;
+      try { saveStateToDB(); } finally { window.__skipCloudPush = false; }
+      if (typeof updateFinancialUI === 'function') { try { updateFinancialUI(); } catch (e) {} }
+      if (cloudTxCount !== null && cloudTxCount !== localTxCount) {
+        setTimeout(() => showToast(`🔄 Synchro : ${localTxCount} → ${state.transactions.length} transaction(s)`, 'info'), 1000);
+      }
+    }
+  } catch (e) {
+    console.error(`[SYNC-${label}] fetchState/applyCloudState a levé une exception :`, e);
+    setTimeout(() => showToast('⚠️ Restauration cloud échouée : ' + e.message, 'warn'), 1000);
+  }
+}
+
 function approveItem(id, evt) {
   const btn = evt.currentTarget;
   const item = state.approvals.find(x => x.id === id);
@@ -8304,38 +8337,14 @@ async function init() {
     console.warn('[MISSION CTRL] supabase-sync-1.js non chargé — mode hors-ligne activé.');
   }
 
-  // Vérification session auth — après init Supabase, jamais avant
+  // Vérification session auth — après init Supabase, jamais avant.
+  // La restauration cloud (dépenses, clé météo, PIN, trésorerie, etc.) se
+  // déclenche depuis _onSessionReady() dès qu'une session devient valide —
+  // que ce soit une session déjà active (ci-dessous) OU une connexion fraîche
+  // sur un nouvel appareil (voir _onSessionReady : c'était le trou qui
+  // empêchait un nouvel appareil de récupérer les données déjà existantes).
   setStatus('Vérification session…');
   await checkAuthSession();
-
-  // Restauration depuis le cloud : rattrape tout ce qui a changé sur un autre
-  // appareil pendant que celui-ci était fermé (dépenses, clé météo, PIN,
-  // trésorerie, etc.) — un seul point de réconciliation, voir applyCloudState().
-  if (typeof SupaSync !== 'undefined' && typeof SupaSync.fetchState === 'function') {
-    setStatus('Restauration cloud…');
-    try {
-      const localTxCount = state.transactions.length;
-      const cloud = await SupaSync.fetchState();
-      const cloudTxCount = Array.isArray(cloud?.transactions) ? cloud.transactions.length : null;
-      console.log(`[SYNC-DEMARRAGE] local: ${localTxCount} transaction(s) · cloud: ${cloudTxCount === null ? 'introuvable' : cloudTxCount + ' transaction(s)'}`);
-      if (!cloud) {
-        console.warn('[SYNC-DEMARRAGE] fetchState() a renvoyé null — aucune restauration possible (hors-ligne, ou aucune ligne mission_state).');
-      } else {
-        const changed = applyCloudState(cloud);
-        console.log(`[SYNC-DEMARRAGE] applyCloudState → changed=${changed} · local après: ${state.transactions.length} transaction(s)`);
-        if (changed) {
-          window.__skipCloudPush = true;
-          try { saveStateToDB(); } finally { window.__skipCloudPush = false; }
-          if (cloudTxCount !== null && cloudTxCount !== localTxCount) {
-            setTimeout(() => showToast(`🔄 Synchro au démarrage : ${localTxCount} → ${state.transactions.length} transaction(s)`, 'info'), 1500);
-          }
-        }
-      }
-    } catch (e) {
-      console.error('[SYNC-DEMARRAGE] fetchState/applyCloudState a levé une exception :', e);
-      setTimeout(() => showToast('⚠️ Restauration cloud échouée : ' + e.message, 'warn'), 1500);
-    }
-  }
 
 
   // Rapport mensuel automatique (1er-3 du mois, une fois, dédup cloud)
@@ -13766,6 +13775,12 @@ async function _onSessionReady(session) {
   //    existaient bien dans le cloud.
   if (typeof SupaSync !== 'undefined') {
     await SupaSync.setSession(session);
+
+    // 1bis. Rattrape l'état déjà accumulé dans le cloud (PIN, clé météo,
+    //       dépenses, trésorerie…) — indispensable ici en plus de init(),
+    //       car c'est le SEUL passage exécuté pour un nouvel appareil qui
+    //       vient tout juste de se connecter pour la première fois.
+    await pullCloudStateNow('CONNEXION');
 
     // 2. Active les subscriptions Realtime si pas déjà fait
     if (!_realtimeChan) {
