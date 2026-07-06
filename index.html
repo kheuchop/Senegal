@@ -940,6 +940,18 @@ textarea.input-field { resize: vertical; min-height: 80px; }
   border-color: var(--emerald);
   box-shadow: 0 0 12px rgba(0,230,118,0.3);
 }
+#gps-recenter-btn {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(6,9,16,0.92);
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 10px rgba(214,165,58,0.35);
+  margin-bottom: 8px;
+  animation: gps-recenter-pop 0.3s ease-out;
+}
+@keyframes gps-recenter-pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
 /* Leaflet dark overrides */
 .leaflet-container { background: #0a0d14 !important; }
@@ -4764,12 +4776,19 @@ textarea.input-field { resize: vertical; min-height: 80px; }
               <div class="gps-site" id="gps-site-display"></div>
               <div class="gps-dist" id="gps-dist-display"></div>
             </div>
-            <button id="gps-toggle-btn" onclick="toggleGPS()">
-              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
-                <circle cx="12" cy="12" r="9" stroke-dasharray="2 3"/>
-              </svg>
-            </button>
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <button id="gps-recenter-btn" style="display:none" onclick="recenterMap()" title="Recentrer sur ma position">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+                </svg>
+              </button>
+              <button id="gps-toggle-btn" onclick="toggleGPS()">
+                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+                  <circle cx="12" cy="12" r="9" stroke-dasharray="2 3"/>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
         <!-- Légende des zones (couleurs des marqueurs) -->
@@ -4974,6 +4993,7 @@ const state = {
   leafletMap: null,
   mapMarkers: [],
   mapFallback: false,
+  mapFollowUser: true, // false dès que l'utilisateur déplace la carte à la main — le GPS arrête de la recentrer tout seul
   navTarget: null,
   orsApiKey: null, // clé OpenRouteService (itinéraires routiers réels) — partagée comme la clé météo
   dailyChecklist: { date: '', checked: {} },
@@ -5718,8 +5738,18 @@ function onGpsPosition(pos) {
     document.getElementById('gps-site-display').textContent = '';
     document.getElementById('gps-dist-display').textContent = '';
   }
-  if (state.leafletMap) { state.leafletMap.setView([avgLat, avgLon], state.leafletMap.getZoom()); }
+  if (state.leafletMap && state.mapFollowUser) { state.leafletMap.setView([avgLat, avgLon], state.leafletMap.getZoom()); }
   _updateNavDisplay(avgLat, avgLon);
+}
+
+/* Reprend le suivi automatique de la position (bouton 🎯 apparu après un
+   déplacement manuel de la carte pendant que le GPS est actif). */
+function recenterMap() {
+  state.mapFollowUser = true;
+  const btn = document.getElementById('gps-recenter-btn');
+  if (btn) btn.style.display = 'none';
+  const last = state.gpsBuffer[state.gpsBuffer.length - 1];
+  if (state.leafletMap && last) state.leafletMap.setView([last.lat, last.lon], state.leafletMap.getZoom());
 }
 
 /* ============================================================
@@ -5797,6 +5827,8 @@ function startNavigation(siteId) {
     state.leafletMap.setView(site.coords, Math.max(state.leafletMap.getZoom(), 10));
   }
   if (!state.gpsActive) toggleGPS();
+  state.mapFollowUser = true;
+  const rBtn = document.getElementById('gps-recenter-btn'); if (rBtn) rBtn.style.display = 'none';
   showToast('🧭 Navigation vers ' + site.name, 'ok');
   switchTab(17);
   _updateNavDisplay();
@@ -5974,9 +6006,12 @@ function toggleGPS() {
     document.getElementById('gps-dist-display').textContent = '';
     updateMapPulse(null, false);
     clearMyLocationMarker();
+    state.mapFollowUser = true;
+    const rBtn = document.getElementById('gps-recenter-btn'); if (rBtn) rBtn.style.display = 'none';
     showToast('GPS désactivé', 'info');
   } else {
     state.gpsActive = true;
+    state.mapFollowUser = true;
     btn.className = 'gps-on';
     state.gpsWatchId = navigator.geolocation.watchPosition(onGpsPosition, onGpsError, { enableHighAccuracy:true, timeout:15000, maximumAge:0 });
     resetGpsWatchdog();
@@ -6127,6 +6162,14 @@ function initMap() {
       L.marker(s.coords, { icon }).addTo(map).bindPopup(`<b>${s.name}</b><br><small style="color:#ffab40">Mission Hors-Terrain · 0 jour</small>`);
     });
     L.control.attribution({ prefix: '' }).addTo(map);
+    // Dès que l'utilisateur déplace la carte à la main, le GPS arrête de la
+    // recentrer automatiquement (sinon impossible de regarder ailleurs :
+    // elle "revenait toujours au point de départ" à chaque position GPS).
+    map.on('dragstart', () => {
+      state.mapFollowUser = false;
+      const btn = document.getElementById('gps-recenter-btn');
+      if (btn && state.gpsActive) btn.style.display = 'flex';
+    });
   } catch(e) {
     /* Leaflet CDN unavailable in sandboxed context — CSS vector fallback active */
     state.mapFallback = true;
