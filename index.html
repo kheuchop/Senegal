@@ -5950,8 +5950,18 @@ async function _updateNavDisplay(avgLat, avgLon) {
   if (!due) return;
   _lastRouteCalc = { lat, lon, ts: Date.now() };
 
-  const route = await fetchRoadRoute(lat, lon, target.coords[0], target.coords[1]);
+  let route = await fetchRoadRoute(lat, lon, target.coords[0], target.coords[1]);
   if (state.navTarget !== target) return; // la destination a changé pendant l'appel → résultat obsolète, on l'ignore
+
+  // Garde-fou : rejette un itinéraire aberrant (ex. un site mal connecté au
+  // réseau routier OSM — zone portuaire, ferry — fait parfois répondre
+  // OpenRouteService avec un énorme détour au lieu d'échouer proprement).
+  // Un vrai détour routier dépasse rarement 3x la distance à vol d'oiseau ;
+  // marge fixe en plus pour les trajets courts. Au-delà, on ignore la
+  // route et on retombe sur le repli à vol d'oiseau.
+  if (route && route.distanceM != null && route.distanceM > Math.max(straightDist * 3, straightDist + 20000)) {
+    route = null;
+  }
 
   if (state.leafletMap && typeof L !== 'undefined') {
     if (navRouteLine) { state.leafletMap.removeLayer(navRouteLine); navRouteLine = null; }
