@@ -2308,6 +2308,12 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <button class="btn btn-ghost btn-sm btn-full" id="push-enable-btn" style="margin-top:8px;display:none" onclick="enablePushNotifications()">🔔 Activer les notifications sur cet appareil</button>
         </div>
 
+        <!-- Installer l'application sur cet appareil -->
+        <div class="card" id="install-app-card" style="display:none">
+          <div class="card-title">📲 Installer l'application</div>
+          <div id="install-app-body"></div>
+        </div>
+
         <!-- Diagnostic de synchronisation -->
         <div class="card">
           <div class="card-title">🩺 Diagnostic Synchronisation</div>
@@ -6512,6 +6518,7 @@ function initSuperviseur() {
   renderChecklist();
   setTimeout(() => { try { renderMorningBrief(); } catch (e) { console.warn('[Brief]', e); } }, 1500);
   setTimeout(() => { try { displaySwVersion(); } catch (e) {} }, 1000);
+  setTimeout(() => { try { checkInstallPrompt(); } catch (e) {} }, 1200);
   const feed = document.getElementById('activity-feed');
   if (feed) INITIAL_ACTIVITY.forEach(a => { const div=document.createElement('div'); div.className='activity-item'; div.innerHTML=`<div class="activity-icon">${a.icon}</div><div class="activity-detail"><div class="act-title">${a.title}</div><div class="act-time">${a.time}</div></div>`; feed.appendChild(div); });
   updateCOORing();
@@ -6529,6 +6536,58 @@ function updateCOORing() {
   const budgetPct = Math.round(((state.budget - state.spent) / state.budget) * 100);
   const cb = document.getElementById('coo-budget-pct');
   if (cb) { cb.textContent = `${budgetPct}% budget`; cb.className = `pill ${budgetPct > 50 ? 'pill-green' : budgetPct > 20 ? 'pill-amber' : 'pill-red'}`; }
+}
+
+/* ============================================================
+   INSTALLATION DE L'APP (PWA) — Android/Chrome propose une installation
+   automatique (événement beforeinstallprompt) ; Safari (iPhone/iPad) ne le
+   fait JAMAIS (limitation volontaire d'Apple, aucun bug possible côté app) :
+   sur Safari, l'ajout à l'écran d'accueil est TOUJOURS une action manuelle
+   (Partager → Sur l'écran d'accueil). On guide donc explicitement ce cas.
+   ============================================================ */
+let _deferredInstallPrompt = null;
+function isStandaloneMode() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+function isIOSDevice() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  _deferredInstallPrompt = e;
+  showInstallCard('chrome');
+});
+window.addEventListener('appinstalled', () => {
+  _deferredInstallPrompt = null;
+  const card = document.getElementById('install-app-card');
+  if (card) card.style.display = 'none';
+  showToast('📲 Application installée !', 'ok');
+});
+function checkInstallPrompt() {
+  if (isStandaloneMode()) return; // déjà installée : rien à montrer
+  if (_deferredInstallPrompt) { showInstallCard('chrome'); return; }
+  if (isIOSDevice()) showInstallCard('ios');
+}
+function showInstallCard(kind) {
+  if (isStandaloneMode()) return;
+  const card = document.getElementById('install-app-card');
+  const body = document.getElementById('install-app-body');
+  if (!card || !body) return;
+  card.style.display = 'block';
+  if (kind === 'chrome') {
+    body.innerHTML = `<div style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);margin-bottom:8px;line-height:1.5">Installe l'app sur cet appareil pour l'ouvrir comme une vraie application (icône sur l'écran d'accueil, plein écran, hors-ligne).</div>
+      <button class="btn btn-primary btn-full" onclick="triggerInstallPrompt()">📲 Installer l'application</button>`;
+  } else if (kind === 'ios') {
+    body.innerHTML = `<div style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);line-height:1.9">Safari (iPhone/iPad) ne propose jamais d'installation automatique — c'est une limitation d'Apple, pas un bug de l'app. Pour ajouter l'icône à l'écran d'accueil :<br>1. Appuie sur <b style="color:var(--gold)">Partager 📤</b> (barre du bas dans Safari)<br>2. Choisis <b style="color:var(--gold)">« Sur l'écran d'accueil »</b><br>3. Appuie sur <b style="color:var(--gold)">Ajouter</b></div>`;
+  }
+}
+async function triggerInstallPrompt() {
+  if (!_deferredInstallPrompt) return;
+  _deferredInstallPrompt.prompt();
+  try { await _deferredInstallPrompt.userChoice; } catch (e) {}
+  _deferredInstallPrompt = null;
+  const card = document.getElementById('install-app-card');
+  if (card) card.style.display = 'none';
 }
 
 /* ============================================================
