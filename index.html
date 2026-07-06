@@ -2305,7 +2305,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
             <button class="btn btn-ghost btn-sm" onclick="renderMorningBrief()">🔄 Actualiser</button>
             <button class="btn btn-primary btn-sm" onclick="sendMorningBrief(event)"><div class="spinner"></div><span class="btn-text">📣 Envoyer à l'équipe</span></button>
           </div>
-          <button class="btn btn-ghost btn-sm btn-full" id="push-enable-btn" style="margin-top:8px;display:none" onclick="enablePushNotifications()">🔔 Activer les notifications sur cet appareil</button>
+          <button class="btn btn-ghost btn-sm btn-full" id="push-enable-btn" style="margin-top:8px;display:none" onclick="togglePushNotifications()"><span class="btn-text">🔔 Activer les notifications sur cet appareil</span></button>
         </div>
 
         <!-- Installer l'application sur cet appareil -->
@@ -5280,19 +5280,18 @@ async function _pushSubscribe(silent) {
     const { error } = await client.from('push_subscriptions').upsert({ id, sub: sub.toJSON() }, { onConflict: 'id' });
     if (error) { if (!silent) showToast('Table push absente ? (SQL à exécuter) : ' + error.message, 'warn'); return false; }
     if (!silent) showToast('🔔 Notifications activées sur cet appareil', 'ok');
-    const b = document.getElementById('push-enable-btn'); if (b) b.style.display = 'none';
     return true;
   } catch (e) { if (!silent) showToast('Activation impossible : ' + e.message, 'warn'); return false; }
 }
+async function _hasPushSubscription() {
+  try {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    return !!sub;
+  } catch (e) { return false; }
+}
 async function enablePushNotifications() {
-  // Sur iPhone/iPad, Safari REFUSE les notifications tant que l'app n'est
-  // pas installée sur l'écran d'accueil (mode standalone) — c'est une règle
-  // d'Apple, pas un bug ici. Sans ce garde-fou, le bouton échouait sans
-  // explication claire pour l'utilisateur.
-  if (typeof isIOSDevice === 'function' && isIOSDevice() && typeof isStandaloneMode === 'function' && !isStandaloneMode()) {
-    showToast('📲 Sur iPhone/iPad, installe d\'abord l\'app sur l\'écran d\'accueil (carte juste au-dessus) — les notifications ne fonctionnent qu\'une fois installée.', 'warn');
-    return;
-  }
   if (!('Notification' in window)) { showToast('Notifications non supportées sur ce navigateur', 'warn'); return; }
   let perm;
   try { perm = await Notification.requestPermission(); }
@@ -5300,6 +5299,51 @@ async function enablePushNotifications() {
   if (perm !== 'granted') { showToast('Permission refusée — notifications désactivées', 'warn'); return; }
   const ok = await _pushSubscribe(false);
   if (!ok) showToast('⚠️ Activation incomplète — relance le 🩺 Diagnostic Synchronisation pour voir le détail', 'warn');
+}
+async function disablePushNotifications() {
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      const client = (typeof _getAuthClient === 'function') ? _getAuthClient() : null;
+      if (client) {
+        const id = btoa(sub.endpoint).replace(/[^a-zA-Z0-9]/g, '').slice(-60);
+        await client.from('push_subscriptions').delete().eq('id', id);
+      }
+      await sub.unsubscribe();
+    }
+    showToast('🔕 Notifications désactivées sur cet appareil', 'ok');
+  } catch (e) { showToast('Erreur de désactivation : ' + e.message, 'warn'); }
+}
+/* Bouton bascule — reste toujours visible (sauf navigateur non compatible) :
+   affiche « Activer » ou « Désactiver » selon l'abonnement push réel de CET
+   appareil (pas seulement la permission navigateur, qui elle est irrévocable
+   en JS une fois accordée). */
+async function togglePushNotifications() {
+  // Sur iPhone/iPad, Safari REFUSE les notifications tant que l'app n'est
+  // pas installée sur l'écran d'accueil (mode standalone) — c'est une règle
+  // d'Apple, pas un bug ici.
+  if (typeof isIOSDevice === 'function' && isIOSDevice() && typeof isStandaloneMode === 'function' && !isStandaloneMode()) {
+    showToast('📲 Sur iPhone/iPad, installe d\'abord l\'app sur l\'écran d\'accueil (carte juste au-dessus) — les notifications ne fonctionnent qu\'une fois installée.', 'warn');
+    return;
+  }
+  const subscribed = await _hasPushSubscription();
+  if (subscribed) await disablePushNotifications();
+  else await enablePushNotifications();
+  await updatePushButton();
+}
+async function updatePushButton() {
+  const pb = document.getElementById('push-enable-btn');
+  if (!pb) return;
+  const txt = pb.querySelector('.btn-text') || pb;
+  if (!('Notification' in window)) { pb.style.display = 'none'; return; }
+  pb.style.display = 'block';
+  if (typeof isIOSDevice === 'function' && isIOSDevice() && typeof isStandaloneMode === 'function' && !isStandaloneMode()) {
+    txt.textContent = '📲 Installe d\'abord l\'app (ci-dessous) pour activer les notifications';
+    return;
+  }
+  const subscribed = await _hasPushSubscription();
+  txt.textContent = subscribed ? '🔕 Désactiver les notifications sur cet appareil' : '🔔 Activer les notifications sur cet appareil';
 }
 /* Envoie une notification push à TOUS les appareils abonnés de l'équipe (best-effort) */
 function sendPushToTeam(title, body, tag) {
@@ -13387,14 +13431,8 @@ function buildMorningBrief() {
 function renderMorningBrief() {
   const el = document.getElementById('brief-content');
   if (!el) return;
-  // Propose l'activation des notifications si pas encore accordées
-  const pb = document.getElementById('push-enable-btn');
-  if (pb && 'Notification' in window) {
-    pb.style.display = Notification.permission === 'granted' ? 'none' : 'block';
-    if (typeof isIOSDevice === 'function' && isIOSDevice() && typeof isStandaloneMode === 'function' && !isStandaloneMode()) {
-      pb.querySelector('.btn-text').textContent = '📲 Installe d\'abord l\'app (ci-dessous) pour activer les notifications';
-    }
-  }
+  // Bouton notifications : toujours visible, texte Activer/Désactiver selon l'état réel
+  if (typeof updatePushButton === 'function') updatePushButton();
   try { el.textContent = buildMorningBrief(); } catch (e) { el.textContent = 'Brief indisponible : ' + e.message; return; }
   // Météo du site du jour (si la clé OpenWeatherMap est configurée dans l'agent 14)
   try {
