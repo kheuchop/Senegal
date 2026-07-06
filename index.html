@@ -998,6 +998,16 @@ textarea.input-field { resize: vertical; min-height: 80px; }
   animation: nav-bounce 1s ease-in-out infinite alternate;
 }
 @keyframes nav-bounce { from { transform: translateY(0); } to { transform: translateY(-5px); } }
+.my-location-dot {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: #4285F4; border: 3px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.3), 0 0 8px rgba(66,133,244,0.9);
+  animation: my-location-pulse 2s ease-in-out infinite;
+}
+@keyframes my-location-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(0,0,0,0.3), 0 0 8px rgba(66,133,244,0.9); }
+  50%      { box-shadow: 0 0 0 1px rgba(0,0,0,0.3), 0 0 14px rgba(66,133,244,1); }
+}
 .zone-legend-dot {
   display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; vertical-align: middle;
 }
@@ -5697,6 +5707,7 @@ function onGpsPosition(pos) {
   const avgLat = state.gpsBuffer.reduce((s,p) => s+p.lat, 0) / state.gpsBuffer.length;
   const avgLon = state.gpsBuffer.reduce((s,p) => s+p.lon, 0) / state.gpsBuffer.length;
   document.getElementById('gps-coords-display').textContent = `${avgLat.toFixed(5)}°N / ${Math.abs(avgLon).toFixed(5)}°W ±${Math.round(accuracy)}m`;
+  updateMyLocationMarker(avgLat, avgLon, accuracy);
   const nearest = findNearestSite(avgLat, avgLon);
   state.nearestSite = nearest;
   if (nearest) {
@@ -5904,6 +5915,33 @@ function _haversineKm(lat1, lon1, lat2, lon2) {
   const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
   return 2 * R * Math.asin(Math.sqrt(a));
 }
+
+/* Repère "ma position" (façon Google Maps) — point bleu + cercle de
+   précision GPS réelle (rayon = accuracy renvoyée par le téléphone). */
+let myLocationMarker = null;
+let myLocationAccuracyCircle = null;
+function updateMyLocationMarker(lat, lon, accuracy) {
+  if (!state.leafletMap || typeof L === 'undefined') return;
+  if (!myLocationAccuracyCircle) {
+    myLocationAccuracyCircle = L.circle([lat, lon], { radius: accuracy, color: '#4285F4', weight: 1, fillColor: '#4285F4', fillOpacity: 0.1, interactive: false }).addTo(state.leafletMap);
+  } else {
+    myLocationAccuracyCircle.setLatLng([lat, lon]);
+    myLocationAccuracyCircle.setRadius(accuracy);
+  }
+  if (!myLocationMarker) {
+    const icon = L.divIcon({ html: '<div class="my-location-dot"></div>', className: '', iconSize: [18, 18], iconAnchor: [9, 9] });
+    myLocationMarker = L.marker([lat, lon], { icon, zIndexOffset: 1000 }).addTo(state.leafletMap);
+    myLocationMarker.bindPopup(`📍 Ma position (précision ±${Math.round(accuracy)}m)`);
+  } else {
+    myLocationMarker.setLatLng([lat, lon]);
+    myLocationMarker.getPopup()?.setContent(`📍 Ma position (précision ±${Math.round(accuracy)}m)`);
+  }
+}
+function clearMyLocationMarker() {
+  if (!state.leafletMap) return;
+  if (myLocationMarker)         { state.leafletMap.removeLayer(myLocationMarker);         myLocationMarker = null; }
+  if (myLocationAccuracyCircle) { state.leafletMap.removeLayer(myLocationAccuracyCircle); myLocationAccuracyCircle = null; }
+}
 function findNearestSite(lat, lon) {
   let best = null, bestDist = Infinity;
   SITES.forEach(s => { const d = haversine(lat, lon, s.coords[0], s.coords[1]); if (d < bestDist) { bestDist = d; best = s; } });
@@ -5935,6 +5973,7 @@ function toggleGPS() {
     document.getElementById('gps-site-display').textContent = '';
     document.getElementById('gps-dist-display').textContent = '';
     updateMapPulse(null, false);
+    clearMyLocationMarker();
     showToast('GPS désactivé', 'info');
   } else {
     state.gpsActive = true;
