@@ -9100,7 +9100,14 @@ async function a6GenerateImage(btn, reseed) {
       img.src = data.image;
       return;
     }
-  } catch (e) { /* pas de clé, quota dépassé, ou hors-ligne → repli ci-dessous */ }
+    // DIAGNOSTIC TEMPORAIRE — affiche la vraie raison de l'échec Gemini au lieu de
+    // basculer en silence, pour identifier la cause exacte (clé, modèle, quota…).
+    console.warn('[Gemini image]', res.status, data);
+    showToast(`⚠️ Gemini indisponible (${data.error || res.status}${data.hint ? ' — ' + data.hint : ''}) — repli maquette gratuite`, 'warn');
+  } catch (e) {
+    console.warn('[Gemini image] exception', e);
+    showToast('⚠️ Gemini indisponible (' + e.message + ') — repli maquette gratuite', 'warn');
+  }
 
   // Repli : maquette gratuite Pollinations.ai (moins fidèle au prompt mais toujours disponible)
   const seed = reseed ? Math.floor(Math.random() * 1e6) : 42;
