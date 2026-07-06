@@ -8997,6 +8997,21 @@ const A6_STYLE_PARAMS = {
   longexp: { label:'Longue Exposition', lens:'24mm f/8-16', iso:'ISO 50-100', light:'Crépuscule ou nuit, trépied obligatoire', tech:'ND 10 stops, bulb mode, déclencheur câblé', mood:'Temps suspendu & abstraction' }
 };
 
+// Description purement visuelle (sans jargon caméra/DPI/profil colorimétrique) pour
+// les moteurs de génération d'image (Gemini/Pollinations) — un modèle de diffusion
+// ne « comprend » pas "Phase One IQ4 150MP" ou "--ar 4:3 --q 2" (syntaxe Midjourney),
+// ces tokens diluent juste l'attention du modèle loin du sujet réel.
+const A6_STYLE_VISUAL = {
+  natgeo:   'golden natural light, controlled backlight, rule of thirds composition, selective depth of field',
+  golden:   'warm golden hour light at sunrise or sunset, silhouettes and reflections, sculpting backlight',
+  blue:     'even blue-hour light shortly after sunset, long exposure look, balanced natural and artificial light',
+  aerial:   'aerial drone view from above, wide open perspective, soft even light, no harsh shadows',
+  portrait: 'documentary portrait, natural side window light, direct eye contact, contextual environment visible',
+  street:   'candid street photography, ambient natural light, decisive moment, natural motion',
+  macro:    'extreme macro close-up detail, soft diffused light, very shallow focus',
+  longexp:  'long exposure at dusk or night, suspended motion, abstract light trails'
+};
+
 const A6_INTENTION_PROMPTS = {
   grandiose: 'vast scale, epic composition, sense of awe and wonder, panoramic perspective, emphasizing the magnificence',
   intime: 'intimate human connection, soft focus background, emotional authenticity, personal story, warm relationship',
@@ -9055,6 +9070,9 @@ function a6GeneratePrompt() {
   setTimeout(() => {
     const prompt = `Hyper-realistic documentary photograph of ${site.name}, Senegal, West Africa. ${intentStr}. Photographed in ${sp.label} style using ${sp.lens} lens, ${sp.iso}. ${sp.light}. ${sp.tech}. Mood: ${sp.mood}. Shot on Phase One IQ4 150MP medium format camera, RAW format, 8K resolution, Adobe RGB 1998 color profile, 300 DPI. Authentic, no post-processing artifacts, National Geographic editorial quality, luxury art book printing standard. Golden color palette with terracotta accents. No tourists, timeless atmosphere. Award-winning photography, --ar 4:3 --q 2 --style raw`;
     a6State.currentPrompt = prompt;
+    // Prompt distinct, épuré (sans jargon caméra ni syntaxe Midjourney), pour la
+    // génération d'image réelle — le prompt ci-dessus reste pour Midjourney/l'humain.
+    a6State.currentImagePrompt = `Photorealistic documentary photograph of ${site.name}, Senegal, West Africa. ${intentStr}. ${A6_STYLE_VISUAL[a6State.style] || A6_STYLE_VISUAL.natgeo}. Mood: ${sp.mood}. Natural authentic colors, golden and terracotta tones, no tourists, no text, no watermark, no logo.`;
     document.getElementById('a6-prompt-output').textContent = prompt;
     document.getElementById('a6-prompt-card').style.display = 'block';
     enableBtn(btn);
@@ -9076,7 +9094,10 @@ function a6VariatePrompt() {
    repli automatique sur Pollinations.ai (gratuit, sans clé, moins fidèle) --- */
 let a6ImageUrl = null;
 async function a6GenerateImage(btn, reseed) {
-  const prompt = a6State.currentPrompt;
+  // Prompt épuré (visuel uniquement) — le prompt Midjourney complet (avec jargon
+  // caméra et flags --ar/--q) n'est pas compris par les moteurs de génération
+  // d'image et diluait la fidélité au sujet réel.
+  const prompt = a6State.currentImagePrompt || a6State.currentPrompt;
   if (!prompt) { showToast('Générez d\'abord un prompt', 'warn'); enableBtn(btn); return; }
   disableBtn(btn);
   const out = document.getElementById('a6-image-output');
@@ -9100,13 +9121,11 @@ async function a6GenerateImage(btn, reseed) {
       img.src = data.image;
       return;
     }
-    // DIAGNOSTIC TEMPORAIRE — affiche la vraie raison de l'échec Gemini au lieu de
-    // basculer en silence, pour identifier la cause exacte (clé, modèle, quota…).
+    // Gemini indisponible (pas de clé, quota gratuit épuisé/facturation non activée,
+    // ou hors-ligne) → repli silencieux ci-dessous. Log conservé pour diagnostic futur.
     console.warn('[Gemini image]', res.status, data);
-    showToast(`⚠️ Gemini indisponible (${data.error || res.status}${data.hint ? ' — ' + data.hint : ''}) — repli maquette gratuite`, 'warn');
   } catch (e) {
     console.warn('[Gemini image] exception', e);
-    showToast('⚠️ Gemini indisponible (' + e.message + ') — repli maquette gratuite', 'warn');
   }
 
   // Repli : maquette gratuite Pollinations.ai (moins fidèle au prompt mais toujours disponible)

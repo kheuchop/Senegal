@@ -203,7 +203,7 @@ L'agent le plus complet. Il guide les prises de vue ET construit le livre.
 4. **📋 Générer Brief** → un brief technique complet (cadrage, lumière, réglages).
 5. **✨ Prompt 8K** → génère un prompt image haute définition.
 6. Boutons **📋 Copier** et **💾 Archiver** pour conserver le brief.
-7. **🎨 Générer l'image (maquette)** : prévisualisation IA du prompt — tente d'abord **Gemini** (plus fidèle au prompt, clé gratuite Google) puis, si la clé n'est pas configurée ou le quota gratuit dépassé, **repli automatique** sur Pollinations.ai (gratuit, sans clé, moins fidèle). Dans les deux cas, c'est une **maquette/prévisualisation**, jamais une vraie photo du site.
+7. **🎨 Générer l'image (maquette)** : prévisualisation IA — utilise un prompt visuel épuré (sans jargon caméra ni syntaxe Midjourney, contrairement au « Prompt 8K » ci-dessus qui lui est fait pour être copié dans Midjourney/un photographe humain). Tente d'abord **Gemini** (clé Google) puis, si indisponible (quota gratuit insuffisant sans facturation activée, ou hors-ligne), **repli automatique** sur Pollinations.ai (gratuit, sans clé). Dans les deux cas, c'est une **maquette/prévisualisation**, jamais une vraie photo du site.
 
 **Repères fixes :**
 - **Charte Colorimétrique** : les couleurs officielles de la mission.
