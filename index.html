@@ -4781,6 +4781,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
               <div class="gps-coords" id="gps-coords-display">GPS inactif</div>
               <div class="gps-site" id="gps-site-display"></div>
               <div class="gps-dist" id="gps-dist-display"></div>
+              <div id="gps-quality-display" style="font-family:var(--font-mono);font-size:0.5rem;margin-top:2px"></div>
             </div>
             <div style="display:flex;flex-direction:column;align-items:center">
               <button id="gps-recenter-btn" style="display:none" onclick="recenterMap()" title="Recentrer sur ma position">
@@ -5284,10 +5285,21 @@ async function _pushSubscribe(silent) {
   } catch (e) { if (!silent) showToast('Activation impossible : ' + e.message, 'warn'); return false; }
 }
 async function enablePushNotifications() {
-  if (!('Notification' in window)) { showToast('Notifications non supportées', 'warn'); return; }
-  const perm = await Notification.requestPermission();
+  // Sur iPhone/iPad, Safari REFUSE les notifications tant que l'app n'est
+  // pas installée sur l'écran d'accueil (mode standalone) — c'est une règle
+  // d'Apple, pas un bug ici. Sans ce garde-fou, le bouton échouait sans
+  // explication claire pour l'utilisateur.
+  if (typeof isIOSDevice === 'function' && isIOSDevice() && typeof isStandaloneMode === 'function' && !isStandaloneMode()) {
+    showToast('📲 Sur iPhone/iPad, installe d\'abord l\'app sur l\'écran d\'accueil (carte juste au-dessus) — les notifications ne fonctionnent qu\'une fois installée.', 'warn');
+    return;
+  }
+  if (!('Notification' in window)) { showToast('Notifications non supportées sur ce navigateur', 'warn'); return; }
+  let perm;
+  try { perm = await Notification.requestPermission(); }
+  catch (e) { showToast('Erreur de permission : ' + e.message, 'warn'); return; }
   if (perm !== 'granted') { showToast('Permission refusée — notifications désactivées', 'warn'); return; }
-  await _pushSubscribe(false);
+  const ok = await _pushSubscribe(false);
+  if (!ok) showToast('⚠️ Activation incomplète — relance le 🩺 Diagnostic Synchronisation pour voir le détail', 'warn');
 }
 /* Envoie une notification push à TOUS les appareils abonnés de l'équipe (best-effort) */
 function sendPushToTeam(title, body, tag) {
@@ -5733,6 +5745,12 @@ function onGpsPosition(pos) {
   const avgLat = state.gpsBuffer.reduce((s,p) => s+p.lat, 0) / state.gpsBuffer.length;
   const avgLon = state.gpsBuffer.reduce((s,p) => s+p.lon, 0) / state.gpsBuffer.length;
   document.getElementById('gps-coords-display').textContent = `${avgLat.toFixed(5)}°N / ${Math.abs(avgLon).toFixed(5)}°W ±${Math.round(accuracy)}m`;
+  const qEl = document.getElementById('gps-quality-display');
+  if (qEl) {
+    if (accuracy <= 20) { qEl.textContent = '🎯 Signal GPS précis'; qEl.style.color = 'var(--emerald)'; }
+    else if (accuracy <= 50) { qEl.textContent = '📶 Signal GPS correct'; qEl.style.color = 'var(--amber)'; }
+    else { qEl.textContent = '📡 Position approximative (Wi-Fi/réseau) — sors à ciel ouvert pour un signal GPS précis'; qEl.style.color = 'var(--text-muted)'; }
+  }
   updateMyLocationMarker(avgLat, avgLon, accuracy);
   const nearest = findNearestSite(avgLat, avgLon);
   state.nearestSite = nearest;
@@ -6010,6 +6028,7 @@ function toggleGPS() {
     document.getElementById('gps-coords-display').textContent = 'GPS inactif';
     document.getElementById('gps-site-display').textContent = '';
     document.getElementById('gps-dist-display').textContent = '';
+    const qEl = document.getElementById('gps-quality-display'); if (qEl) qEl.textContent = '';
     updateMapPulse(null, false);
     clearMyLocationMarker();
     state.mapFollowUser = true;
@@ -13370,7 +13389,12 @@ function renderMorningBrief() {
   if (!el) return;
   // Propose l'activation des notifications si pas encore accordées
   const pb = document.getElementById('push-enable-btn');
-  if (pb && 'Notification' in window) pb.style.display = Notification.permission === 'granted' ? 'none' : 'block';
+  if (pb && 'Notification' in window) {
+    pb.style.display = Notification.permission === 'granted' ? 'none' : 'block';
+    if (typeof isIOSDevice === 'function' && isIOSDevice() && typeof isStandaloneMode === 'function' && !isStandaloneMode()) {
+      pb.querySelector('.btn-text').textContent = '📲 Installe d\'abord l\'app (ci-dessous) pour activer les notifications';
+    }
+  }
   try { el.textContent = buildMorningBrief(); } catch (e) { el.textContent = 'Brief indisponible : ' + e.message; return; }
   // Météo du site du jour (si la clé OpenWeatherMap est configurée dans l'agent 14)
   try {
