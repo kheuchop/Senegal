@@ -22,6 +22,8 @@ Ensuite, un **code d'accès à 4 chiffres** ouvre ton espace selon ton **rôle**
 
 > La **Direction** définit et communique ces codes : Superviseur → **🔐 Gestion des Accès** → modifier chaque code → **💾 Enregistrer**. Bouton **🔒 Changer d'accès** pour reverrouiller et changer de rôle.
 
+> 🔒 Ce code d'accès est **redemandé à chaque relance de l'app**, sur téléphone comme sur ordinateur — il n'est jamais mémorisé automatiquement d'une session à l'autre.
+
 **📱 Nouvel appareil**
 
 Les **7 codes de rôle** (et le PIN du Coffre-Fort) se synchronisent désormais automatiquement entre tous les appareils de l'équipe connectés au même compte : pas besoin de les ressaisir sur un nouveau téléphone, ils arrivent tout seuls dès la connexion. Il reste juste à laisser chaque membre entrer **son** code (**🔒 Changer d'accès**) sur son appareil.

@@ -8424,9 +8424,9 @@ function applyRoleAccess(role) {
 }
 
 function initRoleAccess() {
-  const saved = localStorage.getItem('missionRole');
-  if (saved && ACCESS_ROLES[saved]) applyRoleAccess(saved);
-  else showRoleGate();
+  // Le code d'accès est redemandé à chaque relance de l'app (tél ou ordi) —
+  // on ne restaure jamais l'accès depuis un rôle mémorisé au démarrage.
+  showRoleGate();
 }
 
 function lockRole() {
