@@ -4771,7 +4771,14 @@ textarea.input-field { resize: vertical; min-height: 80px; }
         <!-- Navigation GPS vers un site -->
         <div style="padding:12px;border-top:1px solid var(--border);background:var(--bg-card)">
           <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--gold);letter-spacing:0.12em;margin-bottom:6px">🧭 NAVIGATION GPS</div>
-          <div style="font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted);margin-bottom:8px;line-height:1.5">Choisis un site : distance et cap se mettent à jour en direct pendant le trajet (ligne à vol d'oiseau — pas de guidage routier).</div>
+          <div style="font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted);margin-bottom:8px;line-height:1.5">Choisis un site : distance, cap et itinéraire se mettent à jour en direct pendant le trajet.</div>
+          <div id="nav-ors-key-wrap" style="margin-bottom:8px">
+            <div style="font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted);margin-bottom:6px;line-height:1.5">🛣 Pour un itinéraire qui suit les vraies routes (façon Google Maps) au lieu d'une ligne droite, colle une clé <b>OpenRouteService</b> (gratuite : openrouteservice.org/dev/#/signup).</div>
+            <div style="display:grid;grid-template-columns:1fr auto;gap:8px">
+              <input type="text" class="input-field" id="nav-ors-key" placeholder="Clé OpenRouteService" autocomplete="off">
+              <button class="btn btn-ghost btn-sm" onclick="saveOrsApiKey(event)"><div class="spinner"></div><span class="btn-text">💾</span></button>
+            </div>
+          </div>
           <select class="input-field" id="nav-target-select" style="margin-bottom:8px"></select>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <button class="btn btn-primary btn-sm" id="nav-start-btn" onclick="startNavigation()">🧭 Naviguer</button>
@@ -4958,6 +4965,7 @@ const state = {
   mapMarkers: [],
   mapFallback: false,
   navTarget: null,
+  orsApiKey: null, // clé OpenRouteService (itinéraires routiers réels) — partagée comme la clé météo
   dailyChecklist: { date: '', checked: {} },
   rolePins: {},
 };
@@ -5128,6 +5136,7 @@ function saveStateToDB() {
     a17MissionStartTs: state.a17MissionStartTs || null,
     lastMonthlyReport: state.lastMonthlyReport || null,
     auditLog:       state.auditLog || [],
+    orsApiKey:      state.orsApiKey || null,
   };
 
   dbWrite('state', { id: 1, data: fullData }).catch(e => console.error('[DB] saveState échoué:', e));
@@ -5466,6 +5475,7 @@ async function loadStateFromDB() {
     if (d.a17MissionStartTs) state.a17MissionStartTs = d.a17MissionStartTs;
     if (d.lastMonthlyReport) state.lastMonthlyReport = d.lastMonthlyReport;
     if (Array.isArray(d.auditLog)) state.auditLog = d.auditLog;
+    if (typeof d.orsApiKey === 'string' && d.orsApiKey) state.orsApiKey = d.orsApiKey;
   }
   // Livre : store dédié (prioritaire) — les champs a6Book* du blob ci-dessus
   // ne servent plus que de migration depuis les anciennes versions.
@@ -5702,13 +5712,50 @@ function onGpsPosition(pos) {
 }
 
 /* ============================================================
-   NAVIGATION GPS — choisir un site et suivre cap + distance en
-   direct (ligne à vol d'oiseau + relèvement, façon "guidage"). Pas de
-   moteur de routage routier tiers (coût/CSP/fiabilité hors-ligne) : la
-   distance et le cap suffisent pour rallier un site en brousse.
+   NAVIGATION GPS — choisir un site et suivre l'itinéraire en direct.
+   Itinéraire ROUTIER réel via OpenRouteService quand une clé est
+   configurée ET qu'une route existe dans leurs données (zones bien
+   cartographiées : Dakar, axes principaux). Repli automatique sur la
+   ligne à vol d'oiseau + cap boussole sinon (zones non cartographiées,
+   hors-ligne, ou clé absente) — jamais d'échec silencieux, la navigation
+   fonctionne toujours d'une manière ou d'une autre.
    ============================================================ */
-let navPolyline = null;
+let navPolyline = null;   // ligne à vol d'oiseau (toujours affichée, repère immédiat)
+let navRouteLine = null;  // itinéraire routier réel (par-dessus, quand disponible)
 let navDestMarker = null;
+let _lastRouteCalc = { lat: null, lon: null, ts: 0 };
+const ROUTE_RECALC_MIN_METERS = 100; // ne recalcule pas l'itinéraire pour un mouvement infime
+const ROUTE_RECALC_MIN_MS = 45000;   // ni plus souvent que ça (préserve le quota gratuit)
+
+/* Appel OpenRouteService (profil voiture/4x4). Renvoie {coords, distanceM,
+   durationS} ou null (pas de clé, hors-ligne, erreur, ou aucune route trouvée
+   — fréquent en zone non cartographiée : on retombe alors sur la ligne droite). */
+async function fetchRoadRoute(fromLat, fromLon, toLat, toLon) {
+  if (!state.orsApiKey || !navigator.onLine) return null;
+  try {
+    const url = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=${encodeURIComponent(state.orsApiKey)}&start=${fromLon},${fromLat}&end=${toLon},${toLat}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const feat = data?.features?.[0];
+    if (!feat?.geometry?.coordinates?.length) return null;
+    const coords = feat.geometry.coordinates.map(([lon, lat]) => [lat, lon]);
+    const summary = feat.properties?.summary || {};
+    return { coords, distanceM: summary.distance ?? null, durationS: summary.duration ?? null };
+  } catch (e) {
+    return null;
+  }
+}
+function saveOrsApiKey(evt) {
+  const btn = evt && evt.currentTarget; if (btn) disableBtn(btn);
+  const val = (document.getElementById('nav-ors-key')?.value || '').trim();
+  if (!val) { showToast('Colle ta clé OpenRouteService', 'warn'); if (btn) enableBtn(btn); return; }
+  state.orsApiKey = val;
+  saveStateToDB();
+  const kw = document.getElementById('nav-ors-key-wrap'); if (kw) kw.style.display = 'none';
+  showToast('🔑 Clé enregistrée — itinéraires routiers activés', 'ok');
+  if (btn) enableBtn(btn);
+}
 function bearingTo(lat1, lon1, lat2, lon2) {
   const toRad = d => d * Math.PI / 180, toDeg = r => r * 180 / Math.PI;
   const dLon = toRad(lon2 - lon1);
@@ -5745,6 +5792,7 @@ function startNavigation(siteId) {
 }
 function stopNavigation() {
   state.navTarget = null;
+  _lastRouteCalc = { lat: null, lon: null, ts: 0 };
   const resEl = document.getElementById('nav-result');
   if (resEl) resEl.style.display = 'none';
   const startBtn = document.getElementById('nav-start-btn'), stopBtn = document.getElementById('nav-stop-btn');
@@ -5752,28 +5800,64 @@ function stopNavigation() {
   if (stopBtn) stopBtn.style.display = 'none';
   if (state.leafletMap) {
     if (navPolyline)   { state.leafletMap.removeLayer(navPolyline);   navPolyline = null; }
+    if (navRouteLine)  { state.leafletMap.removeLayer(navRouteLine);  navRouteLine = null; }
     if (navDestMarker) { state.leafletMap.removeLayer(navDestMarker); navDestMarker = null; }
   }
   showToast('Navigation arrêtée', 'info');
 }
-function _updateNavDisplay(avgLat, avgLon) {
+const _fmtNavDist = m => m >= 10000 ? (m/1000).toFixed(1) + ' km' : m >= 1000 ? (m/1000).toFixed(2) + ' km' : Math.round(m) + ' m';
+async function _updateNavDisplay(avgLat, avgLon) {
   if (!state.navTarget) return;
+  const target = state.navTarget;
   const last = state.gpsBuffer[state.gpsBuffer.length - 1];
   const lat = avgLat ?? (last && last.lat);
   const lon = avgLon ?? (last && last.lon);
   const el = document.getElementById('nav-result');
   if (lat == null || lon == null) {
-    if (el) el.innerHTML = `🎯 <b>${escapeHtml(state.navTarget.name)}</b><br><span style="color:var(--text-muted)">Active le GPS pour voir la distance et le cap.</span>`;
+    if (el) el.innerHTML = `🎯 <b>${escapeHtml(target.name)}</b><br><span style="color:var(--text-muted)">Active le GPS pour voir la distance et le cap.</span>`;
     return;
   }
-  const dist = haversine(lat, lon, state.navTarget.coords[0], state.navTarget.coords[1]);
-  const brg = bearingTo(lat, lon, state.navTarget.coords[0], state.navTarget.coords[1]);
-  const arrived = dist < GPS_PROXIMITY;
-  if (el) el.innerHTML = `🎯 <b>${escapeHtml(state.navTarget.name)}</b><br>${dist >= 10000 ? (dist/1000).toFixed(1) + ' km' : dist >= 1000 ? (dist/1000).toFixed(2) + ' km' : dist + ' m'} · cap ${Math.round(brg)}° (${compassLabel(brg)})${arrived ? ' · ✅ Arrivé' : ''}`;
+  const straightDist = haversine(lat, lon, target.coords[0], target.coords[1]);
+  const brg = bearingTo(lat, lon, target.coords[0], target.coords[1]);
+  const arrived = straightDist < GPS_PROXIMITY;
+  const zc = ZONE_COLORS[target.zone] || '#d6a53a';
+
+  // Ligne à vol d'oiseau : repère immédiat, toujours affiché (atténué si un
+  // itinéraire routier réel est aussi affiché par-dessus).
   if (state.leafletMap && typeof L !== 'undefined') {
     if (navPolyline) state.leafletMap.removeLayer(navPolyline);
-    const zc = ZONE_COLORS[state.navTarget.zone] || '#d6a53a';
-    navPolyline = L.polyline([[lat, lon], state.navTarget.coords], { color: zc, weight: 3, opacity: 0.85, dashArray: '6 8' }).addTo(state.leafletMap);
+    navPolyline = L.polyline([[lat, lon], target.coords], { color: zc, weight: 2, opacity: navRouteLine ? 0.35 : 0.85, dashArray: '6 8' }).addTo(state.leafletMap);
+  }
+  if (el) el.innerHTML = `🎯 <b>${escapeHtml(target.name)}</b><br>${_fmtNavDist(straightDist)} à vol d'oiseau · cap ${Math.round(brg)}° (${compassLabel(brg)})${arrived ? ' · ✅ Arrivé' : ''}`;
+
+  if (arrived || !state.orsApiKey) return; // arrivé, ou pas de clé configurée → pas de calcul d'itinéraire
+
+  // Itinéraire routier réel — recalculé seulement si on a assez bougé ou que
+  // ça fait assez longtemps (préserve le quota gratuit OpenRouteService).
+  const movedM = _lastRouteCalc.lat != null ? haversine(lat, lon, _lastRouteCalc.lat, _lastRouteCalc.lon) : Infinity;
+  const due = movedM > ROUTE_RECALC_MIN_METERS || (Date.now() - _lastRouteCalc.ts) > ROUTE_RECALC_MIN_MS;
+  if (!due) return;
+  _lastRouteCalc = { lat, lon, ts: Date.now() };
+
+  const route = await fetchRoadRoute(lat, lon, target.coords[0], target.coords[1]);
+  if (state.navTarget !== target) return; // la destination a changé pendant l'appel → résultat obsolète, on l'ignore
+
+  if (state.leafletMap && typeof L !== 'undefined') {
+    if (navRouteLine) { state.leafletMap.removeLayer(navRouteLine); navRouteLine = null; }
+    if (route) {
+      navRouteLine = L.polyline(route.coords, { color: zc, weight: 5, opacity: 0.9 }).addTo(state.leafletMap);
+      if (navPolyline) navPolyline.setStyle({ opacity: 0.3 });
+    }
+  }
+  const elNow = document.getElementById('nav-result'); // re-vérifié : l'utilisateur a pu changer d'écran entre-temps
+  if (elNow && state.navTarget === target) {
+    if (route) {
+      const mins = route.durationS != null ? Math.round(route.durationS / 60) : null;
+      const durTxt = mins == null ? '' : (mins >= 60 ? ` · ~${Math.floor(mins/60)}h${String(mins%60).padStart(2,'0')}` : ` · ~${mins} min`);
+      elNow.innerHTML = `🎯 <b>${escapeHtml(target.name)}</b><br>🛣 ${_fmtNavDist(route.distanceM)} par la route${durTxt} · cap ${Math.round(brg)}° (${compassLabel(brg)})`;
+    } else {
+      elNow.innerHTML = `🎯 <b>${escapeHtml(target.name)}</b><br>${_fmtNavDist(straightDist)} à vol d'oiseau (itinéraire routier non disponible ici) · cap ${Math.round(brg)}° (${compassLabel(brg)})`;
+    }
   }
 }
 
@@ -6035,6 +6119,12 @@ function initMap() {
     navSel.appendChild(optGroup('Sites terrain', SITES, s => `[Z${s.zone}] ${s.name}`));
     if (OFFSHORE.length) navSel.appendChild(optGroup('Hors-terrain', OFFSHORE, s => s.name));
   }
+  const orsWrap = document.getElementById('nav-ors-key-wrap');
+  const orsInput = document.getElementById('nav-ors-key');
+  if (state.orsApiKey) {
+    if (orsInput) orsInput.value = state.orsApiKey;
+    if (orsWrap) orsWrap.style.display = 'none';
+  }
 }
 
 /* ============================================================
@@ -6120,6 +6210,12 @@ function applyCloudState(d) {
     a14State.apiKey = d.a14ApiKey;
     changed = true;
     if (typeof initAgent14 === 'function' && document.getElementById('a14-meteo-hero')) { try { initAgent14(); } catch (e) {} }
+  }
+  if (typeof d.orsApiKey === 'string' && d.orsApiKey && d.orsApiKey !== state.orsApiKey) {
+    state.orsApiKey = d.orsApiKey;
+    changed = true;
+    const ki = document.getElementById('nav-ors-key'); if (ki) ki.value = d.orsApiKey;
+    const kw = document.getElementById('nav-ors-key-wrap'); if (kw) kw.style.display = 'none';
   }
   if (typeof d.printRate === 'number' && d.printRate && d.printRate !== state.printRate) { state.printRate = d.printRate; changed = true; }
   if (d.printCfg && typeof d.printCfg === 'object' && d.printCfg.std) { state.printCfg = { ...state.printCfg, ...d.printCfg }; if (typeof printCfgPopulate === 'function') printCfgPopulate(); changed = true; }

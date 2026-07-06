@@ -482,7 +482,10 @@ Onglet **Carte** (icône ⬡, ou bouton **Carte** en bas).
 - Bascule **Satellite / Plan / Satellite + noms** (sélecteur en haut à droite de la carte).
 - Chaque site est un point **coloré selon sa zone** (A à F — voir la légende **⬡ ZONES** sous la carte). Cliquer sur un point affiche son **nom**, sa **zone** et ses **coordonnées GPS**. Les sites offshore (Sangomar, GTA) sont signalés à part.
 - Bouton **GPS** : suit ta position en temps réel et indique le **site le plus proche** et la distance.
-- **🧭 Navigation GPS** : choisis une destination dans la liste déroulante (ou clique **« 🧭 Naviguer ici »** dans la fiche d'un site) → **🧭 Naviguer**. La carte affiche une ligne vers le site et un repère 🎯 ; la distance et le **cap** (ex. « 2,3 km · cap 118° (ESE) ») se mettent à jour en direct à mesure que tu te déplaces. C'est un guidage **à vol d'oiseau** (comme une boussole), pas un calcul d'itinéraire routier — utile en brousse où les routes ne sont pas toujours cartographiées. **⏹ Arrêter** pour effacer la navigation.
+- **🧭 Navigation GPS** : choisis une destination dans la liste déroulante (ou clique **« 🧭 Naviguer ici »** dans la fiche d'un site) → **🧭 Naviguer**.
+  - **Sans clé OpenRouteService** : guidage à vol d'oiseau (comme une boussole) — ligne droite + distance + **cap** (ex. « 2,3 km · cap 118° (ESE) »), mis à jour en direct.
+  - **Avec une clé OpenRouteService** *(gratuite, voir le champ dans la carte Navigation)* : la carte affiche un **vrai itinéraire qui suit les routes** (comme Google Maps), avec distance routière et durée estimée. Si aucune route n'est cartographiée à cet endroit (zones isolées), l'app **repasse automatiquement** au guidage à vol d'oiseau, sans planter.
+  - Un repère 🎯 marque la destination. **⏹ Arrêter** pour effacer la navigation.
 - Les zones déjà consultées restent visibles **hors-ligne** sur le terrain.
 - **📥 Cartes hors-ligne par zone** : avant chaque départ, appuyer sur le bouton de la zone (A à F) en Wi-Fi → les cartes de tous les sites de la zone sont préchargées et resteront disponibles sans réseau.
 
