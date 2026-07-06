@@ -6525,7 +6525,7 @@ const DAILY_CHECKLIST_ITEMS = [
 
 // Renvoie les tâches du poste connecté (la Direction voit tout ; tâche sans roles = visible par tous)
 function _checklistItems() {
-  const role = localStorage.getItem('missionRole') || 'direction';
+  const role = window.currentRole || 'direction';
   if (role === 'direction') return DAILY_CHECKLIST_ITEMS;
   return DAILY_CHECKLIST_ITEMS.filter(it => !it.roles || it.roles.includes(role));
 }
@@ -10202,7 +10202,7 @@ function a7SaveToLibrary() {
     list.innerHTML = '';
     a7State.library.slice(0, 6).forEach(item => {
       const div = document.createElement('div'); div.className = 'a7-lib-item';
-      div.innerHTML = `<div class="a7-lib-type">${item.type.toUpperCase()} · ${new Date(item.ts).toLocaleDateString('fr-FR')}</div><div class="a7-lib-preview">${item.output.fr.substring(0,80)}…</div>`;
+      div.innerHTML = `<div class="a7-lib-type">${escapeHtml(item.type.toUpperCase())} · ${new Date(item.ts).toLocaleDateString('fr-FR')}</div><div class="a7-lib-preview">${escapeHtml(item.output.fr.substring(0,80))}…</div>`;
       div.onclick = () => { a7State.lastOutput = item.output; a7RenderOutput(); };
       list.appendChild(div);
     });
@@ -10636,7 +10636,7 @@ function a8RenderHistory() {
   list.innerHTML = '';
   a8State.history.slice(0, 5).forEach(h => {
     const div = document.createElement('div'); div.className = 'a8-hist-item';
-    div.innerHTML = `<div class="a8-hist-ctx">${h.ctx.toUpperCase()} · ${new Date(h.ts).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div><div class="a8-hist-score" style="color:${h.score>=80?'var(--emerald)':h.score>=60?'var(--amber)':'var(--red)'}">${h.score}/100</div><div style="font-size:0.6rem;color:var(--text-muted);margin-top:2px">${h.text}…</div>`;
+    div.innerHTML = `<div class="a8-hist-ctx">${escapeHtml(h.ctx.toUpperCase())} · ${new Date(h.ts).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div><div class="a8-hist-score" style="color:${h.score>=80?'var(--emerald)':h.score>=60?'var(--amber)':'var(--red)'}">${h.score}/100</div><div style="font-size:0.6rem;color:var(--text-muted);margin-top:2px">${escapeHtml(h.text)}…</div>`;
     list.appendChild(div);
   });
 }
@@ -11159,9 +11159,9 @@ function a10RenderTable() {
     const div = document.createElement('div');
     div.className = `a10-auth-row s-${a.status}`;
     div.innerHTML = `<div class="a10-auth-info">
-      <div class="a10-auth-site">${a.site}</div>
-      <div class="a10-auth-org">${a.org}</div>
-      <div class="a10-auth-ref">Réf: ${a.ref} · ${a.date}</div>
+      <div class="a10-auth-site">${escapeHtml(a.site)}</div>
+      <div class="a10-auth-org">${escapeHtml(a.org)}</div>
+      <div class="a10-auth-ref">Réf: ${escapeHtml(a.ref)} · ${escapeHtml(a.date)}</div>
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">
       <div class="a10-auth-status s-${a.status}">${statusLabel[a.status]}</div>
@@ -11257,7 +11257,7 @@ function a10AddJournal(text) {
   list.innerHTML = '';
   a10State.journal.slice(0, 8).forEach(j => {
     const div = document.createElement('div'); div.className = 'a10-journal-item';
-    div.innerHTML = `<div class="a10-ji-text">${j.text}</div><div class="a10-ji-time">${j.time}</div>`;
+    div.innerHTML = `<div class="a10-ji-text">${escapeHtml(j.text)}</div><div class="a10-ji-time">${escapeHtml(j.time)}</div>`;
     list.appendChild(div);
   });
 }
@@ -11594,8 +11594,8 @@ function a11RenderBackups() {
     const div = document.createElement('div'); div.className = 'a11-backup-item';
     const switchId = 'bk-sw-' + bk.id;
     div.innerHTML = `<div class="a11-backup-info">
-        <div class="a11-backup-name">${bk.name}</div>
-        <div class="a11-backup-meta">${bk.size} · ${bk.shots} prises · ${bk.synced ? '✅ Synchronisé' : '⏳ En attente'}</div>
+        <div class="a11-backup-name">${escapeHtml(bk.name)}</div>
+        <div class="a11-backup-meta">${escapeHtml(bk.size)} · ${bk.shots} prises · ${bk.synced ? '✅ Synchronisé' : '⏳ En attente'}</div>
       </div>
       <label class="a11-switch">
         <input type="checkbox" id="${switchId}" ${bk.synced ? 'checked' : ''} onchange="a11ToggleBackup('${bk.id}',this)">
@@ -11879,7 +11879,7 @@ function a12RenderAlerts(alerts) {
     const details = [];
     if (a.lowStd)  details.push(`Standard : ${a.resteStd} ex.`);
     if (a.lowLuxe) details.push(`Luxe : ${a.resteLuxe} ex.`);
-    div.innerHTML = `<strong>${a.name}</strong> — ${details.join(' / ')} restants. Réapprovisionnement requis.`;
+    div.innerHTML = `<strong>${escapeHtml(a.name)}</strong> — ${details.join(' / ')} restants. Réapprovisionnement requis.`;
     list.appendChild(div);
   });
 }
