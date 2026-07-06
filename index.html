@@ -8218,12 +8218,27 @@ async function init() {
   if (typeof SupaSync !== 'undefined' && typeof SupaSync.fetchState === 'function') {
     setStatus('Restauration cloud…');
     try {
+      const localTxCount = state.transactions.length;
       const cloud = await SupaSync.fetchState();
-      if (cloud && applyCloudState(cloud)) {
-        window.__skipCloudPush = true;
-        try { saveStateToDB(); } finally { window.__skipCloudPush = false; }
+      const cloudTxCount = Array.isArray(cloud?.transactions) ? cloud.transactions.length : null;
+      console.log(`[SYNC-DEMARRAGE] local: ${localTxCount} transaction(s) · cloud: ${cloudTxCount === null ? 'introuvable' : cloudTxCount + ' transaction(s)'}`);
+      if (!cloud) {
+        console.warn('[SYNC-DEMARRAGE] fetchState() a renvoyé null — aucune restauration possible (hors-ligne, ou aucune ligne mission_state).');
+      } else {
+        const changed = applyCloudState(cloud);
+        console.log(`[SYNC-DEMARRAGE] applyCloudState → changed=${changed} · local après: ${state.transactions.length} transaction(s)`);
+        if (changed) {
+          window.__skipCloudPush = true;
+          try { saveStateToDB(); } finally { window.__skipCloudPush = false; }
+          if (cloudTxCount !== null && cloudTxCount !== localTxCount) {
+            setTimeout(() => showToast(`🔄 Synchro au démarrage : ${localTxCount} → ${state.transactions.length} transaction(s)`, 'info'), 1500);
+          }
+        }
       }
-    } catch (e) { console.warn('[Sync] fetchState:', e.message); }
+    } catch (e) {
+      console.error('[SYNC-DEMARRAGE] fetchState/applyCloudState a levé une exception :', e);
+      setTimeout(() => showToast('⚠️ Restauration cloud échouée : ' + e.message, 'warn'), 1500);
+    }
   }
 
 
