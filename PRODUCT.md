@@ -6,7 +6,7 @@ product
 
 ## Users
 
-17 agents spécialisés coordonnant une mission documentaire photographique au Sénégal (32 sites, 59 jours). Usage mixte : agents terrain (Météo, Terrain) en plein soleil, mains occupées, lecture rapide sous stress ; agents bureau (COO, Financial, Juridique) en conditions confortables avec lecture prolongée. Tous sur mobile, PWA installée.
+17 agents spécialisés coordonnant une mission documentaire photographique au Sénégal (36 sites, 56 jours). Usage mixte : agents terrain (Météo, Terrain) en plein soleil, mains occupées, lecture rapide sous stress ; agents bureau (COO, Financial, Juridique) en conditions confortables avec lecture prolongée. Tous sur mobile, PWA installée.
 
 ## Product Purpose
 

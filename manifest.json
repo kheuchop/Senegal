@@ -1,7 +1,7 @@
 {
   "name": "MISSION CTRL — Sénégal, Terre d'Histoire et de Rencontres",
   "short_name": "MISSION CTRL",
-  "description": "Dashboard de pilotage de la mission documentaire Sénégal — 32 sites, 54 jours.",
+  "description": "Dashboard de pilotage de la mission documentaire Sénégal — 36 sites, 56 jours.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

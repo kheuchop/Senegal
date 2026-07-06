@@ -180,7 +180,7 @@ Le cœur du suivi terrain.
 
 **🏕 Mode Journée Terrain** : bouton sous le chronomètre → **écran plein format à gros boutons** (lisible en plein soleil) : jour, site, météo, chrono, Démarrer/Pause/Valider, note rapide vers le journal.
 
-**Planning Mission :** liste des 54 jours de terrain avec leur statut.
+**Planning Mission :** liste des 56 jours de terrain avec leur statut.
 
 **Journal de Terrain (chaque soir) :**
 1. Renseigner **Site visité**, **Conditions terrain**, **Note de terrain**, **Prises validées (nb)**.
@@ -233,7 +233,7 @@ L'agent le plus complet. Il guide les prises de vue ET construit le livre.
 
 **📚 Galerie du Livre :** rassemble les photos validées (via « Meilleure Photo » → « Ajouter au livre »). Le compteur indique le nombre de photos.
 
-**📖 Séquençage Narratif :** **📖 Générer séquençage** → Claude propose l'ordre des 32 sites pour une vraie narration.
+**📖 Séquençage Narratif :** **📖 Générer séquençage** → Claude propose l'ordre des 36 sites pour une vraie narration.
 
 **📐 Maquette du Livre :** la structure page à page.
 1. Choisir la **Langue(s)** (FR, bilingue, trilingue FR+EN+AR).
@@ -247,7 +247,7 @@ L'agent le plus complet. Il guide les prises de vue ET construit le livre.
 3. Légendes trilingues (FR+EN+AR) générées par Claude, QR codes par site.
 4. **📋 Exporter** pour sortir la maquette complète.
 
-**🛍️ Recommandations Matériel :** **🎒 Besoins mission** (matériel idéal pour les 32 sites) ou **🔧 Optimiser mon parc** (à partir de l'existant).
+**🛍️ Recommandations Matériel :** **🎒 Besoins mission** (matériel idéal pour les 36 sites) ou **🔧 Optimiser mon parc** (à partir de l'existant).
 
 > **En résumé, le livre se construit ainsi :** on shoote en suivant les briefs → on charge les photos dans « Meilleure Photo » → Claude sélectionne → « Ajouter au livre » remplit la Galerie → « Maquette » et « Livre Vivant » assemblent tout, page par page, avec légendes et QR codes.
 

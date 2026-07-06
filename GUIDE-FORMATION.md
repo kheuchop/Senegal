@@ -6,7 +6,7 @@ Guide complet pour l'équipe. À lire avant la première utilisation, à garder 
 
 ## 1. C'EST QUOI CETTE APPLICATION ?
 
-**MISSION CTRL · SÉNÉGAL V3** est le centre de pilotage de la mission documentaire photographique au Sénégal : 32 sites, 54 jours de terrain, 10 800 km, budget 100 millions FCFA, parution du livre en 2027.
+**MISSION CTRL · SÉNÉGAL V3** est le centre de pilotage de la mission documentaire photographique au Sénégal : 36 sites, 56 jours de terrain, 11 700 km, budget 100 millions FCFA, parution du livre en 2027.
 
 C'est une **PWA** (application web installable) : elle s'ouvre dans le navigateur mais s'installe sur le téléphone comme une vraie app, et **fonctionne sans connexion internet**.
 
@@ -109,7 +109,7 @@ Les agents sont regroupés ici par métier pour faciliter la formation.
 **Rôle :** suivre le temps réel passé sur chaque site.
 **Ce qu'il fait :**
 - **Chronomètre GPS** : à lancer en arrivant sur un site, à arrêter en partant
-- **Planning** des 54 jours de terrain
+- **Planning** des 56 jours de terrain
 - **Journal de terrain** : noter ce qui s'est passé dans la journée
 - **Historique des sessions GPS**
 

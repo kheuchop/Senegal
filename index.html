@@ -2975,9 +2975,9 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           </div>
         </div>
 
-        <!-- A5: Planning 54 jours -->
+        <!-- A5: Planning 56 jours -->
         <div class="card">
-          <div class="card-title">Planning Mission — 54 Jours Terrain</div>
+          <div class="card-title">Planning Mission — 56 Jours Terrain</div>
           <div class="a5-plan-filter">
             <button class="a5-filter-btn active" onclick="a5FilterPlan('all',this)">Tous</button>
             <button class="a5-filter-btn" onclick="a5FilterPlan('done',this)">✅ Faits</button>
@@ -3230,7 +3230,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
         <!-- A6-IA-5 : Séquençage Narratif Livre -->
         <div class="card">
           <div class="card-title">📖 Séquençage Narratif du Livre <span class="pill pill-amber" style="margin-left:auto;font-size:0.45rem">Claude</span></div>
-          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:8px">Claude propose l'ordre des 32 sites pour que le livre ait une vraie narration.</div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:8px">Claude propose l'ordre des 36 sites pour que le livre ait une vraie narration.</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <button class="btn btn-primary btn-sm" onclick="a6GenSequencing(this)">
               <div class="spinner"></div><span class="btn-text">📖 Générer séquençage</span>
@@ -3285,7 +3285,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
         <!-- A6-IA-8 : Recommandations Matériel -->
         <div class="card">
           <div class="card-title">🛍️ Recommandations Matériel <span class="pill pill-amber" style="margin-left:auto;font-size:0.45rem">Claude</span></div>
-          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:8px">Claude analyse les 32 sites et recommande le matériel idéal. Avec ou sans parc existant.</div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:8px">Claude analyse les 36 sites et recommande le matériel idéal. Avec ou sans parc existant.</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <button class="btn btn-primary btn-sm" onclick="a6GenEquipmentRecs(this,'mission')">
               <div class="spinner"></div><span class="btn-text">🎒 Besoins mission</span>
@@ -4703,7 +4703,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <div class="a17-status-hero" id="a17-status-hero">
             <div class="a17-mode-badge" id="a17-mode-badge">⬡ NOMINAL</div>
             <div class="a17-delta-display" id="a17-delta-display">Δ +0h</div>
-            <div class="a17-delta-sub" id="a17-delta-sub">En phase avec le planning — 54 jours terrain</div>
+            <div class="a17-delta-sub" id="a17-delta-sub">En phase avec le planning — 56 jours terrain</div>
           </div>
           <div class="a17-kpi-row">
             <div class="a17-kpi-box"><div class="a17-kpi-val" id="a17-k-done">0</div><div class="a17-kpi-label">J. Effectués</div></div>
@@ -4915,13 +4915,15 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 /* ============================================================
    MISSION DATA & CONSTANTS
    ============================================================ */
-const MISSION = { sites: 32, joursTerrain: 54, joursRepos: 28, joursTotal: 82, km: 10800, budget: 100000000, startYear: 2027 };
+const MISSION = { sites: 36, joursTerrain: 56, joursRepos: 28, joursTotal: 84, km: 11700, budget: 100000000, startYear: 2027 };
 
-// SITES — conformes au Plan de Trajet officiel V4.1 (32 sites, 6 zones, 54 jours terrain)
-// Jours par zone : A=15 · B=10 · C=6 · D=7 · E=10 · F=6 (total 54).
+// SITES — conformes au Plan de Trajet officiel V4.1 (36 sites, 6 zones, 56 jours terrain)
+// Jours par zone : A=16 · B=11 · C=6 · D=7 · E=10 · F=6 (total 56).
 // Coordonnées vérifiées via sources publiques (Wikipedia/Wikidata/OSM), juillet 2026.
+// NB : sites 33-36 issus de la scission (2026-07) de 4 entrées qui combinaient à tort
+// deux lieux réellement distincts sous un seul nom/une seule coordonnée GPS.
 const SITES = [
-  // ZONE A — Dakar et Périphérie (12 sites, 15j)
+  // ZONE A — Dakar et Périphérie (13 sites, 16j)
   { id:1,  zone:'A', name:'Île de Gorée (UNESCO 1978)', coords:[14.6672,-17.3989], days:2, km:4 },
   { id:2,  zone:'A', name:'Musée Historique du Sénégal', coords:[14.6709,-17.3996], days:1, km:4 },
   { id:3,  zone:'A', name:'Musée des Civilisations Noires', coords:[14.6775,-17.4351], days:2, km:3 },
@@ -4933,14 +4935,16 @@ const SITES = [
   { id:9,  zone:'A', name:'Almadies et Phare des Mamelles', coords:[14.7236,-17.5017], days:1, km:20 },
   { id:10, zone:'A', name:'Mosquée Massalikul Djinaan', coords:[14.7009,-17.4493], days:1, km:7 },
   { id:11, zone:'A', name:'Port Autonome de Dakar', coords:[14.6806,-17.4278], days:1, km:3 },
-  { id:12, zone:'A', name:'Vieux Rufisque et Stade du Sénégal', coords:[14.7167,-17.2667], days:1, km:25 },
-  // ZONE B — Saint-Louis, Patrimoine et Écosystèmes (6 sites, 10j)
+  { id:12, zone:'A', name:'Vieux Rufisque', coords:[14.7167,-17.2667], days:1, km:25 },
+  { id:33, zone:'A', name:'Stade du Sénégal (Diamniadio)', coords:[14.7326,-17.2011], days:1, km:35 },
+  // ZONE B — Saint-Louis, Patrimoine et Écosystèmes (7 sites, 11j)
   { id:13, zone:'B', name:'Ville historique de Saint-Louis (UNESCO 2000)', coords:[16.0179,-16.4896], days:3, km:264 },
-  { id:14, zone:'B', name:'Pont Faidherbe et Langue de Barbarie', coords:[16.0258,-16.5013], days:1, km:264 },
+  { id:14, zone:'B', name:'Pont Faidherbe', coords:[16.0258,-16.5013], days:1, km:264 },
   { id:15, zone:'B', name:'Parc National des Oiseaux du Djoudj (UNESCO 1981)', coords:[16.3590,-16.2744], days:2, km:300 },
   { id:16, zone:'B', name:'Quartiers historiques coloniaux de Saint-Louis', coords:[16.0260,-16.4980], days:1, km:264 },
   { id:17, zone:'B', name:'Pêche traditionnelle de Guet Ndar', coords:[16.0226,-16.5085], days:1, km:265 },
   { id:18, zone:'B', name:'Podor et Fort colonial du fleuve Sénégal', coords:[16.6558,-14.9597], days:2, km:440 },
+  { id:34, zone:'B', name:'Parc National de la Langue de Barbarie', coords:[15.9500,-16.5100], days:1, km:270 },
   // ZONE C — Thiès et Louga, Paysages et Expériences (4 sites, 6j)
   { id:19, zone:'C', name:'Lac Rose (Retba) — Liste Indicative UNESCO', coords:[14.8380,-17.2246], days:2, km:35 },
   { id:20, zone:'C', name:'Désert de Lompoul et Bivouac', coords:[15.4599,-16.6830], days:2, km:145 },
@@ -4951,14 +4955,16 @@ const SITES = [
   { id:24, zone:'D', name:'Joal-Fadiouth et Île aux Coquillages', coords:[14.1546,-16.8327], days:2, km:110 },
   { id:25, zone:'D', name:'Lodges et Écolodges du Saloum', coords:[14.0500,-16.7500], days:1, km:140 },
   { id:26, zone:'D', name:'Mangroves et Bolongs', coords:[13.8500,-16.7800], days:1, km:150 },
-  // ZONE E — Centre et Est, Spiritualité et Pays Bassari (4 sites, 10j)
+  // ZONE E — Centre et Est, Spiritualité et Pays Bassari (5 sites, 10j)
   { id:27, zone:'E', name:'Grande Mosquée de Touba', coords:[14.8632,-15.8758], days:3, km:194 },
-  { id:28, zone:'E', name:'Medina Baye Kaolack et Tivaouane', coords:[14.1639,-16.0619], days:2, km:192 },
+  { id:28, zone:'E', name:'Medina Baye (Kaolack)', coords:[14.1639,-16.0619], days:1, km:192 },
+  { id:35, zone:'E', name:'Tivaouane', coords:[14.9500,-16.8167], days:1, km:95 },
   { id:29, zone:'E', name:'Mégalithes de Sine Ngayène (UNESCO 2006)', coords:[13.6883,-15.5203], days:2, km:250 },
   { id:30, zone:'E', name:'Pays Bassari et Villages Bédik (UNESCO 2012)', coords:[12.5579,-12.1743], days:3, km:690 },
-  // ZONE F — Casamance, accès vol intérieur (2 sites, 6j)
+  // ZONE F — Casamance, accès vol intérieur (3 sites, 6j)
   { id:31, zone:'F', name:'Ziguinchor et Forêts sacrées Diola', coords:[12.5681,-16.2719], days:3, km:460 },
-  { id:32, zone:'F', name:'Île de Carabane et Cap Skirring', coords:[12.3956,-16.7472], days:3, km:510 },
+  { id:36, zone:'F', name:'Île de Carabane', coords:[12.5378,-16.7008], days:2, km:465 },
+  { id:32, zone:'F', name:'Cap Skirring', coords:[12.3956,-16.7472], days:1, km:510 },
 ];
 const OFFSHORE = [
   { id:'S1', name:'Sangomar — Zone Pétrolière', coords:[13.9000,-17.4500] },
@@ -6295,7 +6301,7 @@ const INITIAL_APPROVALS = [];
 const INITIAL_NOTIFICATIONS = [
   { type:'info', text:'🚀 Mission Control initialisé — Démarrage prévu Janvier 2027', time:'Aujourd\'hui' },
   { type:'ok', text:'✅ Base de données Supabase connectée — sync active', time:'Aujourd\'hui' },
-  { type:'info', text:'📋 32 sites chargés — 54 jours terrain planifiés sur 6 zones', time:'Aujourd\'hui' },
+  { type:'info', text:'📋 36 sites chargés — 56 jours terrain planifiés sur 6 zones', time:'Aujourd\'hui' },
 ];
 const INITIAL_ACTIVITY = [
   { icon:'🎯', title:'Mission documentaire Sénégal V3 — Initialisation système', time:'Aujourd\'hui' },
@@ -6846,43 +6852,43 @@ function selectPlatform(plat, el) {
 const CM_TEMPLATES = {
   tiktok: (site, tone, extra) => {
     const hooks = { inspiring:`✨ Le Sénégal t'appelle. ${site.name}.`, informative:`📍 Site ${site.id}, ${site.name}`, exciting:`🔥 ON EST ICI → ${site.name} !`, cultural:`🌍 Découverte : ${site.name}`, promotional:`🎥 EXCLUSIF : Coulisses tournage à ${site.name}` };
-    const bodies = { inspiring:`Un lieu qui suspend le temps.\nChaque pierre, chaque lumière raconte une histoire vieille de siècles. Zone ${site.zone}, à ${site.km}km de Dakar.\n\nCe documentaire, c'est pour VOUS. 🎬`, informative:`Zone ${site.zone} de notre mission documentaire. ${site.days} jour${site.days>1?'s':''} de tournage pour capturer l'essence de ce lieu exceptionnel.\n📏 Distance parcourue : ~${site.km} km`, exciting:`WOOOW ! 🤩\nOn vient de poser le matériel à ${site.name} et les images sont FOLLES.\n32 sites, 10800km, 82 jours de mission — on NE LÂCHE RIEN !`, cultural:`${site.name} — Zone ${site.zone}\n\nUn patrimoine inestimable au cœur du Sénégal. Notre équipe documentaire y passe ${site.days} jour${site.days>1?'s':''} pour en capturer chaque détail.\n🎥 Bientôt dans votre livre collector.`, promotional:`🚨 RÉSERVEZ VOTRE EXEMPLAIRE MAINTENANT 🚨\n\nCe livre documentaire sur le Sénégal sera UNIQUE. 32 sites, 100M FCFA de production.\nOn tourne à ${site.name} — et c'est MAGNIFIQUE.` };
+    const bodies = { inspiring:`Un lieu qui suspend le temps.\nChaque pierre, chaque lumière raconte une histoire vieille de siècles. Zone ${site.zone}, à ${site.km}km de Dakar.\n\nCe documentaire, c'est pour VOUS. 🎬`, informative:`Zone ${site.zone} de notre mission documentaire. ${site.days} jour${site.days>1?'s':''} de tournage pour capturer l'essence de ce lieu exceptionnel.\n📏 Distance parcourue : ~${site.km} km`, exciting:`WOOOW ! 🤩\nOn vient de poser le matériel à ${site.name} et les images sont FOLLES.\n36 sites, 11700km, 84 jours de mission — on NE LÂCHE RIEN !`, cultural:`${site.name} — Zone ${site.zone}\n\nUn patrimoine inestimable au cœur du Sénégal. Notre équipe documentaire y passe ${site.days} jour${site.days>1?'s':''} pour en capturer chaque détail.\n🎥 Bientôt dans votre livre collector.`, promotional:`🚨 RÉSERVEZ VOTRE EXEMPLAIRE MAINTENANT 🚨\n\nCe livre documentaire sur le Sénégal sera UNIQUE. 36 sites, 100M FCFA de production.\nOn tourne à ${site.name} — et c'est MAGNIFIQUE.` };
     const tags = `#Sénégal #${site.name.replace(/\s+/g,'').replace(/[^\w]/g,'')} #Documentaire #Afrique #ZoneA #Photography #Africa #Documentary #WestAfrica #BeautifulAfrica`;
     return { text: `${hooks[tone]}\n\n${bodies[tone]}`, hashtags: tags, meta: `Format : Vertical · 15-60s · Sous-titres FR recommandés · Musique afrobeat conseillée` };
   },
   youtube: (site, tone, duration) => {
     const dur = duration || 'medium';
-    const titles = { inspiring:`${site.name} — Quand le Sénégal vous coupe le souffle | Documentaire 4K`, informative:`[DOCUMENTAIRE] ${site.name} : Zone ${site.zone} | Mission Photographique Sénégal`, exciting:`INCROYABLE ! 32 sites en 82 jours — On était à ${site.name} 🔥`, cultural:`${site.name} — Histoire & Patrimoine du Sénégal | Série Documentaire`, promotional:`${site.name} : Le livre qui va changer votre regard sur l'Afrique` };
-    const descs = `🎬 DESCRIPTION\nCette vidéo fait partie de notre série documentaire sur les 32 sites emblématiques du Sénégal.\n\nSite ${site.id} sur 32 — Zone ${site.zone}\n📍 ${site.name}\n🗺️ Coordonnées : ${site.coords[0].toFixed(4)}°N / ${Math.abs(site.coords[1]).toFixed(4)}°W\n⏱ ${site.days} jour${site.days>1?'s':''} de tournage\n🚗 ~${site.km}km depuis Dakar\n\n${dur==='short'?'🎯 Format court — Highlights & Best-of':''}${dur==='medium'?'📽 Format documentaire web — Histoire complète du site':''}${dur==='long'?'🎬 Documentaire complet — Récit immersif et archives':''}`;
+    const titles = { inspiring:`${site.name} — Quand le Sénégal vous coupe le souffle | Documentaire 4K`, informative:`[DOCUMENTAIRE] ${site.name} : Zone ${site.zone} | Mission Photographique Sénégal`, exciting:`INCROYABLE ! 36 sites en 84 jours — On était à ${site.name} 🔥`, cultural:`${site.name} — Histoire & Patrimoine du Sénégal | Série Documentaire`, promotional:`${site.name} : Le livre qui va changer votre regard sur l'Afrique` };
+    const descs = `🎬 DESCRIPTION\nCette vidéo fait partie de notre série documentaire sur les 36 sites emblématiques du Sénégal.\n\nSite ${site.id} sur 36 — Zone ${site.zone}\n📍 ${site.name}\n🗺️ Coordonnées : ${site.coords[0].toFixed(4)}°N / ${Math.abs(site.coords[1]).toFixed(4)}°W\n⏱ ${site.days} jour${site.days>1?'s':''} de tournage\n🚗 ~${site.km}km depuis Dakar\n\n${dur==='short'?'🎯 Format court — Highlights & Best-of':''}${dur==='medium'?'📽 Format documentaire web — Histoire complète du site':''}${dur==='long'?'🎬 Documentaire complet — Récit immersif et archives':''}`;
     const timestamps = dur !== 'short' ? '\n\n⏰ CHAPITRES\n00:00 Introduction\n01:30 Contexte historique\n04:00 Tournage sur site\n${dur==="long"?"08:00 Témoignages & interviews\n15:00 Conclusion":""}\n' : '';
     return { title: titles[tone], text: descs + timestamps, hashtags: `#${site.name.replace(/\s+/g,'')} #Sénégal #Documentaire #Africa4K #Patrimoine`, meta: `Durée recommandée : ${dur==='short'?'< 5 min':dur==='medium'?'5-20 min':'20-60 min'} · Catégorie : Voyage & Événements · Langue : Français` };
   },
   linkedin: (site, tone) => {
-    const texts = { inspiring:`Après ${site.km}km parcourus pour atteindre ${site.name}, je comprends mieux pourquoi ce pays mérite un documentaire de cette envergure.\n\nSite ${site.id}/32 de notre mission photographique nationale. Zone ${site.zone}. ${site.days} jour${site.days>1?'s':''} d'immersion.\n\n🎯 Notre mission : rendre accessible le patrimoine sénégalais à travers un livre documentaire produit avec un budget de 100M FCFA.\n\nL'Afrique mérite des récits à la hauteur de sa beauté.\n\n#Leadership #Afrique #Documentaire #Patrimoine #Sénégal`, informative:`📊 Point d'avancement — Mission Documentaire Sénégal V3\n\n✅ Site ${site.id} : ${site.name} (Zone ${site.zone})\n📍 ${site.coords[0].toFixed(4)}°N\n⏱ ${site.days} jour${site.days>1?'s':''} terrain\n🚗 ${site.km}km depuis Dakar\n\nÉtat global mission :\n• 32 sites · 54j terrain · 82j total\n• ~10 800 km à parcourir\n• Budget : 100 000 000 FCFA\n\n#Gestion de Projet #Documentary #Sénégal`, exciting:'', cultural:`🌍 Héritage Culturel — ${site.name}\n\nSite Zone ${site.zone} de notre série documentaire sur le Sénégal.\n\nCe n'est pas qu'un lieu — c'est une mémoire vivante. Notre équipe y a passé ${site.days} jour${site.days>1?'s':''} pour en capturer chaque nuance.\n\nLe documentaire sort en 2027. Réservez votre exemplaire.\n\n#Culture #Afrique #Heritage #Sénégal`, promotional:`🎥 Nous recherchons des partenaires pour notre documentaire sur les 32 sites emblématiques du Sénégal.\n\nSite en cours : ${site.name} — Zone ${site.zone}\n\nOpportunités :\n• Sponsoring institutionnel\n• Placement de marque\n• Co-production\n• Distribution internationale\n\nContactez notre équipe.\n\n#Sponsoring #Partenariat #Sénégal #Investissement` };
+    const texts = { inspiring:`Après ${site.km}km parcourus pour atteindre ${site.name}, je comprends mieux pourquoi ce pays mérite un documentaire de cette envergure.\n\nSite ${site.id}/36 de notre mission photographique nationale. Zone ${site.zone}. ${site.days} jour${site.days>1?'s':''} d'immersion.\n\n🎯 Notre mission : rendre accessible le patrimoine sénégalais à travers un livre documentaire produit avec un budget de 100M FCFA.\n\nL'Afrique mérite des récits à la hauteur de sa beauté.\n\n#Leadership #Afrique #Documentaire #Patrimoine #Sénégal`, informative:`📊 Point d'avancement — Mission Documentaire Sénégal V3\n\n✅ Site ${site.id} : ${site.name} (Zone ${site.zone})\n📍 ${site.coords[0].toFixed(4)}°N\n⏱ ${site.days} jour${site.days>1?'s':''} terrain\n🚗 ${site.km}km depuis Dakar\n\nÉtat global mission :\n• 36 sites · 56j terrain · 84j total\n• ~11 700 km à parcourir\n• Budget : 100 000 000 FCFA\n\n#Gestion de Projet #Documentary #Sénégal`, exciting:'', cultural:`🌍 Héritage Culturel — ${site.name}\n\nSite Zone ${site.zone} de notre série documentaire sur le Sénégal.\n\nCe n'est pas qu'un lieu — c'est une mémoire vivante. Notre équipe y a passé ${site.days} jour${site.days>1?'s':''} pour en capturer chaque nuance.\n\nLe documentaire sort en 2027. Réservez votre exemplaire.\n\n#Culture #Afrique #Heritage #Sénégal`, promotional:`🎥 Nous recherchons des partenaires pour notre documentaire sur les 36 sites emblématiques du Sénégal.\n\nSite en cours : ${site.name} — Zone ${site.zone}\n\nOpportunités :\n• Sponsoring institutionnel\n• Placement de marque\n• Co-production\n• Distribution internationale\n\nContactez notre équipe.\n\n#Sponsoring #Partenariat #Sénégal #Investissement` };
     const t = texts[tone] || texts['informative'];
     return { text: t, hashtags: '', meta: `Réseau professionnel · Format recommandé : 1200-2000 caractères · Image haute résolution conseillée` };
   },
   facebook: (site, tone) => {
     const texts = {
-      inspiring: `Je suis debout depuis 5h pour être à ${site.name} au lever du soleil.\n\nZone ${site.zone}. Site ${site.id} sur 32. Et franchement, ça valait chaque kilomètre parcouru.\n\nOn tourne un documentaire sur le Sénégal. 32 sites. 54 jours terrain. Un livre qui sera collector.\n\nSi tu veux suivre l'aventure, partage ce post. 🙏`,
-      informative: `📍 Mise à jour mission : ${site.name}\n\nSite ${site.id}/32 · Zone ${site.zone} · ${site.km}km de Dakar · ${site.days} jour${site.days>1?'s':''} sur place\n\nOn avance. Chaque site est un chapitre. Chaque photo une preuve que ce pays mérite mieux qu'une brochure touristique.\n\nLe livre sort en 2027. Laissez "intéressé" en commentaire 👇`,
-      exciting: `ON EST À ${site.name.toUpperCase()} ET C'EST INCROYABLE 🔥\n\nSite ${site.id} sur 32. Zone ${site.zone}. ${site.km}km. ${site.days} jour${site.days>1?'s':''}.\n\nOn ne s'arrête pas.\n\nTagguez quelqu'un qui doit voir ça 👇`,
+      inspiring: `Je suis debout depuis 5h pour être à ${site.name} au lever du soleil.\n\nZone ${site.zone}. Site ${site.id} sur 36. Et franchement, ça valait chaque kilomètre parcouru.\n\nOn tourne un documentaire sur le Sénégal. 36 sites. 56 jours terrain. Un livre qui sera collector.\n\nSi tu veux suivre l'aventure, partage ce post. 🙏`,
+      informative: `📍 Mise à jour mission : ${site.name}\n\nSite ${site.id}/36 · Zone ${site.zone} · ${site.km}km de Dakar · ${site.days} jour${site.days>1?'s':''} sur place\n\nOn avance. Chaque site est un chapitre. Chaque photo une preuve que ce pays mérite mieux qu'une brochure touristique.\n\nLe livre sort en 2027. Laissez "intéressé" en commentaire 👇`,
+      exciting: `ON EST À ${site.name.toUpperCase()} ET C'EST INCROYABLE 🔥\n\nSite ${site.id} sur 36. Zone ${site.zone}. ${site.km}km. ${site.days} jour${site.days>1?'s':''}.\n\nOn ne s'arrête pas.\n\nTagguez quelqu'un qui doit voir ça 👇`,
       cultural: `${site.name}, Zone ${site.zone}\n\nIl y a des endroits qui te changent. Pas de façon dramatique. Juste... tu repars différent.\n\n${site.days} jour${site.days>1?'s':''} sur place. ${site.km}km depuis Dakar. Et des images qu'on n'oubliera pas.\n\nCe documentaire, c'est pour garder vivante cette mémoire. 🇸🇳`,
-      promotional: `🎬 TOURNAGE EN COURS : ${site.name}\n\nSite ${site.id} sur 32. Le livre documentaire sur le Sénégal le plus ambitieux jamais produit avance.\n\n📖 500 exemplaires · 32 sites · 100M FCFA de production\n✅ Précommandes ouvertes\n\nLaissez "intéressé" en commentaire et on vous contacte 👇`
+      promotional: `🎬 TOURNAGE EN COURS : ${site.name}\n\nSite ${site.id} sur 36. Le livre documentaire sur le Sénégal le plus ambitieux jamais produit avance.\n\n📖 500 exemplaires · 36 sites · 100M FCFA de production\n✅ Précommandes ouvertes\n\nLaissez "intéressé" en commentaire et on vous contacte 👇`
     };
     return { text: texts[tone] || texts['informative'], hashtags: `#Sénégal #${site.name.replace(/[^\w]/g,'')} #Documentaire #Afrique #WestAfrica #${site.zone==='A'?'Dakar':site.zone==='C'?'Casamance':'Sénégal'}`, meta: `Réseau communautaire · Post texte ou carrousel · Épingler les annonces importantes` };
   },
   instagram: (site, tone) => {
-    const captions = { inspiring:`✨ ${site.name}\n\nCertains endroits ne se décrivent pas. Ils se ressentent.\n\nZone ${site.zone} · Site ${site.id} sur 32\n${site.coords[0].toFixed(4)}°N · ${site.days}j de tournage\n\nCe documentaire est pour vous 🎬\n\n📖 Lien en bio pour précommander`, informative:`📍 ${site.name}\n\n🗺 Zone ${site.zone} · Site ${site.id}/32\n📏 ${site.km}km de Dakar\n⏱ ${site.days} jour${site.days>1?'s':''} sur place\n\nNotre équipe capture l'essence de chaque lieu pour un livre documentaire exceptionnel sur le Sénégal.\n\n📖 32 sites · 100M FCFA · 2027`, exciting:`🔥🔥🔥 ${site.name.toUpperCase()}\n\nON EST LÀ ET C'EST INSANE 🎥\n\nZone ${site.zone} · ${site.km}km · ${site.days}j\n32 SITES. 5400KM. UN LIVRE. 💥\n\nSave this post si tu veux être notifié !\n#VenirVite`, cultural:`🌍 ${site.name}\n\nUne page de l'histoire de l'Afrique de l'Ouest.\nZone ${site.zone}, à ${site.km}km de Dakar.\n\nNotre documentaire raconte ces histoires que le monde doit connaître.\n\n📖 Réservation ouverte — lien en bio`, promotional:`🎬 TOURNAGE EN COURS 📸\n\n${site.name} — Zone ${site.zone}\n\nDevenez les premiers à tenir entre vos mains le documentaire photographique le plus ambitieux jamais réalisé sur le Sénégal.\n\n👉 Lien de précommande en bio\n🔔 Activez les notifications !` };
+    const captions = { inspiring:`✨ ${site.name}\n\nCertains endroits ne se décrivent pas. Ils se ressentent.\n\nZone ${site.zone} · Site ${site.id} sur 36\n${site.coords[0].toFixed(4)}°N · ${site.days}j de tournage\n\nCe documentaire est pour vous 🎬\n\n📖 Lien en bio pour précommander`, informative:`📍 ${site.name}\n\n🗺 Zone ${site.zone} · Site ${site.id}/36\n📏 ${site.km}km de Dakar\n⏱ ${site.days} jour${site.days>1?'s':''} sur place\n\nNotre équipe capture l'essence de chaque lieu pour un livre documentaire exceptionnel sur le Sénégal.\n\n📖 36 sites · 100M FCFA · 2027`, exciting:`🔥🔥🔥 ${site.name.toUpperCase()}\n\nON EST LÀ ET C'EST INSANE 🎥\n\nZone ${site.zone} · ${site.km}km · ${site.days}j\n36 SITES. 11700KM. UN LIVRE. 💥\n\nSave this post si tu veux être notifié !\n#VenirVite`, cultural:`🌍 ${site.name}\n\nUne page de l'histoire de l'Afrique de l'Ouest.\nZone ${site.zone}, à ${site.km}km de Dakar.\n\nNotre documentaire raconte ces histoires que le monde doit connaître.\n\n📖 Réservation ouverte — lien en bio`, promotional:`🎬 TOURNAGE EN COURS 📸\n\n${site.name} — Zone ${site.zone}\n\nDevenez les premiers à tenir entre vos mains le documentaire photographique le plus ambitieux jamais réalisé sur le Sénégal.\n\n👉 Lien de précommande en bio\n🔔 Activez les notifications !` };
     return { text: captions[tone] || captions['informative'], hashtags: `#Sénégal #Dakar #Afrique #${site.zone==='A'?'Dakar':site.zone==='C'?'Casamance':site.zone==='D'?'Kédougou':'Sénégal'} #Documentary #Photography #AfriqueOuest #${site.name.replace(/[^\w]/g,'')} #WestAfrica #NatGeoAfrica #DiscoverAfrica`, meta: `Format : Carré 1080×1080 ou Portrait 4:5 · Premier commentaire : hashtags secondaires` };
   },
   twitter: (site, tone) => {
     const posts = {
       inspiring:`${site.name}. Zone ${site.zone}.\nCertains lieux ne se racontent pas — ils se vivent. On y était, caméra au poing. 🎬🇸🇳`,
-      informative:`📍 ${site.name} — Zone ${site.zone} · site ${site.id}/32\n${site.days}j de tournage · ~${site.km} km depuis Dakar.\nMission documentaire Sénégal.`,
-      exciting:`ON EST À ${site.name.toUpperCase()} 🔥\n32 sites · 54j de terrain · un livre collector. On ne lâche rien. 🇸🇳🎥`,
+      informative:`📍 ${site.name} — Zone ${site.zone} · site ${site.id}/36\n${site.days}j de tournage · ~${site.km} km depuis Dakar.\nMission documentaire Sénégal.`,
+      exciting:`ON EST À ${site.name.toUpperCase()} 🔥\n36 sites · 56j de terrain · un livre collector. On ne lâche rien. 🇸🇳🎥`,
       cultural:`${site.name}, Zone ${site.zone}.\nUn pan du patrimoine sénégalais qu'on documente pour qu'il reste. 🇸🇳`,
-      promotional:`🎬 Tournage à ${site.name}.\nLivre documentaire Sénégal — 32 sites, édition collector. Précommandes ouvertes.`
+      promotional:`🎬 Tournage à ${site.name}.\nLivre documentaire Sénégal — 36 sites, édition collector. Précommandes ouvertes.`
     };
     const text = posts[tone] || posts['informative'];
     const tags = `#Sénégal #${site.name.replace(/\s+/g,'').replace(/[^\w]/g,'')} #Africa`;
@@ -7184,7 +7190,7 @@ async function cmGenerateFromPhoto(btn) {
   previewEl.className  = 'preview-box loading';
   previewEl.innerHTML  = '<div class="preview-empty">Claude Vision analyse votre photo terrain…</div>';
 
-  const systemPrompt = `Tu es photographe-documentariste et community manager de la mission SÉNÉGAL V3 (livre collector, 32 sites, 100M FCFA, sortie 2027). Tu écris depuis le terrain, en immersion totale.
+  const systemPrompt = `Tu es photographe-documentariste et community manager de la mission SÉNÉGAL V3 (livre collector, 36 sites, 100M FCFA, sortie 2027). Tu écris depuis le terrain, en immersion totale.
 
 RÈGLES D'ÉCRITURE HUMAINE — OBLIGATOIRES :
 - Première personne systématique : "j'étais là", "on a filmé ça ce matin", "ce que j'ai vu"
@@ -9238,7 +9244,7 @@ function a6GetBriefText() {
 
 const A6_DA_IDENTITY = `Agis en tant que Directeur Artistique de renommée internationale, expert en infographie et en édition de "beaux-livres" (photographie haut de gamme, culture, art). Tu possèdes le niveau d'exigence des plus grandes maisons d'édition de luxe, combiné à l'œil photographique de National Geographic.
 
-Tu supervises la direction visuelle, graphique et éditoriale du projet : « Sénégal, Terre d'Histoire et de Rencontres ». Ouvrage de prestige, fruit d'une mission de documentation sur 32 sites au Sénégal, 54 jours de terrain. Format : 210×280mm, 224 pages, 500 exemplaires numérotés.
+Tu supervises la direction visuelle, graphique et éditoriale du projet : « Sénégal, Terre d'Histoire et de Rencontres ». Ouvrage de prestige, fruit d'une mission de documentation sur 36 sites au Sénégal, 56 jours de terrain. Format : 210×280mm, 224 pages, 500 exemplaires numérotés.
 
 CONTRAINTE FONDAMENTALE — TRILINGUE : Le livre est intégralement trilingue Français / English / عربية (arabe). TOUTES les légendes, captions, textes de pages, introductions, ouvertures de chapitres, 4e de couverture et notes de terrain doivent être produits dans les TROIS langues simultanément, avec le même soin et la même qualité littéraire dans chaque langue. L'arabe est en direction droite-gauche, registre soutenu.
 
@@ -9479,7 +9485,7 @@ async function a6GenSequencing(btn) {
   const resultEl = document.getElementById('a6-seq-result');
   resultEl.innerHTML = '<div class="a6-ia-result" style="color:var(--text-muted)">Claude construit la narration du livre…</div>';
   const sitesList = SITES.map(s => `#${s.id} [Zone ${s.zone}] ${s.name} — ${s.days}j, ${s.km}km`).join('\n');
-  const prompt = `Tu es le directeur artistique et narrateur de la mission documentaire SÉNÉGAL V3.\n\nVoici les 32 sites :\n${sitesList}\n\nPropose l'ordre optimal pour le livre collector. Critères : progression narrative (ouverture forte, montée, climax, épilogue), alternance géographique, variété urbain/nature/patrimoine, cohérence émotionnelle.\n\nJSON :\n{"arc":"titre narratif du livre","structure":[{"ordre":1,"site_id":1,"site_name":"...","chapitre":"...","role":"ouverture|développement|climax|épilogue","transition":"lien avec la page suivante"}],"note_da":"note du DA sur les choix"}`;
+  const prompt = `Tu es le directeur artistique et narrateur de la mission documentaire SÉNÉGAL V3.\n\nVoici les 36 sites :\n${sitesList}\n\nPropose l'ordre optimal pour le livre collector. Critères : progression narrative (ouverture forte, montée, climax, épilogue), alternance géographique, variété urbain/nature/patrimoine, cohérence émotionnelle.\n\nJSON :\n{"arc":"titre narratif du livre","structure":[{"ordre":1,"site_id":1,"site_name":"...","chapitre":"...","role":"ouverture|développement|climax|épilogue","transition":"lien avec la page suivante"}],"note_da":"note du DA sur les choix"}`;
   try {
     const data = await a6CallClaude('Tu es directeur artistique senior, expert en narration visuelle et séquençage de livres de photographie documentaire.', [{ type:'text', text: prompt }], 2000);
     const items = (data.structure || []).map(s => {
@@ -9590,12 +9596,14 @@ function a6InitBook(btn) {
 }
 
 function a6BuildDefaultPages() {
-  // Structure cible : 224 pages
+  // Structure cible : 210 pages (36 sites, scission 2026-07 de 4 sites qui en
+  // combinaient 2 à tort — pages par site réduites de 6 à 5 pour contenir le
+  // coût d'impression malgré les 4 sites supplémentaires, cf. décision user)
   // Front matter  :  8 pages
-  // Zones (7×2)   : 14 pages  (ouverture + description par zone)
-  // Sites (32×6)  :192 pages  (pleine page, double G, double D, portfolio, légende, terrain)
+  // Zones (6×2)   : 12 pages  (ouverture + description par zone)
+  // Sites (36×5)  :180 pages  (pleine page, double G, double D, portfolio, légende)
   // Back matter   : 10 pages
-  // TOTAL         :224 pages
+  // TOTAL         :210 pages
   const pages = [];
   let n = 0;
   const mk = ov => {
@@ -9608,8 +9616,8 @@ function a6BuildDefaultPages() {
   pages.push(mk({ type:'page_titre',   siteName:'Page titre' }));
   pages.push(mk({ type:'copyright',    siteName:'Copyright & Crédits photographiques' }));
   pages.push(mk({ type:'avantpropos',  siteName:'Avant-propos' }));
-  pages.push(mk({ type:'introduction', siteName:'Introduction — 54 jours au Sénégal' }));
-  pages.push(mk({ type:'carte',        siteName:'Carte · 32 sites documentaires' }));
+  pages.push(mk({ type:'introduction', siteName:'Introduction — 56 jours au Sénégal' }));
+  pages.push(mk({ type:'carte',        siteName:'Carte · 36 sites documentaires' }));
   pages.push(mk({ type:'editorial',    siteName:'Note éditoriale & Direction artistique' }));
   pages.push(mk({ type:'sommaire',     siteName:'Sommaire' }));
 
@@ -9626,13 +9634,12 @@ function a6BuildDefaultPages() {
       pages.push(mk({ type:'double_suite', siteId:s.id, siteName:s.name+' · Double p.D', zone:zn })); // Spread droite
       pages.push(mk({ type:'portfolio',    siteId:s.id, siteName:s.name+' · Portfolio', zone:zn }));   // 3–4 petites photos
       pages.push(mk({ type:'legendes',     siteId:s.id, siteName:s.name, zone:zn }));           // Légende + texte
-      pages.push(mk({ type:'contexte',     siteId:s.id, siteName:s.name+' · Notes terrain', zone:zn }));// Behind the scenes
     });
   });
 
   // ── BACK MATTER (10 pages) ──────────────────────────────────────
   pages.push(mk({ type:'makingof',      siteName:'Making-of · Coulisses de la mission' }));
-  pages.push(mk({ type:'index',         siteName:'Index · 32 sites & coordonnées' }));
+  pages.push(mk({ type:'index',         siteName:'Index · 36 sites & coordonnées' }));
   pages.push(mk({ type:'remerciements', siteName:'Remerciements' }));
   pages.push(mk({ type:'sponsor',       siteName:'Partenaires — Page 1' }));
   pages.push(mk({ type:'sponsor',       siteName:'Partenaires — Page 2' }));
@@ -10042,7 +10049,7 @@ async function a6GenMaquette(btn) {
   const gallery = a6State.bookGallery.length > 0 ? `\nPhotos déjà sélectionnées pour le livre : ${a6State.bookGallery.map(e=>e.site).join(', ')}.` : '';
   const equip = a6GetEquipmentContext();
   const sitesList = SITES.map(s => `#${s.id} [Zone ${s.zone}] ${s.name}`).join(', ');
-  const prompt = `Mission documentaire SÉNÉGAL V3 : 32 sites, 54 jours, livre collector.\nSites : ${sitesList}\nFormat livre : 210×280mm, ${pages} pages, impression offset luxe.\nLangue(s) : ${langLabel}.${sponsorLine}${gallery}${equip}\n\nConçois la maquette structurée du livre. Chaque section = un objet JSON.\nJSON :\n{"titre_livre":"...","accroche":"phrase de couverture","sections":[{"pages":"p.1-2","type":"couverture|page_titre|intro|chapitre|pleine_page|double_page|portfolio|legendes|sponsor|colophon|quatrieme","titre":"...","contenu":"description du contenu","note_da":"conseil pour le DA"}],"notes_generales":"conseils globaux"}`;
+  const prompt = `Mission documentaire SÉNÉGAL V3 : 36 sites, 56 jours, livre collector.\nSites : ${sitesList}\nFormat livre : 210×280mm, ${pages} pages, impression offset luxe.\nLangue(s) : ${langLabel}.${sponsorLine}${gallery}${equip}\n\nConçois la maquette structurée du livre. Chaque section = un objet JSON.\nJSON :\n{"titre_livre":"...","accroche":"phrase de couverture","sections":[{"pages":"p.1-2","type":"couverture|page_titre|intro|chapitre|pleine_page|double_page|portfolio|legendes|sponsor|colophon|quatrieme","titre":"...","contenu":"description du contenu","note_da":"conseil pour le DA"}],"notes_generales":"conseils globaux"}`;
   try {
     const data = await a6CallClaude(
       'Tu es directeur artistique et maquettiste expert en livres de photographie documentaire de luxe.',
@@ -10092,10 +10099,10 @@ async function a6GenEquipmentRecs(btn, mode) {
   const zones = [...new Set(SITES.map(s => s.zone))].join(', ');
   const types = 'urbain, rural, côtier, désertique, patrimoine, marché';
   const sitesSummary = SITES.map(s => `${s.name} [Zone ${s.zone}]`).join(', ');
-  const basePrompt = `Mission : SÉNÉGAL V3, 32 sites documentaires, 54 jours de terrain.\nZones géographiques : ${zones}.\nTypes de terrains : ${types}.\nSites : ${sitesSummary}.\nObjectif : livre collector luxe + contenus réseaux sociaux + vidéo documentaire.`;
+  const basePrompt = `Mission : SÉNÉGAL V3, 36 sites documentaires, 56 jours de terrain.\nZones géographiques : ${zones}.\nTypes de terrains : ${types}.\nSites : ${sitesSummary}.\nObjectif : livre collector luxe + contenus réseaux sociaux + vidéo documentaire.`;
   const modePrompt = mode === 'optimize' && existing
-    ? `\n\nParc existant : ${existing}.\n\nAnalyse ce parc et recommande ce qu'il manque ou ce qui devrait être remplacé pour couvrir optimalement les 32 sites. JSON :\n{"categories":[{"nom":"...","items":[{"nom":"...","priorite":"essentiel|recommande|optionnel","justification":"pourquoi pour cette mission"}]}],"priorite_absolue":"les 3 achats les plus urgents","budget_estime":"fourchette en EUR"}`
-    : `\n\nSans contrainte de parc existant. Recommande le kit matériel idéal pour couvrir les 32 sites en photo + vidéo documentaire luxe. JSON :\n{"categories":[{"nom":"...","items":[{"nom":"...","priorite":"essentiel|recommande|optionnel","justification":"pourquoi pour cette mission"}]}],"kit_minimal":"liste des absolus","budget_estime":"fourchette en EUR","conseil":"conseil terrain le plus important"}`;
+    ? `\n\nParc existant : ${existing}.\n\nAnalyse ce parc et recommande ce qu'il manque ou ce qui devrait être remplacé pour couvrir optimalement les 36 sites. JSON :\n{"categories":[{"nom":"...","items":[{"nom":"...","priorite":"essentiel|recommande|optionnel","justification":"pourquoi pour cette mission"}]}],"priorite_absolue":"les 3 achats les plus urgents","budget_estime":"fourchette en EUR"}`
+    : `\n\nSans contrainte de parc existant. Recommande le kit matériel idéal pour couvrir les 36 sites en photo + vidéo documentaire luxe. JSON :\n{"categories":[{"nom":"...","items":[{"nom":"...","priorite":"essentiel|recommande|optionnel","justification":"pourquoi pour cette mission"}]}],"kit_minimal":"liste des absolus","budget_estime":"fourchette en EUR","conseil":"conseil terrain le plus important"}`;
   try {
     const data = await a6CallClaude(
       'Tu es directeur de photographie expert en missions documentaires terrain, spécialiste du matériel photo/vidéo pour reportages Africa.',
@@ -10943,7 +10950,7 @@ const A9_DOSSIER_TEMPLATES = {
   mtac: (amt, angle) => ({
     title: 'Fonds MTAC',
     sections: [
-      { head:"PRÉSENTATION DU PROJET", body:`La Mission Documentaire Sénégal V3 constitue le projet photographique le plus ambitieux jamais entrepris sur le territoire national. 32 sites répartis sur l'ensemble du territoire, 54 jours de terrain, 82 jours de mission totale, ~10 800 km parcourus — un inventaire exhaustif du patrimoine sénégalais destiné à une édition d'art de 224 pages tirée à 500 exemplaires numérotés.` },
+      { head:"PRÉSENTATION DU PROJET", body:`La Mission Documentaire Sénégal V3 constitue le projet photographique le plus ambitieux jamais entrepris sur le territoire national. 36 sites répartis sur l'ensemble du territoire, 56 jours de terrain, 84 jours de mission totale, ~11 700 km parcourus — un inventaire exhaustif du patrimoine sénégalais destiné à une édition d'art de 210 pages tirée à 500 exemplaires numérotés.` },
       { head:"INDICATEURS D'IMPACT", body:"__KPIS__" },
       { head:"DEMANDE DE FINANCEMENT", body:`Montant sollicité auprès du Fonds MTAC : ${Math.round(amt).toLocaleString('fr-FR')} FCFA.
 
@@ -10954,14 +10961,14 @@ Budget global du projet : 100 000 000 FCFA — dont ${Math.round(amt/1000000)}M 
 • 50 exemplaires numérotés dédicacés remis au Ministère
 • Exposition itinérante dans les institutions culturelles partenaires
 • Droits de diffusion numérique pour les établissements scolaires` },
-      { head:"CALENDRIER D'EXÉCUTION", body:`Phase terrain : 54 jours · Phase édition : 6 mois · Livraison finale : 2027
+      { head:"CALENDRIER D'EXÉCUTION", body:`Phase terrain : 56 jours · Phase édition : 6 mois · Livraison finale : 2027
 Dépôt légal BN du Sénégal · ISBN international · Distribution : Sénégal, France, diaspora mondiale` }
     ]
   }),
   entreprise: (amt, angle) => ({
     title: 'Mécénat Entreprise',
     sections: [
-      { head:"OPPORTUNITÉ DE MÉCÉNAT", body:`Associez votre marque au premier grand livre documentaire sur le Sénégal du XXIe siècle. 32 sites, 500 exemplaires numérotés, audience cible : décideurs, institutionnels, collectionneurs, diaspora — un positionnement RSE & culturel d'exception.` },
+      { head:"OPPORTUNITÉ DE MÉCÉNAT", body:`Associez votre marque au premier grand livre documentaire sur le Sénégal du XXIe siècle. 36 sites, 500 exemplaires numérotés, audience cible : décideurs, institutionnels, collectionneurs, diaspora — un positionnement RSE & culturel d'exception.` },
       { head:"INDICATEURS D'IMPACT", body:"__KPIS__" },
       { head:"INVESTISSEMENT SOLLICITÉ", body:`Contribution : ${Math.round(amt).toLocaleString('fr-FR')} FCFA
 Angle stratégique : ${angle === 'visibilite' ? 'Visibilité internationale & image de marque' : angle === 'eco' ? 'Retombées économiques & promotion du tourisme' : 'Responsabilité sociétale & ancrage territorial'}` },
@@ -10986,7 +10993,7 @@ Angle stratégique : ${angle === 'visibilite' ? 'Visibilité internationale & im
   ong: (amt, angle) => ({
     title: 'ONG / Fondation',
     sections: [
-      { head:"DIMENSION PATRIMONIALE", body:`La Mission Documentaire Sénégal V3 constitue un acte de mémoire : documenter 32 sites du patrimoine sénégalais avant que les mutations climatiques et urbaines n'en altèrent définitivement la physionomie.` },
+      { head:"DIMENSION PATRIMONIALE", body:`La Mission Documentaire Sénégal V3 constitue un acte de mémoire : documenter 36 sites du patrimoine sénégalais avant que les mutations climatiques et urbaines n'en altèrent définitivement la physionomie.` },
       { head:"INDICATEURS D'IMPACT", body:"__KPIS__" },
       { head:"PARTENARIAT SOLLICITÉ", body:`Montant : ${Math.round(amt).toLocaleString('fr-FR')} FCFA · Angle : ${angle === 'heritage' ? 'Préservation du patrimoine immatériel' : 'Impact éducatif & développement culturel'}` }
     ]
@@ -11018,11 +11025,11 @@ const A9_ANGLE_LABELS = {
 };
 
 const A9_DOSSIER_KPIS = `<div class="a9-dos-kpi-row">
-  <div class="a9-dos-kpi"><div class="a9-dk-val">32</div><div class="a9-dk-label">Sites</div></div>
-  <div class="a9-dos-kpi"><div class="a9-dk-val">10 800</div><div class="a9-dk-label">km</div></div>
-  <div class="a9-dos-kpi"><div class="a9-dk-val">82j</div><div class="a9-dk-label">Mission</div></div>
+  <div class="a9-dos-kpi"><div class="a9-dk-val">36</div><div class="a9-dk-label">Sites</div></div>
+  <div class="a9-dos-kpi"><div class="a9-dk-val">11 700</div><div class="a9-dk-label">km</div></div>
+  <div class="a9-dos-kpi"><div class="a9-dk-val">84j</div><div class="a9-dk-label">Mission</div></div>
   <div class="a9-dos-kpi"><div class="a9-dk-val">500</div><div class="a9-dk-label">Ex. numérotés</div></div>
-  <div class="a9-dos-kpi"><div class="a9-dk-val">224p</div><div class="a9-dk-label">Livre</div></div>
+  <div class="a9-dos-kpi"><div class="a9-dk-val">210p</div><div class="a9-dk-label">Livre</div></div>
   <div class="a9-dos-kpi"><div class="a9-dk-val">8K</div><div class="a9-dk-label">Résolution</div></div>
 </div>`;
 
@@ -11054,8 +11061,8 @@ Montant sollicité : ${amt.toLocaleString('fr-FR')} FCFA
 Argument principal à mettre en avant : ${A9_ANGLE_LABELS[angle] || angle}
 
 Contexte mission (chiffres réels, à intégrer naturellement) :
-- 32 sites photographiés sur tout le territoire sénégalais
-- 54 jours de terrain, 82 jours de mission au total, ~10 800 km
+- 36 sites photographiés sur tout le territoire sénégalais
+- 56 jours de terrain, 84 jours de mission au total, ~11 700 km
 - Livre d'art de 224 pages, 2 éditions : 2000 standards (50 000 FCFA) + 500 luxe numérotés (85 000 FCFA)
 - Budget global du projet : 100 000 000 FCFA
 - Livraison prévue 2027, dépôt légal BN Sénégal + ISBN international
@@ -11152,7 +11159,7 @@ function a9LaunchSourcing(btn) {
 const a10State = {
   filter: 'all',
   auths: [
-    /* ZONE A — DAKAR & PÉRIPHÉRIE (12 sites) */
+    /* ZONE A — DAKAR & PÉRIPHÉRIE (13 sites) */
     { id:'a10_1',  site:'Île de Gorée (UNESCO 1978)',                  org:'OLAG / Mairie de Gorée',                          status:'encours', ref:'AUTH-ZA-01-2027', date:'—', contact:'mairie.goree@dakar.sn' },
     { id:'a10_2',  site:'Musée Historique du Sénégal',                 org:'Direction du Patrimoine Culturel (Gorée)',        status:'encours', ref:'AUTH-ZA-02-2027', date:'—', contact:'patrimoine@culture.gouv.sn' },
     { id:'a10_3',  site:'Musée des Civilisations Noires',              org:'Ministère de la Culture — Direction MCN',         status:'encours', ref:'AUTH-ZA-03-2027', date:'—', contact:'mcn@culture.gouv.sn' },
@@ -11164,14 +11171,16 @@ const a10State = {
     { id:'a10_9',  site:'Almadies et Phare des Mamelles',             org:'Marine Nationale / Mairie des Almadies',          status:'encours', ref:'AUTH-ZA-09-2027', date:'—', contact:'almadies@dakar.sn' },
     { id:'a10_10', site:'Mosquée Massalikul Djinaan',                 org:'Dahira Mouride — Bureau Communication',           status:'encours', ref:'AUTH-ZA-10-2027', date:'—', contact:'communication@massalikul.sn' },
     { id:'a10_11', site:'Port Autonome de Dakar',                     org:'Direction Générale PAD',                          status:'encours', ref:'AUTH-ZA-11-2027', date:'—', contact:'dg@portdakar.sn' },
-    { id:'a10_12', site:'Vieux Rufisque et Stade du Sénégal',         org:'Mairie de Rufisque / SOGIP (Stade)',              status:'encours', ref:'AUTH-ZA-12-2027', date:'—', contact:'rufisque@gouv.sn' },
-    /* ZONE B — SAINT-LOUIS, PATRIMOINE & ÉCOSYSTÈMES (6 sites) */
+    { id:'a10_12', site:'Vieux Rufisque',                             org:'Mairie de Rufisque',                              status:'encours', ref:'AUTH-ZA-12-2027', date:'—', contact:'rufisque@gouv.sn' },
+    { id:'a10_33', site:'Stade du Sénégal (Diamniadio)',              org:'SOGIP / Ministère des Sports',                    status:'encours', ref:'AUTH-ZA-33-2027', date:'—', contact:'contact@sports.gouv.sn' },
+    /* ZONE B — SAINT-LOUIS, PATRIMOINE & ÉCOSYSTÈMES (7 sites) */
     { id:'a10_13', site:'Ville historique de Saint-Louis (UNESCO 2000)', org:'Mairie de Saint-Louis / Commission UNESCO',    status:'encours', ref:'AUTH-ZB-13-2027', date:'—', contact:'mairie@saint-louis.sn' },
-    { id:'a10_14', site:'Pont Faidherbe et Langue de Barbarie',       org:'Mairie de Saint-Louis — Direction des Routes',    status:'encours', ref:'AUTH-ZB-14-2027', date:'—', contact:'mairie@saint-louis.sn' },
+    { id:'a10_14', site:'Pont Faidherbe',                             org:'Mairie de Saint-Louis — Direction des Routes',    status:'encours', ref:'AUTH-ZB-14-2027', date:'—', contact:'mairie@saint-louis.sn' },
     { id:'a10_15', site:'Parc National des Oiseaux du Djoudj (UNESCO 1981)', org:'DPN — Direction des Parcs Nationaux',      status:'encours', ref:'AUTH-ZB-15-2027', date:'—', contact:'dpn@environnement.gouv.sn' },
     { id:'a10_16', site:'Quartiers historiques coloniaux de Saint-Louis', org:'Mairie de Saint-Louis — Service Patrimoine',  status:'encours', ref:'AUTH-ZB-16-2027', date:'—', contact:'patrimoine@saint-louis.sn' },
     { id:'a10_17', site:'Pêche traditionnelle de Guet Ndar',          org:'Mairie de Saint-Louis / Communauté Guet Ndar',    status:'encours', ref:'AUTH-ZB-17-2027', date:'—', contact:'mairie@saint-louis.sn' },
     { id:'a10_18', site:'Podor et Fort colonial du fleuve Sénégal',   org:'Mairie de Podor / Direction Patrimoine',          status:'encours', ref:'AUTH-ZB-18-2027', date:'—', contact:'podor@gouvernement.sn' },
+    { id:'a10_34', site:'Parc National de la Langue de Barbarie',    org:'DPN — Direction des Parcs Nationaux',              status:'encours', ref:'AUTH-ZB-34-2027', date:'—', contact:'dpn@environnement.gouv.sn' },
     /* ZONE C — THIÈS & LOUGA, PAYSAGES (4 sites) */
     { id:'a10_19', site:'Lac Rose (Retba) — Liste Indicative UNESCO', org:'Mairie de Rufisque / Gestionnaire Réserve',       status:'encours', ref:'AUTH-ZC-19-2027', date:'—', contact:'rufisque@gouv.sn' },
     { id:'a10_20', site:'Désert de Lompoul et Bivouac',              org:'Mairie de Kébémer / Opérateur Lompoul',           status:'encours', ref:'AUTH-ZC-20-2027', date:'—', contact:'lompoul@gouvernement.sn' },
@@ -11182,14 +11191,16 @@ const a10State = {
     { id:'a10_24', site:'Joal-Fadiouth et Île aux Coquillages',      org:'Mairie de Joal-Fadiouth',                         status:'encours', ref:'AUTH-ZD-24-2027', date:'—', contact:'joalfadiouth@gouvernement.sn' },
     { id:'a10_25', site:'Lodges et Écolodges du Saloum',             org:'Opérateurs écolodges / SAPCO',                    status:'encours', ref:'AUTH-ZD-25-2027', date:'—', contact:'info@sapco.sn' },
     { id:'a10_26', site:'Mangroves et Bolongs',                       org:'DPN / Réserve de Biosphère',                      status:'encours', ref:'AUTH-ZD-26-2027', date:'—', contact:'dpn@environnement.gouv.sn' },
-    /* ZONE E — CENTRE & EST, SPIRITUALITÉ & BASSARI (4 sites) */
+    /* ZONE E — CENTRE & EST, SPIRITUALITÉ & BASSARI (5 sites) */
     { id:'a10_27', site:'Grande Mosquée de Touba',                   org:'Khalife Général des Mourides',                    status:'encours', ref:'AUTH-ZE-27-2027', date:'—', contact:'—' },
-    { id:'a10_28', site:'Medina Baye Kaolack et Tivaouane',          org:'Khalife Medina Baye / Tidianes de Tivaouane',     status:'encours', ref:'AUTH-ZE-28-2027', date:'—', contact:'—' },
+    { id:'a10_28', site:'Medina Baye (Kaolack)',                     org:'Khalife Général de Médina Baye',                  status:'encours', ref:'AUTH-ZE-28-2027', date:'—', contact:'—' },
+    { id:'a10_35', site:'Tivaouane',                                 org:'Khalife Général des Tidianes de Tivaouane',       status:'encours', ref:'AUTH-ZE-35-2027', date:'—', contact:'—' },
     { id:'a10_29', site:'Mégalithes de Sine Ngayène (UNESCO 2006)',  org:'Direction du Patrimoine Culturel / UNESCO Dakar', status:'encours', ref:'AUTH-ZE-29-2027', date:'—', contact:'patrimoine@culture.gouv.sn' },
     { id:'a10_30', site:'Pays Bassari et Villages Bédik (UNESCO 2012)', org:'Ministère de la Culture / Guide Bassari habilité', status:'encours', ref:'AUTH-ZE-30-2027', date:'—', contact:'culture@gouv.sn' },
-    /* ZONE F — CASAMANCE (2 sites) */
+    /* ZONE F — CASAMANCE (3 sites) */
     { id:'a10_31', site:'Ziguinchor et Forêts sacrées Diola',        org:'Mairie de Ziguinchor / Communauté Diola',         status:'encours', ref:'AUTH-ZF-31-2027', date:'—', contact:'mairie.ziguinchor@gouv.sn' },
-    { id:'a10_32', site:'Île de Carabane et Cap Skirring',           org:'Mairie d\'Oussouye / Chefs de Village',           status:'encours', ref:'AUTH-ZF-32-2027', date:'—', contact:'oussouye@gouvernement.sn' },
+    { id:'a10_36', site:'Île de Carabane',                           org:'Chefs de Village de Carabane / Mairie d\'Oussouye', status:'encours', ref:'AUTH-ZF-36-2027', date:'—', contact:'oussouye@gouvernement.sn' },
+    { id:'a10_32', site:'Cap Skirring',                              org:'Mairie de Cap Skirring / Oussouye',               status:'encours', ref:'AUTH-ZF-32-2027', date:'—', contact:'oussouye@gouvernement.sn' },
   ],
   journal: [],
   currentRelanceId: null
@@ -11252,7 +11263,7 @@ Dans le cadre de notre Mission Documentaire Sénégal V3, notre équipe souhaite
 
 Ce projet, doté d'un budget de 100 000 000 FCFA, vise la production d'un livre d'art de référence en 500 exemplaires numérotés, valorisant le patrimoine sénégalais à l'international.
 
-Nous restons à votre entière disposition pour tout renseignement complémentaire et vous prions de bien vouloir traiter cette demande en priorité, notre calendrier terrain étant fixé sur 54 jours.
+Nous restons à votre entière disposition pour tout renseignement complémentaire et vous prions de bien vouloir traiter cette demande en priorité, notre calendrier terrain étant fixé sur 56 jours.
 
 Dans l'attente de votre retour, veuillez agréer, Madame, Monsieur, l'expression de nos salutations distinguées.
 
@@ -11708,7 +11719,7 @@ function initAgent11() {
 }
 
 /* ── A11 : Claude helpers ── */
-const A11_LOGISTICS_IDENTITY = `Tu es coordinateur logistique expert en missions photographiques documentaires terrain. Tu maîtrises les équipements photo/vidéo professionnels, les contraintes terrain au Sénégal (chaleur, humidité, sable, lumière tropicale), et l'optimisation de la couverture photographique. Mission : SÉNÉGAL V3, 32 sites, 54 jours.`;
+const A11_LOGISTICS_IDENTITY = `Tu es coordinateur logistique expert en missions photographiques documentaires terrain. Tu maîtrises les équipements photo/vidéo professionnels, les contraintes terrain au Sénégal (chaleur, humidité, sable, lumière tropicale), et l'optimisation de la couverture photographique. Mission : SÉNÉGAL V3, 36 sites, 56 jours.`;
 
 async function a11CallClaude(sys, txt, tok) {
   const res = await apiFetch('/api/claude', {
@@ -13134,7 +13145,7 @@ async function a15GenEmailRelance(evt) {
   if (!d) { showToast('Sélectionner un prestataire', 'warn'); enableBtn(btn); return; }
   if (out) out.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted)">Rédaction en cours…</div>';
   const raw = await a15CallClaude(
-    `Tu es chargé de négociation pour une mission documentaire photographique au Sénégal (budget 100M FCFA, 32 sites). Rédige des emails courts et efficaces.` + HUMAN_DOC_STYLE,
+    `Tu es chargé de négociation pour une mission documentaire photographique au Sénégal (budget 100M FCFA, 36 sites). Rédige des emails courts et efficaces.` + HUMAN_DOC_STYLE,
     `Prestataire : ${d.nom}. Catégorie : ${d.cat}. Estimation : ${fmtFCFA(d.est)}. Devis : ${fmtFCFA(d.reel)}. Écart : ${fmtFCFA(Math.abs(d.est-d.reel))} (${d.reel>d.est?'dépassement':'économie'}). Ton : ${ton}. Note : ${d.note||'aucune'}. Rédige un email de relance/négociation professionnel en français, prêt à envoyer.`,
     700);
   if (!out) { enableBtn(btn); return; }
@@ -13161,7 +13172,7 @@ async function a15ComparerDevis(evt) {
   const devisStr = items.map(d => `• ${d.nom} : ${fmtFCFA(d.reel)} (estimé ${fmtFCFA(d.est)})${d.note?' – '+d.note:''}`).join('\n');
   const data = await a15CallClaudeJSON(
     `Tu es expert en sélection de prestataires pour missions photographiques en Afrique de l'Ouest. Réponds en JSON : {"recommande":"nom","raison":"...","points_attention":"...","economie_vs_reste":"...","alerte":""}`,
-    `Catégorie : ${cat}. Devis reçus :\n${devisStr}\nMission documentaire 32 sites Sénégal, ${MISSION.joursTerrain} jours terrain. Analyse comparative et recommande le meilleur prestataire (pas forcément le moins cher).`,
+    `Catégorie : ${cat}. Devis reçus :\n${devisStr}\nMission documentaire 36 sites Sénégal, ${MISSION.joursTerrain} jours terrain. Analyse comparative et recommande le meilleur prestataire (pas forcément le moins cher).`,
     800);
   if (!out) { enableBtn(btn); return; }
   if (!data.recommande) { out.innerHTML = '<div style="color:var(--red);font-size:0.6rem">Erreur — vérifiez la clé API Claude</div>'; enableBtn(btn); return; }
@@ -13453,7 +13464,7 @@ const a17State = {
   fusionSuggestions: []
 };
 
-/* Site planifié pour un jour terrain donné (parcours des 32 sites dans l'ordre) */
+/* Site planifié pour un jour terrain donné (parcours des 36 sites dans l'ordre) */
 function getPlannedSiteForDay(dayNum) {
   let acc = 0;
   for (const s of SITES) { acc += (s.days || 1); if (dayNum <= acc) return s; }
@@ -13936,7 +13947,7 @@ function a17Simulate() {
   const mcatRetard = document.getElementById('a17-sim-mcat')?.checked;
   const out = document.getElementById('a17-sim-result');
   if (!out) return;
-  const COUT_JOUR = Math.round(43401900 / MISSION.joursTerrain); // production terrain / 54j ≈ 804k
+  const COUT_JOUR = Math.round(43401900 / MISSION.joursTerrain); // production terrain / 56j ≈ 775k
   const reposDispo = Math.max(0, MISSION.joursRepos - Math.max(0, -(a17CalcDrift().deltaDays || 0)));
   const joursAbsorbes = Math.min(jours, reposDispo);
   const joursSurcout = Math.max(0, jours - joursAbsorbes);
