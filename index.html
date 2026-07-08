@@ -5202,7 +5202,7 @@ function saveStateToDB() {
 }
 
 /* ============================================================
-   DOCUMENTS SORTANTS — export Word (.doc) + rédaction humaine
+   DOCUMENTS SORTANTS — export Word (.docx réel) + rédaction humaine
    Tous les courriers/contrats/formulaires générés par Claude
    sortent en Word avec papier à en-tête THR, prêts à envoyer.
    ============================================================ */
@@ -5226,29 +5226,171 @@ function humanizeDocText(t) {
     .replace(/^[ \t]*[•▪◦][ \t]*/gm, '- ');
 }
 
-/* Export .doc (HTML Word) : A4, marges courrier, en-tête THR or, date à Dakar,
-   objet, corps justifié, signature co-gérants, pied de page contact. */
-function exportWordDoc(filename, title, text, opts = {}) {
-  const clean = humanizeDocText(text);
-  const paras = clean.split(/\n{2,}/).map(p =>
-    `<p style="margin:0 0 12pt 0;text-align:justify;line-height:150%">${escapeHtml(p).replace(/\n/g, '<br>')}</p>`).join('');
-  const dateStr = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]--><style>@page{size:A4;margin:2.5cm 2.2cm}body{font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#1a1a1a}</style></head><body>
-<table width="100%" style="border-bottom:2pt solid #C4872A"><tr>
-<td style="font-family:Cambria,Georgia,serif;font-size:14pt;font-weight:bold;color:#C4872A;padding-bottom:6pt">SÉNÉGAL, TERRE D'HISTOIRE ET DE RENCONTRES</td>
-<td align="right" style="font-size:8.5pt;color:#555555;padding-bottom:6pt">THR Éditions SARL<br>contact@senegalthr.com<br>Dakar, Sénégal</td></tr></table>
-<p style="text-align:right;margin:16pt 0 4pt 0">Dakar, le ${dateStr}</p>
-${opts.objet === false ? '' : `<p style="margin:14pt 0 16pt 0"><b>Objet : ${escapeHtml(opts.objet || title)}</b></p>`}
-${paras}
-${opts.signature === false ? '' : `<p style="margin-top:28pt">Attab Sonko &nbsp;·&nbsp; Cheikh Anta Diop<br><span style="font-size:9.5pt;color:#555555">Co-gérants, THR Éditions · Mission « Sénégal, Terre d'Histoire et de Rencontres »</span></p>`}
-<p style="margin-top:24pt;border-top:0.5pt solid #bbbbbb;padding-top:6pt;font-size:8pt;color:#888888">THR Éditions SARL · contact@senegalthr.com · +221 77 612 82 21 / 77 336 11 42 · Dakar, Sénégal</p>
-</body></html>`;
-  const blob = new Blob(['﻿' + html], { type: 'application/msword' });
+/* ── Génération DOCX réel (OOXML), sans dépendance externe ──────────────
+   Avant : un fichier HTML avec extension .doc (astuce reconnue par Word
+   desktop mais qui échoue souvent sur Word mobile, Google Docs, etc. — le
+   fichier n'est tout simplement pas un vrai document Word). Ici on
+   construit un .docx conforme : un ZIP (méthode STORE, sans compression —
+   documents courts, le gain de deflate serait négligeable et éviter d'avoir
+   à l'implémenter simplifie beaucoup le code) contenant le XML
+   WordprocessingML minimal requis. Ouvre nativement partout. */
+function _crc32(bytes) {
+  if (!_crc32.table) {
+    _crc32.table = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      _crc32.table[n] = c >>> 0;
+    }
+  }
+  let crc = 0xFFFFFFFF;
+  for (let i = 0; i < bytes.length; i++) crc = _crc32.table[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+function _zipBuild(files) {
+  // files: [{name, data:Uint8Array}] — ZIP non compressé (store) : suffisant
+  // pour de petits documents texte/images, pas besoin d'implémenter deflate.
+  const enc = new TextEncoder();
+  const localParts = [], centralParts = [];
+  let offset = 0;
+  const dosTime = 0, dosDate = 0x21; // date fixe arbitraire, sans conséquence
+  files.forEach(f => {
+    const nameBytes = enc.encode(f.name);
+    const crc = _crc32(f.data);
+    const size = f.data.length;
+    const local = new Uint8Array(30 + nameBytes.length + size);
+    const dv = new DataView(local.buffer);
+    dv.setUint32(0, 0x04034b50, true);
+    dv.setUint16(4, 20, true);
+    dv.setUint16(6, 0, true);
+    dv.setUint16(8, 0, true);
+    dv.setUint16(10, dosTime, true);
+    dv.setUint16(12, dosDate, true);
+    dv.setUint32(14, crc, true);
+    dv.setUint32(18, size, true);
+    dv.setUint32(22, size, true);
+    dv.setUint16(26, nameBytes.length, true);
+    dv.setUint16(28, 0, true);
+    local.set(nameBytes, 30);
+    local.set(f.data, 30 + nameBytes.length);
+    localParts.push(local);
+
+    const central = new Uint8Array(46 + nameBytes.length);
+    const cdv = new DataView(central.buffer);
+    cdv.setUint32(0, 0x02014b50, true);
+    cdv.setUint16(4, 20, true);
+    cdv.setUint16(6, 20, true);
+    cdv.setUint16(8, 0, true);
+    cdv.setUint16(10, 0, true);
+    cdv.setUint16(12, dosTime, true);
+    cdv.setUint16(14, dosDate, true);
+    cdv.setUint32(16, crc, true);
+    cdv.setUint32(20, size, true);
+    cdv.setUint32(24, size, true);
+    cdv.setUint16(28, nameBytes.length, true);
+    cdv.setUint16(30, 0, true);
+    cdv.setUint16(32, 0, true);
+    cdv.setUint16(34, 0, true);
+    cdv.setUint16(36, 0, true);
+    cdv.setUint32(38, 0, true);
+    cdv.setUint32(42, offset, true);
+    central.set(nameBytes, 46);
+    centralParts.push(central);
+
+    offset += local.length;
+  });
+  const centralStart = offset;
+  const centralSize = centralParts.reduce((s, c) => s + c.length, 0);
+  const eocd = new Uint8Array(22);
+  const edv = new DataView(eocd.buffer);
+  edv.setUint32(0, 0x06054b50, true);
+  edv.setUint16(8, files.length, true);
+  edv.setUint16(10, files.length, true);
+  edv.setUint32(12, centralSize, true);
+  edv.setUint32(16, centralStart, true);
+  const out = new Uint8Array(offset + centralSize + 22);
+  let p = 0;
+  localParts.forEach(l => { out.set(l, p); p += l.length; });
+  centralParts.forEach(c => { out.set(c, p); p += c.length; });
+  out.set(eocd, p);
+  return out;
+}
+/* Un "run" WordprocessingML : gère les retours à la ligne internes (\n → <w:br/>)
+   sans casser la mise en forme (rPr) portée par le run. */
+function _docxRun(text, rPr) {
+  const lines = String(text == null ? '' : text).split('\n');
+  let inner = '';
+  lines.forEach((line, i) => {
+    if (i > 0) inner += '<w:br/>';
+    inner += `<w:t xml:space="preserve">${escapeHtml(line)}</w:t>`;
+  });
+  return `<w:r>${rPr || ''}${inner}</w:r>`;
+}
+/* Assemble le .docx complet (XML + éventuels médias) en Blob prêt à télécharger. */
+function _buildDocxBlob(title, bodyXml, mediaFiles) {
+  mediaFiles = mediaFiles || [];
+  const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>${bodyXml}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1417" w:right="1247" w:bottom="1417" w:left="1247"/></w:sectPr></w:body></w:document>`;
+
+  const contentTypesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpeg" ContentType="image/jpeg"/><Default Extension="jpg" ContentType="image/jpeg"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`;
+
+  const relsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>`;
+
+  const imgRels = mediaFiles.map(m => `<Relationship Id="${m.relId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/${m.name}"/>`).join('');
+  const docRelsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${imgRels}</Relationships>`;
+
+  const isoDate = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+  const coreXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${escapeHtml(title)}</dc:title><dc:creator>THR Éditions</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${isoDate}</dcterms:created></cp:coreProperties>`;
+
+  const appXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Mission Ctrl Sénégal</Application></Properties>`;
+
+  const enc = new TextEncoder();
+  const files = [
+    { name: '[Content_Types].xml', data: enc.encode(contentTypesXml) },
+    { name: '_rels/.rels', data: enc.encode(relsXml) },
+    { name: 'word/document.xml', data: enc.encode(documentXml) },
+    { name: 'word/_rels/document.xml.rels', data: enc.encode(docRelsXml) },
+    { name: 'docProps/core.xml', data: enc.encode(coreXml) },
+    { name: 'docProps/app.xml', data: enc.encode(appXml) },
+  ];
+  mediaFiles.forEach(m => files.push({ name: 'word/media/' + m.name, data: m.data }));
+  const zipBytes = _zipBuild(files);
+  return new Blob([zipBytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+}
+function _docxDownload(blob, filename) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = filename.replace(/\.doc$/i, '') + '.doc';
+  a.download = filename.replace(/\.docx?$/i, '') + '.docx';
   document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+/* Lettre A4 : en-tête THR or, date à Dakar, objet, corps justifié,
+   signature co-gérants, pied de page contact. */
+function exportWordDoc(filename, title, text, opts = {}) {
+  const clean = humanizeDocText(text);
+  const dateStr = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const rGold = '<w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/><w:b/><w:color w:val="C4872A"/><w:sz w:val="28"/></w:rPr>';
+  const rContact = '<w:rPr><w:color w:val="555555"/><w:sz w:val="17"/></w:rPr>';
+  const rObjet = '<w:rPr><w:b/></w:rPr>';
+  const rSign = '<w:rPr><w:sz w:val="19"/><w:color w:val="555555"/></w:rPr>';
+  const rFooter = '<w:rPr><w:sz w:val="16"/><w:color w:val="888888"/></w:rPr>';
+
+  const bodyParas = clean.split(/\n{2,}/).map(p =>
+    `<w:p><w:pPr><w:spacing w:after="240" w:line="360" w:lineRule="auto"/><w:jc w:val="both"/></w:pPr>${_docxRun(p)}</w:p>`).join('');
+  const header = `<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="12" w:space="4" w:color="C4872A"/></w:pBdr></w:pPr>${_docxRun("SÉNÉGAL, TERRE D'HISTOIRE ET DE RENCONTRES", rGold)}</w:p>` +
+    `<w:p><w:pPr><w:jc w:val="right"/></w:pPr>${_docxRun('THR Éditions SARL\ncontact@senegalthr.com\nDakar, Sénégal', rContact)}</w:p>`;
+  const dateP = `<w:p><w:pPr><w:jc w:val="right"/><w:spacing w:before="240" w:after="120"/></w:pPr>${_docxRun('Dakar, le ' + dateStr)}</w:p>`;
+  const objetP = opts.objet === false ? '' : `<w:p><w:pPr><w:spacing w:after="240"/></w:pPr>${_docxRun('Objet : ' + (opts.objet || title), rObjet)}</w:p>`;
+  const signP = opts.signature === false ? '' : `<w:p><w:pPr><w:spacing w:before="400"/></w:pPr>${_docxRun('Attab Sonko · Cheikh Anta Diop\nCo-gérants, THR Éditions · Mission « Sénégal, Terre d\'Histoire et de Rencontres »', rSign)}</w:p>`;
+  const footerP = `<w:p><w:pPr><w:pBdr><w:top w:val="single" w:sz="4" w:space="4" w:color="BBBBBB"/></w:pBdr><w:spacing w:before="360"/></w:pPr>${_docxRun('THR Éditions SARL · contact@senegalthr.com · +221 77 612 82 21 / 77 336 11 42 · Dakar, Sénégal', rFooter)}</w:p>`;
+
+  const blob = _buildDocxBlob(title, header + dateP + objetP + bodyParas + signP + footerP);
+  _docxDownload(blob, filename);
   showToast('📄 Document Word téléchargé', 'ok');
 }
 /* Registre : permet aux boutons injectés dans innerHTML d'exporter le dernier doc */
@@ -7632,8 +7774,23 @@ function finPerDiemToday(evt) {
   if (btn) setTimeout(() => enableBtn(btn), 500);
 }
 
-/* Justificatifs du mois en Word AVEC les photos des reçus (format MHTML :
-   les images s'affichent dans Word/LibreOffice). Dossier prêt pour le
+function _dataUrlToBytes(dataUrl) {
+  const b64 = (dataUrl || '').split(',')[1] || '';
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+async function _imageDimsFromBytes(bytes) {
+  try {
+    const bitmap = await createImageBitmap(new Blob([bytes], { type: 'image/jpeg' }));
+    const d = { w: bitmap.width, h: bitmap.height };
+    if (bitmap.close) bitmap.close();
+    return d;
+  } catch (e) { return { w: 800, h: 600 }; } // repli si le décodage échoue (format inattendu)
+}
+/* Justificatifs du mois en Word (.docx réel) AVEC les photos des reçus
+   intégrées (image inline WordprocessingML). Dossier prêt pour le
    comptable externe, le CPF et les bailleurs. */
 async function finExportJustificatifs(evt) {
   const btn = evt && evt.currentTarget; if (btn) disableBtn(btn);
@@ -7645,31 +7802,43 @@ async function finExportJustificatifs(evt) {
     if (receipts.length === 0) { showToast('Aucun reçu sur cette période', 'warn'); if (btn) enableBtn(btn); return; }
     const total = receipts.reduce((s, r) => s + (r.amount || 0), 0);
     const dateStr = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-    const B = 'MCTRL-JUSTIF-BOUND';
-    let html = `<html xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Justificatifs</title><style>@page{size:A4;margin:2cm}body{font-family:Calibri,Arial,sans-serif;font-size:10.5pt;color:#1a1a1a}</style></head><body>
-<table width="100%" style="border-bottom:2pt solid #C4872A"><tr><td style="font-family:Cambria,serif;font-size:13pt;font-weight:bold;color:#C4872A;padding-bottom:6pt">SÉNÉGAL, TERRE D'HISTOIRE ET DE RENCONTRES</td><td align="right" style="font-size:8pt;color:#555">THR Éditions SARL<br>Dakar, le ${dateStr}</td></tr></table>
-<p style="margin:14pt 0"><b>PIÈCES JUSTIFICATIVES${moisStr.trim() ? ' — ' + escapeHtml(moisStr.trim()) : ' — INTÉGRALITÉ'}</b><br>${receipts.length} justificatif(s) · Total : ${fmtFCFA(total)}</p>`;
-    const parts = [];
-    receipts.forEach((r, i) => {
-      const imgName = 'justif' + (i + 1) + '.jpg';
-      html += `<div style="page-break-inside:avoid;margin-bottom:18pt;border:0.5pt solid #cccccc;padding:8pt">
-<p style="margin:0 0 6pt 0"><b>N°${i + 1} — ${fmtFCFA(r.amount || 0)}</b> · ${escapeHtml(CAT_LABELS[r.cat] || r.cat || '')} · ${new Date(r.ts).toLocaleDateString('fr-FR')}${r.devise && r.devise !== 'XOF' ? ' · ' + r.montantOriginal + ' ' + r.devise : ''}<br><span style="font-size:9pt;color:#555">${escapeHtml(r.description || '')}</span></p>
-<img src="${imgName}" style="max-width:420pt;max-height:340pt"></div>`;
-      parts.push({ name: imgName, b64: (r.dataUrl || '').split(',')[1] || '' });
-    });
-    html += `<p style="margin-top:20pt;border-top:0.5pt solid #bbb;padding-top:6pt;font-size:8pt;color:#888">Registre généré par Mission CTRL · THR Éditions SARL · contact@senegalthr.com</p></body></html>`;
-    let mhtml = `MIME-Version: 1.0\r\nContent-Type: multipart/related; boundary="${B}"\r\n\r\n--${B}\r\nContent-Type: text/html; charset="utf-8"\r\nContent-Location: doc.html\r\n\r\n${html}\r\n`;
-    parts.forEach(p => {
-      if (!p.b64) return;
-      mhtml += `--${B}\r\nContent-Type: image/jpeg\r\nContent-Transfer-Encoding: base64\r\nContent-Location: ${p.name}\r\n\r\n${p.b64}\r\n`;
-    });
-    mhtml += `--${B}--`;
-    const blob = new Blob([mhtml], { type: 'application/msword' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'justificatifs-' + (moisStr.trim() || 'tout') + '.doc';
-    document.body.appendChild(a); a.click();
-    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    const title = 'Justificatifs' + (moisStr.trim() ? ' — ' + moisStr.trim() : ' — Intégralité');
+
+    const rGold = '<w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/><w:b/><w:color w:val="C4872A"/><w:sz w:val="26"/></w:rPr>';
+    const rContact = '<w:rPr><w:color w:val="555555"/><w:sz w:val="16"/></w:rPr>';
+    const rBold = '<w:rPr><w:b/></w:rPr>';
+    const rMuted = '<w:rPr><w:color w:val="555555"/><w:sz w:val="18"/></w:rPr>';
+    const rFooter = '<w:rPr><w:sz w:val="16"/><w:color w:val="888888"/></w:rPr>';
+
+    const header = `<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="12" w:space="4" w:color="C4872A"/></w:pBdr></w:pPr>${_docxRun("SÉNÉGAL, TERRE D'HISTOIRE ET DE RENCONTRES", rGold)}</w:p>` +
+      `<w:p><w:pPr><w:jc w:val="right"/></w:pPr>${_docxRun('THR Éditions SARL\nDakar, le ' + dateStr, rContact)}</w:p>`;
+    const introP = `<w:p><w:pPr><w:spacing w:before="240" w:after="240"/></w:pPr>${_docxRun('PIÈCES JUSTIFICATIVES — ' + (moisStr.trim() ? moisStr.trim().toUpperCase() : 'INTÉGRALITÉ'), rBold)}${_docxRun('\n' + receipts.length + ' justificatif(s) · Total : ' + fmtFCFA(total))}</w:p>`;
+
+    const maxWEmu = 380 * 12700, maxHEmu = 280 * 12700;
+    const mediaFiles = [];
+    let entriesXml = '';
+    for (let i = 0; i < receipts.length; i++) {
+      const r = receipts[i];
+      const bytes = _dataUrlToBytes(r.dataUrl);
+      const infoP = `<w:p><w:pPr><w:spacing w:before="200" w:after="80"/></w:pPr>${_docxRun(`N°${i + 1} — ${fmtFCFA(r.amount || 0)} · ${CAT_LABELS[r.cat] || r.cat || ''} · ${new Date(r.ts).toLocaleDateString('fr-FR')}` + (r.devise && r.devise !== 'XOF' ? ` · ${r.montantOriginal} ${r.devise}` : ''), rBold)}${_docxRun('\n' + (r.description || ''), rMuted)}</w:p>`;
+      let imgP = '';
+      if (bytes.length) {
+        const { w, h } = await _imageDimsFromBytes(bytes);
+        const aspect = w / h || 1;
+        let cx, cy;
+        if (aspect >= maxWEmu / maxHEmu) { cx = maxWEmu; cy = Math.round(maxWEmu / aspect); }
+        else { cy = maxHEmu; cx = Math.round(maxHEmu * aspect); }
+        const relId = 'rIdImg' + (i + 1);
+        const name = 'receipt' + (i + 1) + '.jpg';
+        mediaFiles.push({ relId, name, data: bytes });
+        imgP = `<w:p><w:pPr><w:spacing w:after="200"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${i + 1}" name="Reçu ${i + 1}"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${i + 1}" name="Reçu ${i + 1}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${relId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
+      }
+      entriesXml += infoP + imgP;
+    }
+    const footerP = `<w:p><w:pPr><w:pBdr><w:top w:val="single" w:sz="4" w:space="4" w:color="BBBBBB"/></w:pBdr><w:spacing w:before="360"/></w:pPr>${_docxRun('Registre généré par Mission CTRL · THR Éditions SARL · contact@senegalthr.com', rFooter)}</w:p>`;
+
+    const blob = _buildDocxBlob(title, header + introP + entriesXml + footerP, mediaFiles);
+    _docxDownload(blob, 'justificatifs-' + (moisStr.trim() || 'tout'));
     showToast('📎 ' + receipts.length + ' justificatif(s) exportés en Word', 'ok');
     auditLog('Export justificatifs', (moisStr.trim() || 'tout') + ' · ' + receipts.length + ' pièces');
   } catch (e) { showToast('Export échoué : ' + e.message, 'error'); }
