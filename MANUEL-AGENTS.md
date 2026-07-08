@@ -36,7 +36,7 @@ Les **7 codes de rôle** (et le PIN du Coffre-Fort) se synchronisent désormais 
 
 C'est l'écran d'accueil, la vue d'ensemble.
 
-- **☀️ Brief du Jour** *(en tête d'écran)* : l'essentiel en un coup d'œil — jour X/54 (ou **⏳ J-XXX** avant le départ), **site du jour** (planning), **météo du site** (si clé configurée), disponible trésorerie, approbations en attente, risques actifs. Bouton **📣 Envoyer à l'équipe** → le brief part dans le groupe Telegram. Le rituel du matin.
+- **☀️ Brief du Jour** *(en tête d'écran)* : l'essentiel en un coup d'œil — jour X/56 (ou **⏳ J-XXX** avant le départ), **site du jour** (planning), **météo du site** (si clé configurée), disponible trésorerie, approbations en attente, risques actifs. Bouton **📣 Envoyer à l'équipe** → le brief part dans le groupe Telegram. Le rituel du matin.
 - **🔔 Notifications push** : bouton **toujours visible**, qui bascule entre **« Activer »** et **« Désactiver les notifications sur cet appareil »** selon l'état réel de l'abonnement — les alertes importantes (approbation CPF à valider, alertes Direction, météo à risque) arrivent **même app fermée** une fois activées.
 
   > ⚠️ **Sur iPhone/iPad**, Safari refuse les notifications tant que l'app n'est pas **installée sur l'écran d'accueil** (voir « Installer l'application » ci-dessous) — c'est une règle d'Apple. Le bouton l'indique clairement s'il faut installer d'abord.
@@ -237,7 +237,7 @@ L'agent le plus complet. Il guide les prises de vue ET construit le livre.
 
 **📐 Maquette du Livre :** la structure page à page.
 1. Choisir la **Langue(s)** (FR, bilingue, trilingue FR+EN+AR).
-2. Choisir le **Nombre de pages cible** (128 à 288, défaut 224).
+2. Choisir le **Nombre de pages cible** (128 à 288, défaut 210 — la structure réelle du Livre Vivant pour 36 sites).
 3. **📐 Générer maquette** → Claude conçoit la structure : pleines pages, doubles pages, légendes, chapitres, emplacements sponsors.
 4. **📋 Copier** pour récupérer le plan.
 

@@ -24,6 +24,7 @@ Elle est organisée en **17 agents** (onglets), chacun couvrant un métier de la
 ### Connexion
 - Un **code d'accès** est demandé à l'ouverture (mur d'authentification)
 - Le **Coffre-Fort** a en plus son propre code PIN
+- Le code d'accès (comme le PIN du Coffre-Fort) est **redemandé à chaque relance de l'app**, sur téléphone comme sur ordinateur — il n'est jamais mémorisé automatiquement. En contrepartie, les codes eux-mêmes se synchronisent entre tous les appareils de l'équipe : pas besoin de les ressaisir sur un nouveau téléphone
 
 ### Fonctionne hors-ligne
 - Sur le terrain, beaucoup de zones n'ont pas de réseau. **Ce n'est pas un problème.**
@@ -78,6 +79,8 @@ Les agents sont regroupés ici par métier pour faciliter la formation.
 - **Notifications Critiques** : les alertes importantes
 - **Journal d'Activité** : l'historique de ce qui se passe dans l'app
 - **Diffusion Telegram** : envoyer un message à l'équipe (📣) ou une urgence (🚨)
+- **🔔 Notifications push** : un bouton toujours visible bascule entre Activer/Désactiver — reçoit les alertes même app fermée. *Sur iPhone/iPad, ça ne marche qu'une fois l'app installée sur l'écran d'accueil (règle Apple).*
+- **📲 Installer l'application** : carte dédiée avec la marche à suivre (automatique sur Android, manuelle via Partager → Sur l'écran d'accueil sur iPhone/iPad)
 
 **Comment l'utiliser :** c'est l'écran d'accueil. On le consulte plusieurs fois par jour. On coche la check-list, on valide les approbations, on diffuse les messages importants.
 
@@ -114,6 +117,8 @@ Les agents sont regroupés ici par métier pour faciliter la formation.
 - **Historique des sessions GPS**
 
 **Comment l'utiliser :** sur chaque site, lancer le chrono. Le soir, mettre à jour les jours/sites faits. C'est ce qui nourrit le Risk Manager.
+
+> 🗺 Sur la **Carte** (onglet dédié), un point bleu façon Google Maps montre ta position exacte avec un indicateur de qualité du signal (🎯 précis / 📶 correct / 📡 approximatif Wi-Fi) — sortir à ciel ouvert donne toujours le signal le plus précis. La navigation GPS propose un vrai itinéraire routier si une clé OpenRouteService (gratuite) est configurée, sinon un guidage à vol d'oiseau.
 
 #### 11 · Logistique — le matériel
 **Rôle :** gérer le parc technique et les sauvegardes.
@@ -218,11 +223,13 @@ Les agents sont regroupés ici par métier pour faciliter la formation.
 #### 10 · Juridique — les autorisations
 **Rôle :** gérer les autorisations de tournage et les droits.
 **Ce qu'il fait :**
-- 32 **autorisations** pré-remplies (organismes réels) avec statut (validé / en cours / relance)
+- 36 **autorisations** pré-remplies (organismes réels) avec statut (validé / en cours / relance)
 - Journal juridique
 - Relances personnalisées, formulaires de droit à l'image (FR/Wolof), checklists, contrats de cession *(IA)*
 
-**Comment l'utiliser :** suivre l'état de chaque autorisation, passer en « relance » celles qui tardent (cela peut alerter l'équipe).
+**Comment l'utiliser :** suivre l'état de chaque autorisation, passer en « relance » celles qui tardent (cela peut alerter l'équipe). Une autorisation restée « en cours » plus de 15 jours sans mise à jour affiche automatiquement un badge d'alerte, pour ne pas en oublier une avant le départ.
+
+> 📄 Tous les courriers générés (relances, contrats, formulaires…) s'exportent en **vrai document Word (.docx)**, prêt à envoyer, avec en-tête de la mission et signature — s'ouvre normalement dans Word, Google Docs ou toute autre application.
 
 ---
 
@@ -301,9 +308,9 @@ Chaque membre entre un **code d'accès** à l'ouverture. Ce code débloque uniqu
 
 **Gestion des codes :** la Direction dispose d'un panneau **« 🔑 Gestion des Accès »** dans le Superviseur pour modifier les codes de chaque rôle (sauvegardés dans le cloud). Communiquez à chaque membre le code de son rôle uniquement.
 
-**Changer d'accès / verrouiller :** bouton « 🔒 Changer d'accès » (panneau Gestion des Accès). Pour réinitialiser sur l'appareil d'un membre, effacer les données du site et ressaisir le code.
+**Changer d'accès / verrouiller :** bouton « 🔒 Changer d'accès » (panneau Gestion des Accès) — permet de changer de rôle sur le même appareil sans rien effacer.
 
-> Le code est mémorisé sur l'appareil : le membre ne le ressaisit pas à chaque ouverture.
+> ⚠️ Le code d'accès est **redemandé à chaque relance de l'app** (téléphone comme ordinateur), il n'est jamais mémorisé automatiquement d'une session à l'autre — c'est volontaire, pour la sécurité. En revanche, les codes de rôle et le PIN du Coffre-Fort se **synchronisent automatiquement** entre tous les appareils de l'équipe : aucun besoin de les ressaisir sur un nouveau téléphone, seul le code personnel de chacun est à entrer.
 
 **Tableau de bord Superviseur — version allégée :** tous les rôles voient le Superviseur, mais les membres non-Direction n'y voient que la **progression mission** (sites/jours/km, sans budget), la **check-list du jour** et leur navigation. Sont masqués pour eux : budget, file d'approbations, diffusion Telegram, gestion des accès.
 
