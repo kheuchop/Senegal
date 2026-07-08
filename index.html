@@ -7463,7 +7463,10 @@ Réponds UNIQUEMENT avec ce JSON valide, sans markdown ni backticks :
    ============================================================ */
 const CAT_COLORS = { transport:'#e8c97e', carburant:'#ff8a65', hebergement:'#00e676', nourriture:'#4db6ac', equipement:'#7c6fff', api:'#d6a53a', impression:'#ffab40', communication:'#f06292', divers:'#90a4ae' };
 const CAT_LABELS = { transport:'Transport', carburant:'Carburant', hebergement:'Hébergement', nourriture:'Nourriture / Per diem', equipement:'Équipement', api:'API Cloud', impression:'Impression', communication:'Communication', divers:'Divers' };
-const CAT_BUDGET = { transport:11000000, carburant:1100000, hebergement:12000000, nourriture:2900000, equipement:20000000, api:5000000, impression:25000000, communication:10000000, divers:13000000 };
+// Transport/carburant ajustés (+900km réels suite à la scission de 4 sites en
+// 2026-07, cf. MISSION.km) ; compensé par la marge "divers" pour garder le
+// total à 100M FCFA (engagement investisseurs inchangé).
+const CAT_BUDGET = { transport:11400000, carburant:1200000, hebergement:12000000, nourriture:2900000, equipement:20000000, api:5000000, impression:25000000, communication:10000000, divers:12500000 };
 
 /* TRÉSORERIE — plan de financement échelonné (bilan financier, section 3, 2027).
    Encaissements par tranche (105M au total : 100M budget + 5M solde). */
@@ -8550,6 +8553,14 @@ function checkMissionAlerts() {
   // 4. Autorisation en relance (Juridique) — opérationnel
   a10State.auths.filter(a => a.status === 'relance').forEach(a => {
     raiseAlert('relance_' + a.id, `Autorisation à relancer : ${a.site} — ${a.org} (réf. ${a.ref}). Statut : relance requise.`, false);
+  });
+
+  // 4bis. Autorisation "en cours" qui stagne (15j+ sans mise à jour) — opérationnel
+  a10State.auths.filter(a => a.status === 'encours').forEach(a => {
+    const days = _a10DaysSinceUpdate(a);
+    if (days >= A10_STALE_DAYS) {
+      raiseAlert('stale_' + a.id, `Autorisation en attente depuis ${days} jours sans mise à jour : ${a.site} — ${a.org} (réf. ${a.ref}). À relancer ?`, false);
+    }
   });
 
   // 5. Durée mission dépassée — opérationnel
@@ -11150,7 +11161,7 @@ Angle stratégique : ${angle === 'visibilite' ? 'Visibilité internationale & im
   diaspora: (amt, angle) => ({
     title: 'Diaspora Sénégalaise',
     sections: [
-      { head:"APPEL À LA DIASPORA", body:`Ce livre, c'est votre Sénégal. 32 lieux que vous portez dans votre mémoire, photographiés avec la précision et l'amour qu'ils méritent. Rejoignez les fondateurs de ce projet — un acte de fierté et de transmission.` },
+      { head:"APPEL À LA DIASPORA", body:`Ce livre, c'est votre Sénégal. 36 lieux que vous portez dans votre mémoire, photographiés avec la précision et l'amour qu'ils méritent. Rejoignez les fondateurs de ce projet — un acte de fierté et de transmission.` },
       { head:"INDICATEURS D'IMPACT", body:"__KPIS__" },
       { head:"MODALITÉS DE PARTICIPATION", body:`Contribution : à partir de ${Math.round(amt).toLocaleString('fr-FR')} FCFA
 • Réservation prioritaire exemplaire numéroté
@@ -11392,10 +11403,14 @@ function a10RenderTable() {
   items.forEach(a => {
     const div = document.createElement('div');
     div.className = `a10-auth-row s-${a.status}`;
+    const staleDays = a.status === 'encours' ? _a10DaysSinceUpdate(a) : 0;
+    const staleBadge = (a.status === 'encours' && staleDays >= A10_STALE_DAYS)
+      ? `<div style="font-size:0.46rem;color:var(--amber);margin-top:2px">⏳ ${staleDays}j sans mise à jour</div>` : '';
     div.innerHTML = `<div class="a10-auth-info">
       <div class="a10-auth-site">${escapeHtml(a.site)}</div>
       <div class="a10-auth-org">${escapeHtml(a.org)}</div>
       <div class="a10-auth-ref">Réf: ${escapeHtml(a.ref)} · ${escapeHtml(a.date)}</div>
+      ${staleBadge}
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">
       <div class="a10-auth-status s-${a.status}">${statusLabel[a.status]}</div>
@@ -11406,11 +11421,21 @@ function a10RenderTable() {
   });
 }
 
+/* Autorisation "en cours" stagnante : dernière mise à jour de statut trop
+   ancienne (défaut 15j) sans passer par validée/relance. Lazy-backfill du
+   timestamp pour les autorisations déjà existantes avant l'ajout de ce
+   champ (évite une fausse alerte immédiate sur les 36 entrées de base). */
+const A10_STALE_DAYS = 15;
+function _a10DaysSinceUpdate(a) {
+  if (!a.updatedTs) a.updatedTs = Date.now();
+  return Math.floor((Date.now() - a.updatedTs) / 86400000);
+}
 function a10CycleStatus(id) {
   const a = a10State.auths.find(x => x.id === id);
   if (!a) return;
   const cycle = { encours: 'valide', valide: 'relance', relance: 'encours' };
   a.status = cycle[a.status] || 'encours';
+  a.updatedTs = Date.now();
   a10RenderTable();
   a10AddJournal(`Statut mis à jour : ${a.site} → ${a.status}`);
   addActivity('⚖️', `Autorisation ${a.site} : statut → ${a.status}`, now());
@@ -11471,7 +11496,7 @@ function a10AddAuth(evt) {
   const ref = document.getElementById('a10-new-ref')?.value.trim() || 'REF-' + Date.now();
   if (!site || !org) { showToast('Site et organisme requis', 'warn'); enableBtn(btn); return; }
   const siteName = SITES.find(s => s.id == site)?.name || site;
-  a10State.auths.unshift({ id: 'a10_' + Date.now(), site: siteName, org, status, ref, date: new Date().toLocaleDateString('fr-FR'), contact: '—' });
+  a10State.auths.unshift({ id: 'a10_' + Date.now(), site: siteName, org, status, ref, date: new Date().toLocaleDateString('fr-FR'), contact: '—', updatedTs: Date.now() });
   a10RenderTable();
   a10AddJournal(`Nouvelle autorisation ajoutée : ${siteName} — ${org}`);
   addActivity('⚖️', `Autorisation ajoutée : ${siteName}`, now());

@@ -327,6 +327,8 @@ Gère les autorisations de tournage et les droits.
 
 **Suivi des autorisations :** liste filtrable (Toutes / Validées / En cours / Relance). Cliquer sur le statut d'une ligne le fait évoluer.
 
+> ⏳ Une autorisation **« En cours »** depuis plus de **15 jours** sans mise à jour de statut affiche un badge d'alerte sur sa ligne, et déclenche une notification (si Telegram est configuré) — pour ne pas laisser une demande traîner sans s'en apercevoir avant le départ.
+
 **Ajouter une autorisation :**
 1. Choisir le **Site**, l'**Organisme**, le **Statut**, la **Référence dossier**.
 2. **➕ Enregistrer**.
