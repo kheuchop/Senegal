@@ -47,11 +47,13 @@ export default async function handler(req, res) {
     if (!prompt) return res.status(400).json({ error: 'BAD_REQUEST', hint: 'prompt requis' });
 
     const model = process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image';
+    // Clé dans l'en-tête (pas dans l'URL) : les URLs peuvent finir dans des
+    // journaux de proxys/serveurs, les en-têtes non.
     const upstream = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
       {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: { responseModalities: ['IMAGE'] },

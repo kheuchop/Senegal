@@ -9425,7 +9425,7 @@ function a6GetBriefText() {
 
 const A6_DA_IDENTITY = `Agis en tant que Directeur Artistique de renommée internationale, expert en infographie et en édition de "beaux-livres" (photographie haut de gamme, culture, art). Tu possèdes le niveau d'exigence des plus grandes maisons d'édition de luxe, combiné à l'œil photographique de National Geographic.
 
-Tu supervises la direction visuelle, graphique et éditoriale du projet : « Sénégal, Terre d'Histoire et de Rencontres ». Ouvrage de prestige, fruit d'une mission de documentation sur 36 sites au Sénégal, 56 jours de terrain. Format : 210×280mm, 224 pages, 500 exemplaires numérotés.
+Tu supervises la direction visuelle, graphique et éditoriale du projet : « Sénégal, Terre d'Histoire et de Rencontres ». Ouvrage de prestige, fruit d'une mission de documentation sur 36 sites au Sénégal, 56 jours de terrain. Format : 210×280mm, 210 pages, 500 exemplaires numérotés.
 
 CONTRAINTE FONDAMENTALE — TRILINGUE : Le livre est intégralement trilingue Français / English / عربية (arabe). TOUTES les légendes, captions, textes de pages, introductions, ouvertures de chapitres, 4e de couverture et notes de terrain doivent être produits dans les TROIS langues simultanément, avec le même soin et la même qualité littéraire dans chaque langue. L'arabe est en direction droite-gauche, registre soutenu.
 
@@ -10321,7 +10321,7 @@ async function a6GenEquipmentRecs(btn, mode) {
 const a7State = { lang: 'fr', outputMode: 'fr', library: [], lastOutput: { fr:'', en:'', ar:'' } };
 
 /* ── Identité rédacteur A7 ── */
-const A7_WRITER_IDENTITY = `Tu es rédacteur et traducteur en chef de la mission documentaire SÉNÉGAL V3 : « Sénégal, Terre d'Histoire et de Rencontres ». Tu rédiges pour un livre collector luxe 224 pages, format 210×280mm. Registre littéraire et journalistique haut de gamme : précis, sensible, ancré dans le réel, jamais générique. Même niveau d'exigence dans chaque langue.`;
+const A7_WRITER_IDENTITY = `Tu es rédacteur et traducteur en chef de la mission documentaire SÉNÉGAL V3 : « Sénégal, Terre d'Histoire et de Rencontres ». Tu rédiges pour un livre collector luxe 210 pages, format 210×280mm. Registre littéraire et journalistique haut de gamme : précis, sensible, ancré dans le réel, jamais générique. Même niveau d'exigence dans chaque langue.`;
 
 async function a7CallClaude(systemPrompt, userContent, maxTok) {
   // userContent : chaîne (texte) OU tableau de blocs (image + texte) pour Claude Vision
@@ -10562,7 +10562,7 @@ async function a7GenPageText(btn) {
     quatrieme:'180-220 mots (4e de couverture)'
   };
   const ctx = site ? `Site : ${site}.` : 'Texte général de la mission.';
-  const sys = `Tu génères les textes du livre 224 pages "Sénégal, Terre d'Histoire et de Rencontres". Chaque texte doit sembler écrit par un écrivain-journaliste de terrain, pas par une IA. Style : précis, ancré, sensible.`;
+  const sys = `Tu génères les textes du livre 210 pages "Sénégal, Terre d'Histoire et de Rencontres". Chaque texte doit sembler écrit par un écrivain-journaliste de terrain, pas par une IA. Style : précis, ancré, sensible.`;
   try {
     const data = await a7CallClaudeJSON(sys,
       `Type de page : ${type} (cible : ${targets[type]||'100-200 mots'}).\n${ctx}\nNotes terrain (contexte, angle) : ${notes||'Aucune note spécifique.'}\n\nGénère le texte en 3 langues.\nJSON UNIQUEMENT : {"fr":"texte français","en":"English text","ar":"النص العربي","note_da":"courte note du DA sur le placement éditorial (FR)"}`, 1200);
@@ -10884,7 +10884,7 @@ function a8RenderHistory() {
 }
 
 /* ── Identité correcteur A8 ── */
-const A8_EDITOR_IDENTITY = `Tu es correcteur éditorial senior de la mission documentaire SÉNÉGAL V3 : livre collector luxe 224 pages. Tu corriges avec exigence de maison d'édition haut-de-gamme (NatGeo, Actes Sud, La Martinière). Tu détectes le ton IA, les tournures mortes, les anglicismes, les clichés. Tu proposes toujours une version réécrite, pas seulement une liste de remarques.`;
+const A8_EDITOR_IDENTITY = `Tu es correcteur éditorial senior de la mission documentaire SÉNÉGAL V3 : livre collector luxe 210 pages. Tu corriges avec exigence de maison d'édition haut-de-gamme (NatGeo, Actes Sud, La Martinière). Tu détectes le ton IA, les tournures mortes, les anglicismes, les clichés. Tu proposes toujours une version réécrite, pas seulement une liste de remarques.`;
 
 async function a8CallClaude(sys, txt, tok) {
   const res = await apiFetch('/api/claude', {
@@ -11244,7 +11244,7 @@ Argument principal à mettre en avant : ${A9_ANGLE_LABELS[angle] || angle}
 Contexte mission (chiffres réels, à intégrer naturellement) :
 - 36 sites photographiés sur tout le territoire sénégalais
 - 56 jours de terrain, 84 jours de mission au total, ~11 700 km
-- Livre d'art de 224 pages, 2 éditions : 2000 standards (50 000 FCFA) + 500 luxe numérotés (85 000 FCFA)
+- Livre d'art de 210 pages, 2 éditions : 2000 standards (50 000 FCFA) + 500 luxe numérotés (85 000 FCFA)
 - Budget global du projet : 100 000 000 FCFA
 - Livraison prévue 2027, dépôt légal BN Sénégal + ISBN international
 
@@ -11578,7 +11578,7 @@ function initAgent10() {
 }
 
 /* ── A10 : Claude helpers ── */
-const A10_LEGAL_IDENTITY = `Tu es juriste expert en droit de l'image, droit de la propriété intellectuelle et droit administratif sénégalais. Tu rédiges pour la Mission Documentaire SÉNÉGAL V3 — livre collector 224 pages, 500 exemplaires numérotés. Tes documents sont professionnels, juridiquement solides et adaptés au contexte sénégalais. Tu maîtrises le français juridique et l'arabe standard lorsque requis.`;
+const A10_LEGAL_IDENTITY = `Tu es juriste expert en droit de l'image, droit de la propriété intellectuelle et droit administratif sénégalais. Tu rédiges pour la Mission Documentaire SÉNÉGAL V3 — livre collector 210 pages, 500 exemplaires numérotés. Tes documents sont professionnels, juridiquement solides et adaptés au contexte sénégalais. Tu maîtrises le français juridique et l'arabe standard lorsque requis.`;
 
 async function a10CallClaude(sys, txt, tok) {
   const res = await apiFetch('/api/claude', {
@@ -12067,7 +12067,7 @@ const a12State = {
 };
 const A12_PRICE_STD  = 50000;
 const A12_PRICE_LUXE = 85000;
-const A12_IDENTITY = `Tu es expert en distribution de livres d'art et d'édition au Sénégal et à l'international. Tu connais les circuits culturels (librairies, musées, hôtels de luxe, ambassades, centres culturels, galeries d'art), les pratiques de remises professionnelles, et les spécificités du marché sénégalais et de la diaspora. Le livre SÉNÉGAL V3 est une mission documentaire photographique trilingue (FR/EN/AR), 224 pages, édité à 2 500 exemplaires : 2 000 éditions Standard (50 000 FCFA) et 500 éditions Luxe numérotées (85 000 FCFA).`;
+const A12_IDENTITY = `Tu es expert en distribution de livres d'art et d'édition au Sénégal et à l'international. Tu connais les circuits culturels (librairies, musées, hôtels de luxe, ambassades, centres culturels, galeries d'art), les pratiques de remises professionnelles, et les spécificités du marché sénégalais et de la diaspora. Le livre SÉNÉGAL V3 est une mission documentaire photographique trilingue (FR/EN/AR), 210 pages, édité à 2 500 exemplaires : 2 000 éditions Standard (50 000 FCFA) et 500 éditions Luxe numérotées (85 000 FCFA).`;
 
 async function a12CallClaude(sys, txt, tok) {
   try {
@@ -12735,7 +12735,7 @@ async function a13GenPageVente(evt) {
   if (out) out.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted)">Rédaction en cours…</div>';
   const canalLabel = { newsletter:'newsletter email', instagram:'post Instagram/Facebook', presse:'communiqué de presse', email_institution:'email institutionnel', whatsapp:'message diaspora WhatsApp/Telegram' };
   const edLabel = edition==='luxe' ? 'Édition Luxe numérotée 500 ex. — 85 000 FCFA / ~130€' : edition==='std' ? 'Édition Standard 2000 ex. — 50 000 FCFA / ~76€' : 'Standard 50 000 F et Luxe numéroté 85 000 F (2 500 ex. total)';
-  const prompt = `Écris un texte de vente pour ${canalLabel[canal]||canal} en ${langue}. Produit : livre d'art documentaire photographique SÉNÉGAL V3. ${edLabel}. 224 pages trilingue FR/EN/AR. Terrain dans toutes les régions du Sénégal. Texte percutant, humain, authentique. Ton parfaitement adapté au canal.`;
+  const prompt = `Écris un texte de vente pour ${canalLabel[canal]||canal} en ${langue}. Produit : livre d'art documentaire photographique SÉNÉGAL V3. ${edLabel}. 210 pages trilingue FR/EN/AR. Terrain dans toutes les régions du Sénégal. Texte percutant, humain, authentique. Ton parfaitement adapté au canal.`;
   const raw = await a13CallClaude('Tu es expert en marketing culturel et communication éditoriale pour livres d\'art.' + HUMAN_DOC_STYLE, prompt, 900);
   if (!out) { enableBtn(btn); return; }
   if (!raw) { out.innerHTML = '<div style="color:var(--red);font-size:0.6rem">Erreur — vérifiez la clé API Claude</div>'; enableBtn(btn); return; }
@@ -12760,7 +12760,7 @@ async function a13GenSequenceLancement(evt) {
   const dl = new Date(dateLancement);
   const fmt = d => d.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
   const dates = { j30:fmt(new Date(dl-30*86400000)), j15:fmt(new Date(dl-15*86400000)), j7:fmt(new Date(dl-7*86400000)), j0:fmt(dl) };
-  const prompt = `Séquence 4 emails pré-lancement pour le livre SÉNÉGAL V3 (224 pages, trilingue FR/EN/AR, 2 000 Standard à 50 000 FCFA et 500 Luxe numérotés à 85 000 FCFA). Audiences : ${audiences.join(', ')||'général'}. Dates : J-30 (${dates.j30}), J-15 (${dates.j15}), J-7 (${dates.j7}), Jour J (${dates.j0}). Chaque email : objet + corps. Arc narratif : mystère → révélation → urgence → lancement.`;
+  const prompt = `Séquence 4 emails pré-lancement pour le livre SÉNÉGAL V3 (210 pages, trilingue FR/EN/AR, 2 000 Standard à 50 000 FCFA et 500 Luxe numérotés à 85 000 FCFA). Audiences : ${audiences.join(', ')||'général'}. Dates : J-30 (${dates.j30}), J-15 (${dates.j15}), J-7 (${dates.j7}), Jour J (${dates.j0}). Chaque email : objet + corps. Arc narratif : mystère → révélation → urgence → lancement.`;
   const sys = 'Tu es expert en email marketing culturel et lancement de livres d\'art.' + HUMAN_DOC_STYLE + '\nRéponds en JSON : {"emails":[{"etape":"J-30","date":"...","objet":"...","corps":"..."}]}';
   const data = await a13CallClaudeJSON(sys, prompt, 1800);
   if (!out) { enableBtn(btn); return; }
@@ -13533,7 +13533,7 @@ async function a16GenMessage(evt) {
   const pays = [...new Set(a16State.backers.map(b => b.pays.split(',')[0].trim()))].filter(Boolean).slice(0,6).join(', ');
   const text = await a16CallClaude(
     `Tu es expert en mobilisation de la diaspora sénégalaise pour des projets culturels. Tu écris des messages authentiques, jamais des slogans creux. Tu ne cites jamais de plateformes de crowdfunding externes.`,
-    `Campagne SÉNÉGAL V3 — livre documentaire photographique trilingue, 224 pages, 2500 exemplaires (2000 Standard 50 000 FCFA + 500 Luxe numéroté 85 000 FCFA). Progression : ${pct}% atteint (${fmtFCFA(a16State.raised)} sur ${fmtFCFA(a16State.goal)}). ${a16State.backers.length} contributeurs${pays?' depuis '+pays:''}. ${a16State.daysLeft} jours restants.${anecdote?' Anecdote terrain à intégrer : '+anecdote:''} Réseau : ${reseauLabel[reseau]||reseau}. Rédige un message de campagne percutant et humain, adapté exactement à ce réseau. Lien : senegalthr.com`,
+    `Campagne SÉNÉGAL V3 — livre documentaire photographique trilingue, 210 pages, 2500 exemplaires (2000 Standard 50 000 FCFA + 500 Luxe numéroté 85 000 FCFA). Progression : ${pct}% atteint (${fmtFCFA(a16State.raised)} sur ${fmtFCFA(a16State.goal)}). ${a16State.backers.length} contributeurs${pays?' depuis '+pays:''}. ${a16State.daysLeft} jours restants.${anecdote?' Anecdote terrain à intégrer : '+anecdote:''} Réseau : ${reseauLabel[reseau]||reseau}. Rédige un message de campagne percutant et humain, adapté exactement à ce réseau. Lien : senegalthr.com`,
     700);
   if (out) out.textContent = text || 'Erreur — vérifiez la clé API Claude';
   enableBtn(btn);
