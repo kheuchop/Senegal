@@ -1187,6 +1187,18 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 #agent-coordination .a5-plan-item.status-done .a5-plan-status { color: var(--emerald); background: rgba(0,230,118,0.08); }
 #agent-coordination .a5-plan-item.status-active .a5-plan-status { color: var(--gold); background: rgba(214,165,58,0.08); }
 #agent-coordination .a5-plan-item.status-pending .a5-plan-status { color: var(--text-muted); background: transparent; }
+#agent-coordination .a5-rs-subtitle {
+  font-size: 0.6rem; font-weight: 600; color: var(--gold); text-transform: uppercase;
+  letter-spacing: 0.04em; margin-top: 10px; margin-bottom: 4px;
+}
+#agent-coordination .a5-rs-subtitle:first-child { margin-top: 0; }
+#agent-coordination .a5-rs-list { margin: 0; padding-left: 16px; font-size: 0.67rem; line-height: 1.5; }
+#agent-coordination .a5-rs-list li { margin-bottom: 2px; }
+#agent-coordination .a5-rs-text { font-size: 0.67rem; line-height: 1.5; color: var(--text-secondary); }
+#agent-coordination .a5-rs-note {
+  font-size: 0.6rem; color: var(--amber); background: rgba(214,165,58,0.08);
+  border-radius: 6px; padding: 6px 8px; margin-top: 4px; line-height: 1.4;
+}
 #agent-coordination .a5-session-log-item {
   display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border);
 }
@@ -2985,6 +2997,23 @@ textarea.input-field { resize: vertical; min-height: 80px; }
             <button class="a5-filter-btn" onclick="a5FilterPlan('pending',this)">○ À venir</button>
           </div>
           <div class="a5-plan-list" id="a5-plan-list"></div>
+        </div>
+
+        <!-- A5: Feuille de route Reportage (Photographe/Vidéaste) -->
+        <div class="card">
+          <div class="card-title">📋 Feuille de Route — Reportage Site</div>
+          <div class="a5-plan-filter">
+            <button class="a5-filter-btn active" id="a5-rs-btn-photo" onclick="a5RsSetRole('photo')">📷 Photographe</button>
+            <button class="a5-filter-btn" id="a5-rs-btn-video" onclick="a5RsSetRole('video')">🎥 Vidéaste</button>
+          </div>
+          <div class="input-group"><label class="input-label">Site</label>
+            <select class="input-field" id="a5-rs-site" onchange="a5RenderRouteSheet()"></select>
+          </div>
+          <div id="a5-rs-output"></div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn btn-ghost btn-sm" onclick="a5RsRegenerate(event)"><div class="spinner"></div><span class="btn-text">🔄 Régénérer via IA</span></button>
+            <button class="btn btn-primary btn-sm" onclick="a5RsExportWord()">📄 Export Word (36 sites)</button>
+          </div>
         </div>
 
         <!-- A5: Journal terrain du jour -->
@@ -4911,6 +4940,9 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 <!-- Supabase Sync — dépend de supabase.min.js, doit précéder le script principal -->
 <script src="supabase-sync-1.js"></script>
 
+<!-- Feuilles de route Agent Terrain (Photographe/Vidéaste + plan Reportage BTS) — données statiques, doivent précéder le script principal -->
+<script src="route-sheets-seed.js"></script>
+<script src="reportage-bts-plan.js"></script>
 
 <script>
 /* ============================================================
@@ -5164,6 +5196,7 @@ function saveStateToDB() {
     a13QrLibrary:   a13State.qrLibrary,
     cmHistory:      state.cmHistory,
     a5Sessions:     a5State.sessions,
+    a5RouteSheets:  a5State.routeSheets,
     a6Briefs:       a6State.briefs,
     // a6BookGallery / a6BookPages : déplacés dans le store 'bookstore'
     // (photos base64 lourdes) — voir saveBookIfChanged() ci-dessous.
@@ -5700,6 +5733,7 @@ async function loadStateFromDB() {
     if (Array.isArray(d.a13QrLibrary)) a13State.qrLibrary     = d.a13QrLibrary;
     if (Array.isArray(d.cmHistory))    state.cmHistory         = d.cmHistory;
     if (Array.isArray(d.a5Sessions))   a5State.sessions        = d.a5Sessions;
+    if (d.a5RouteSheets && typeof d.a5RouteSheets === 'object') a5State.routeSheets = d.a5RouteSheets;
     if (Array.isArray(d.a6Briefs))     a6State.briefs          = d.a6Briefs;
     if (Array.isArray(d.a6BookGallery)) a6State.bookGallery    = d.a6BookGallery;
     if (Array.isArray(d.a6BookPages))  a6State.bookPages       = d.a6BookPages;
@@ -6291,7 +6325,7 @@ function switchTab(idx) {
   }
 
   if (idx === 17) setTimeout(() => { if (state.leafletMap) state.leafletMap.invalidateSize(); }, 320);
-  if (idx === 4) { a5UpdateKPIs(); a5RenderPlan(); }
+  if (idx === 4) { a5UpdateKPIs(); a5RenderPlan(); a5RsInit(); }
   if (idx === 4) a5UpdateKPIs();
   if (idx === 3) {
     updateFinancialUI();
@@ -8866,7 +8900,9 @@ const a5State = {
   interval: null, dayRef: null,
   sessions: [],
   planData: [],
-  currentFilter: 'all'
+  currentFilter: 'all',
+  routeSheets: { photo: {}, video: {} }, // feuilles de route générées par IA, clé = site.id
+  rsRole: 'photo' // rôle actif dans la carte Feuille de Route (photo | video)
 };
 
 function a5BuildPlan() {
@@ -8917,6 +8953,170 @@ function a5FilterPlan(filter, el) {
   document.querySelectorAll('.a5-filter-btn').forEach(b => b.classList.remove('active'));
   if (el) el.classList.add('active');
   a5RenderPlan();
+}
+
+/* ============================================================
+   FEUILLE DE ROUTE — génération IA par site, une par rôle
+   (Photographe / Vidéaste). Phase 1 : logique de génération
+   seule, pas encore reliée à l'UI (voir a5GenerateRouteSheet).
+   ============================================================ */
+const A5_TERRAIN_IDENTITY = `Tu es le coordinateur terrain de la mission "Sénégal, Terre d'Histoire et de Rencontres" (livre collector 210 pages, 36 sites, 56 jours de terrain). Tu prépares des feuilles de route opérationnelles et concrètes pour l'équipe sur le terrain, jamais génériques — toujours ancrées dans le site précis visité.`;
+
+const A5_ROUTE_SYSTEM = {
+  photo: `Prépare la feuille de route du PHOTOGRAPHE pour le site donné.
+- "shots" : 4 à 6 idées de prises de vue précises et variées pour CE site (pas de conseils génériques type "utiliser la lumière naturelle").
+- "materiel" : uniquement des noms choisis tels quels dans la liste de matériel disponible fournie — n'invente jamais un item hors liste. Si la liste est vide ou insuffisante, dis-le dans "materielNote" au lieu d'inventer.
+- "logistiqueHoraire" : 1-2 phrases, meilleur moment (lumière) et durée conseillée sur site.
+Réponds en français, opérationnel, sans blabla.
+JSON UNIQUEMENT : {"shots":["..."],"materiel":["..."],"materielNote":"","logistiqueHoraire":"..."}`,
+  video: `Prépare la feuille de route du VIDÉASTE pour le site donné.
+- "shots" : 4 à 6 séquences/plans précis à tourner pour CE site (B-roll + éventuelle interview si pertinent) — pas de conseils génériques.
+- "materiel" : uniquement des noms choisis tels quels dans la liste de matériel disponible fournie — n'invente jamais un item hors liste. Si la liste est vide ou insuffisante, dis-le dans "materielNote" au lieu d'inventer.
+- "logistiqueHoraire" : 1-2 phrases, meilleur moment (lumière/son) et durée conseillée sur site.
+Réponds en français, opérationnel, sans blabla.
+JSON UNIQUEMENT : {"shots":["..."],"materiel":["..."],"materielNote":"","logistiqueHoraire":"..."}`
+};
+
+async function a5CallClaudeJSON(sys, txt, tok) {
+  const res = await apiFetch('/api/claude', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: tok || 800, system: A5_TERRAIN_IDENTITY + '\n\n' + sys, messages: [{ role: 'user', content: txt }] })
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error?.message || data.hint || `HTTP ${res.status}`);
+  const raw = data.content?.[0]?.text || '';
+  try { return JSON.parse(raw); }
+  catch { const m = raw.match(/\{[\s\S]*\}/); if (m) return JSON.parse(m[0]); throw new Error('Réponse non-JSON'); }
+}
+
+// Même logique de rapprochement site↔autorisation que le Risk Manager (croisement planning × Agent 10).
+function a5GetSiteContact(site) {
+  const auth = a10State.auths.find(a => a.site && (a.site.includes(site.name) || site.name.includes(a.site.split('(')[0].trim())));
+  return auth ? { org: auth.org, contact: auth.contact, status: auth.status } : null;
+}
+
+async function a5GenerateRouteSheet(siteId, role) {
+  if (role !== 'photo' && role !== 'video') throw new Error('Rôle invalide : photo ou video');
+  const site = SITES.find(s => s.id == siteId) || (typeof OFFSHORE !== 'undefined' ? OFFSHORE.find(s => s.id == siteId) : null);
+  if (!site) throw new Error('Site introuvable');
+
+  const equipList = (a11State.equipment || []).filter(e => e.status === 'operationnel').map(e => `${e.icon} ${e.name} (${e.type})`);
+  const equipText = equipList.length ? equipList.join(', ') : 'Aucun matériel opérationnel enregistré dans le parc (Agent Logistique).';
+  const contact = a5GetSiteContact(site);
+
+  const userPrompt = `Site : ${site.name}
+Zone : ${site.zone} · Distance Dakar : ${site.km} km · Durée prévue : ${site.days} jour(s)
+Matériel disponible (parc technique, statut opérationnel) : ${equipText}${contact ? `\nContact/organisme sur place : ${contact.org}${contact.contact && contact.contact !== '—' ? ' — ' + contact.contact : ''}` : ''}`;
+
+  const parsed = await a5CallClaudeJSON(A5_ROUTE_SYSTEM[role], userPrompt, 700);
+  a5State.routeSheets[role][siteId] = { ...parsed, siteId, siteName: site.name, contact, generatedAt: Date.now() };
+  saveStateToDB();
+  return a5State.routeSheets[role][siteId];
+}
+
+/* ── UI : carte Feuille de Route (Agent Terrain) ── */
+function a5RsInit() {
+  const sel = document.getElementById('a5-rs-site');
+  if (sel && sel.options.length === 0) {
+    SITES.forEach(s => { const o = document.createElement('option'); o.value = s.id; o.textContent = `[Z${s.zone}] S${s.id} — ${s.name}`; sel.appendChild(o); });
+  }
+  a5RenderRouteSheet();
+}
+
+function a5RsSetRole(role) {
+  a5State.rsRole = role;
+  document.getElementById('a5-rs-btn-photo')?.classList.toggle('active', role === 'photo');
+  document.getElementById('a5-rs-btn-video')?.classList.toggle('active', role === 'video');
+  a5RenderRouteSheet();
+}
+
+function a5RenderRouteSheet() {
+  const out = document.getElementById('a5-rs-output');
+  if (!out) return;
+  const siteId = Number(document.getElementById('a5-rs-site')?.value) || SITES[0]?.id;
+  const role = a5State.rsRole || 'photo';
+  const site = SITES.find(s => s.id === siteId);
+  if (!site) { out.innerHTML = ''; return; }
+
+  const sheet = (a5State.routeSheets[role] && a5State.routeSheets[role][siteId])
+    || (typeof ROUTE_SHEETS_SEED !== 'undefined' ? ROUTE_SHEETS_SEED[role]?.[siteId] : null);
+  const bts = typeof REPORTAGE_BTS_PLAN !== 'undefined' ? REPORTAGE_BTS_PLAN[siteId] : null;
+  const roleLabel = role === 'photo' ? 'Photographe' : 'Vidéaste';
+
+  let html = `<div style="font-size:12px;color:var(--gold);font-weight:600;margin-bottom:4px">${escapeHtml(site.name)} — ${roleLabel}</div>`;
+
+  if (sheet) {
+    html += `<div class="a5-rs-subtitle">🎯 Prises de vue</div>
+      <ul class="a5-rs-list">${(sheet.shots || []).map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ul>
+      <div class="a5-rs-subtitle">🎒 Matériel</div>
+      <ul class="a5-rs-list">${(sheet.materiel || []).map(m => `<li>${escapeHtml(m)}</li>`).join('')}</ul>
+      ${sheet.materielNote ? `<div class="a5-rs-note">${escapeHtml(sheet.materielNote)}</div>` : ''}
+      <div class="a5-rs-subtitle">🕐 Logistique horaire</div>
+      <div class="a5-rs-text">${escapeHtml(sheet.logistiqueHoraire || '')}</div>`;
+  } else {
+    html += `<div class="a5-rs-text" style="color:var(--text-muted)">Pas encore de feuille de route pour ce site — cliquer « Régénérer via IA ».</div>`;
+  }
+
+  if (bts) {
+    html += `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+      <div class="a5-rs-subtitle">🎬 Plan Reportage — QR Behind The Scenes</div>
+      <div class="a5-rs-text" style="font-style:italic;color:var(--gold)">« ${escapeHtml(bts.reportageTheme)} »</div>
+      <div class="a5-rs-subtitle">📍 Spots</div>
+      <ul class="a5-rs-list">${(bts.spots || []).map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ul>
+      <div class="a5-rs-subtitle">🎥 Recommandation technique</div>
+      <div class="a5-rs-text">${escapeHtml(bts.recommandations || '')}</div>
+      <div class="a5-rs-subtitle">🎙️ À interviewer</div>
+      <div class="a5-rs-text">${escapeHtml(bts.interviewSubject || '')}</div>
+      <div style="display:flex;gap:16px;margin-top:6px;flex-wrap:wrap">
+        <div><div class="a5-rs-subtitle">⏱ Tournage max</div><div class="a5-rs-text">${escapeHtml(bts.tournageLimiteH || '')}</div></div>
+        <div><div class="a5-rs-subtitle">🎞 Vidéo finale QR</div><div class="a5-rs-text">${escapeHtml(bts.videoFinaleMin || '')}</div></div>
+      </div>
+    </div>`;
+  }
+
+  out.innerHTML = html;
+}
+
+async function a5RsRegenerate(evt) {
+  const btn = evt.currentTarget; disableBtn(btn);
+  const siteId = Number(document.getElementById('a5-rs-site')?.value) || SITES[0]?.id;
+  const role = a5State.rsRole || 'photo';
+  try {
+    await a5GenerateRouteSheet(siteId, role);
+    a5RenderRouteSheet();
+    showToast('✅ Feuille de route régénérée', 'ok');
+  } catch (e) {
+    const noKey = String(e.message).includes('NO_KEY') || String(e.message).includes('ANTHROPIC');
+    showToast('❌ ' + e.message + (noKey ? ' — clé IA non configurée sur Vercel, le contenu déjà rédigé reste affiché.' : ''), 'warn');
+  } finally {
+    enableBtn(btn);
+  }
+}
+
+function a5RsExportWord() {
+  const role = a5State.rsRole || 'photo';
+  const roleLabel = role === 'photo' ? 'PHOTOGRAPHE' : 'VIDÉASTE';
+  const parts = SITES.map(site => {
+    const sheet = (a5State.routeSheets[role] && a5State.routeSheets[role][site.id])
+      || (typeof ROUTE_SHEETS_SEED !== 'undefined' ? ROUTE_SHEETS_SEED[role]?.[site.id] : null);
+    const bts = typeof REPORTAGE_BTS_PLAN !== 'undefined' ? REPORTAGE_BTS_PLAN[site.id] : null;
+    if (!sheet && !bts) return '';
+    let t = `[Z${site.zone}] SITE ${site.id} — ${site.name}\n`;
+    if (sheet) {
+      t += `Prises de vue : ${(sheet.shots || []).join(' · ')}\n`;
+      t += `Matériel : ${(sheet.materiel || []).join(', ')}${sheet.materielNote ? ' (' + sheet.materielNote + ')' : ''}\n`;
+      t += `Logistique : ${sheet.logistiqueHoraire || ''}\n`;
+    }
+    if (bts) {
+      t += `Thème reportage : ${bts.reportageTheme}\n`;
+      t += `Spots : ${(bts.spots || []).join(' · ')}\n`;
+      t += `Technique : ${bts.recommandations}\n`;
+      t += `À interviewer : ${bts.interviewSubject}\n`;
+      t += `Tournage max : ${bts.tournageLimiteH} — Vidéo finale QR : ${bts.videoFinaleMin}\n`;
+    }
+    return t;
+  }).filter(Boolean).join('\n\n');
+  exportWordDoc(`feuille-de-route-${role}-${new Date().toISOString().slice(0, 10)}`, `Feuille de Route — ${roleLabel}`, parts, { objet: `Feuille de route mission — ${roleLabel}`, signature: false });
 }
 
 /* ============================================================
