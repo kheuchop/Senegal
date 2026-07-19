@@ -50,7 +50,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:20px 60px;display:f
 
 /* ═══ HERO ═══ */
 #hero{position:relative;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;overflow:hidden;}
-.hero-bg{position:absolute;inset:0;background:url('assets/presentation/img01-373ce4f489.jpg') center/cover no-repeat;z-index:1;}
+.hero-bg{position:absolute;inset:0;background:url('assets/presentation/img01-373ce4f489.jpg') center/cover no-repeat;z-index:1;overflow:hidden;}
+.hero-bg iframe{position:absolute;top:50%;left:50%;width:177.78vh;height:100vh;min-width:100%;min-height:56.25vw;transform:translate(-50%,-50%);border:none;pointer-events:none;}
 .hero-overlay{position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,rgba(7,11,20,.78) 0%,rgba(7,11,20,.62) 40%,rgba(7,11,20,.78) 70%,rgba(7,11,20,.97) 100%);}
 .particles{position:absolute;inset:0;z-index:3;pointer-events:none;}
 .particle{position:absolute;width:2px;height:2px;background:var(--or);border-radius:50%;opacity:0;animation:floatUp var(--d) ease-in infinite;animation-delay:var(--dl);left:var(--x);}
@@ -368,7 +369,9 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;o
 
 <!-- ═══════════ §1 HERO ═══════════ -->
 <section id="hero">
-  <div class="hero-bg" role="img" aria-label="Île de Gorée, patrimoine mondial UNESCO — Sénégal"></div>
+  <div class="hero-bg" role="img" aria-label="Sénégal, Terre d'Histoire et de Rencontres">
+    <iframe src="https://www.youtube.com/embed/FqvBLUcpFys?autoplay=1&mute=1&loop=1&playlist=FqvBLUcpFys&controls=0&showinfo=0&rel=0&modestbranding=1" allow="autoplay; encrypted-media" allowfullscreen title="Sénégal"></iframe>
+  </div>
   <div class="hero-overlay"></div>
   <div class="particles" id="particles"></div>
   <div class="hero-content">
@@ -504,7 +507,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;o
       <div class="tier-amount">10 000 000 — 20 000 000 FCFA</div>
       <ul class="tier-list">
         <li><span class="tier-check"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></span>Double page prestige (3 langues) — 2 500 exemplaires</li>
-        <li><span class="tier-check"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></span>Logo couverture ou 4<sup>e</sup> couverture — circulation 5 ans, 200+ établissements</li>
+        <li><span class="tier-check"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></span><span>Logo couverture ou 4<sup>e</sup> de couverture — circulation 5 ans, 200+ établissements</span></li>
         <li><span class="tier-check"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></span>Mention éditoriale intégrée — permanente, non supprimable</li>
         <li><span class="tier-check"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></span>50 exemplaires collector dédicacés</li>
         <li><span class="tier-check"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></span>Naming rights zone géographique — 1 zone, 3 langues</li>
@@ -515,7 +518,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;o
         <div class="tier-stat"><span class="tier-sv">+46,5%</span><span class="tier-sl">ROI contractuel<br>valorisation 14,65M FCFA</span></div>
         <div class="tier-stat"><span class="tier-sv">10 ans</span><span class="tier-sl">Visibilité<br>minimum garanti</span></div>
       </div>
-      <a class="tier-cta" href="mailto:c.diop@senegalthr.com?subject=Sponsorship%20Tier%201%20%E2%80%94%20S%C3%A9n%C3%A9gal%20THR">Contacter pour Tier 1</a>
+      <a class="tier-cta" href="mailto:c.diop@senegalthr.com,a.sonko@senegalthr.com?subject=Sponsorship%20Tier%201%20%E2%80%94%20S%C3%A9n%C3%A9gal%20THR">Contacter pour Tier 1</a>
     </div>
 
     <div class="tier tier-2 rv" style="transition-delay:.14s">
@@ -524,7 +527,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;o
       <div class="tier-amount">2 000 000 — 6 000 000 FCFA</div>
       <ul class="tier-list">
         <li><span class="tier-check"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></span>Page dédiée ou encadré (3 langues)</li>
-        <li><span class="tier-check"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></span>Logo 4<sup>e</sup> couverture intérieure — 5 ans de circulation</li>
+        <li><span class="tier-check"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></span><span>Logo 4<sup>e</sup> de couverture intérieure — 5 ans de circulation</span></li>
         <li><span class="tier-check"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></span>Mention éditoriale dans la zone concernée</li>
         <li><span class="tier-check"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></span>20 exemplaires collector dédicacés</li>
         <li><span class="tier-check"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></span>Présence numérique — 16 QR codes sur 32</li>
@@ -534,7 +537,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;o
         <div class="tier-stat"><span class="tier-sv">+31%</span><span class="tier-sl">ROI contractuel<br>valorisation 6,55M FCFA</span></div>
         <div class="tier-stat"><span class="tier-sv">5-7 ans</span><span class="tier-sl">Visibilité<br>garantie</span></div>
       </div>
-      <a class="tier-cta" href="mailto:c.diop@senegalthr.com?subject=Sponsorship%20Tier%202%20%E2%80%94%20S%C3%A9n%C3%A9gal%20THR">Contacter pour Tier 2</a>
+      <a class="tier-cta" href="mailto:c.diop@senegalthr.com,a.sonko@senegalthr.com?subject=Sponsorship%20Tier%202%20%E2%80%94%20S%C3%A9n%C3%A9gal%20THR">Contacter pour Tier 2</a>
     </div>
 
     <div class="tier tier-3 rv" style="transition-delay:.23s">
@@ -552,7 +555,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;o
         <div class="tier-stat"><span class="tier-sv">+100%</span><span class="tier-sl">ROI contractuel<br>valorisation 2M FCFA</span></div>
         <div class="tier-stat"><span class="tier-sv">3-5 ans</span><span class="tier-sl">Visibilité<br>garantie</span></div>
       </div>
-      <a class="tier-cta" href="mailto:c.diop@senegalthr.com?subject=Sponsorship%20Tier%203%20%E2%80%94%20S%C3%A9n%C3%A9gal%20THR">Contacter pour Tier 3</a>
+      <a class="tier-cta" href="mailto:c.diop@senegalthr.com,a.sonko@senegalthr.com?subject=Sponsorship%20Tier%203%20%E2%80%94%20S%C3%A9n%C3%A9gal%20THR">Contacter pour Tier 3</a>
     </div>
   </div>
   <div class="tiers-note rv"><strong>Les trois tiers sont cumulables.</strong> Exemple : sponsor à 20M FCFA (Tier 1) + co-sponsor à 5M FCFA (Tier 2) = présence double dans le livre.</div>
@@ -770,20 +773,20 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;o
   <h2 class="ctitle">Prêt à investir dans le<br>patrimoine africain ?</h2>
   <p class="csub">Contactez-nous avant <strong>fin août 2026</strong> pour le Tier 1 — places limitées.</p>
   <div class="cta-row">
-    <a class="cta-btn" href="mailto:c.diop@senegalthr.com?subject=Sponsorship%20Senegalthr">Demander le dossier complet
+    <a class="cta-btn" href="mailto:c.diop@senegalthr.com,a.sonko@senegalthr.com?subject=Demande%20dossier%20sponsor%20%E2%80%94%20S%C3%A9n%C3%A9gal%20THR&body=Bonjour%2C%0A%0AJe%20souhaite%20recevoir%20le%20dossier%20sponsor%20complet%20du%20projet%20S%C3%A9n%C3%A9gal%2C%20Terre%20d'Histoire%20et%20de%20Rencontres.%0A%0ATier%20de%20sponsoring%20envisag%C3%A9%20%3A%20%0AEntreprise%20%2F%20organisation%20%3A%20%0A%0ACordialement%2C">Demander le dossier complet
       <svg class="ic" style="stroke:var(--nuit);" width="16" height="16" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
     </a>
     <a class="cta-btn secondary" href="documents/synthese-budget.pdf" download>Télécharger la synthèse budget</a>
   </div>
   <div class="contact-grid">
     <div class="contact-card">
-      <span class="contact-role">Porteur du projet · Racines Communication</span>
+      <span class="contact-role">Co-porteur du projet · Racines Communication</span>
       <div class="contact-name">Cheikh Anta Diop</div>
       <div class="contact-line"><svg class="ic" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 6L22 7"/></svg><a href="mailto:c.diop@senegalthr.com">c.diop@senegalthr.com</a></div>
       <div class="contact-line"><svg class="ic" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.4 2.1L8.1 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.6 2z"/></svg><a href="tel:+221773361142">77 336 11 42</a></div>
     </div>
     <div class="contact-card">
-      <span class="contact-role">Co-porteur du projet</span>
+      <span class="contact-role">Co-porteur du projet · Mandela Studio / Bawer Print</span>
       <div class="contact-name">Attab Sonko</div>
       <div class="contact-line"><svg class="ic" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 6L22 7"/></svg><a href="mailto:a.sonko@senegalthr.com">a.sonko@senegalthr.com</a></div>
       <div class="contact-line"><svg class="ic" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.4 2.1L8.1 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.6 2z"/></svg><a href="tel:+221776128221">77 612 82 21</a></div>
