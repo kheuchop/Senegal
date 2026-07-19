@@ -90,25 +90,25 @@ personnalité réelle.
 ## 4. Édition collector (`collector.jpg`)
 
 ```
-Photographie produit premium en studio d'un coffret livre collector de luxe,
-boîtier en tissu bleu nuit profond (deep night blue cloth) avec fermeture
-magnétique entrouverte laissant apparaître le livre à tranche dorée à
-l'intérieur, dorure or métallique gravée sur le boîtier.
+Premium studio product photography of a luxury collector's book box set,
+deep night blue cloth-bound case with a magnetic clasp, shown slightly open
+to reveal the gilt-edged book inside, metallic gold foil embossing engraved
+on the case.
 
-Posé sur un tissu de soie sombre légèrement froissé, éclairage studio doux
-en cercle créant un halo doré autour de l'objet, reflets subtils sur la
-dorure. Petite numérotation dorée visible sur le boîtier, façon édition
-limitée collector.
+Resting on dark, subtly wrinkled silk fabric, soft circular studio lighting
+creating a warm golden halo around the object, subtle reflections on the
+gold foil. Small gold-embossed numbering visible on the case, evoking a
+limited collector's edition.
 
-Fond noir profond en dégradé, avec particules dorées floues hors champ
-évoquant le luxe et la rareté. Composition centrée, légère vue en plongée
-3/4.
+Deep black gradient background, with softly blurred golden particles out of
+focus in the background, evoking luxury and rarity. Centered composition,
+slight 3/4 top-down angle.
 
-Style photographie de produit haute joaillerie (référence Cartier, écrin
-Hermès), texture du tissu et de la dorure nettement détaillée.
+High-end jewelry product photography style (reference: Cartier, Hermès
+presentation case), fabric texture and gold foil finely detailed and sharp.
 
-Format 16:9 paysage, photoréaliste, haute définition, aucun texte lisible
-superflu autre que la dorure du titre.
+16:9 landscape format, photorealistic, high definition, no readable text
+other than the gold-foiled title lettering.
 ```
 
 ---
