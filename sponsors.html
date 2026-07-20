@@ -194,30 +194,11 @@ svg.ic{fill:none;stroke:var(--or);stroke-width:1.6;stroke-linecap:round;stroke-l
 .mock-card{border-radius:var(--r);overflow:hidden;background:var(--glass);border:1px solid var(--glass-b);transition:all .4s cubic-bezier(.16,1,.3,1);}
 .mock-card:hover{transform:translateY(-6px);border-color:rgba(201,168,76,.2);box-shadow:0 24px 60px rgba(0,0,0,.45);}
 .mock-visual{position:relative;aspect-ratio:16/9.4;overflow:hidden;background:var(--nuit3);}
+.mock-visual img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s cubic-bezier(.16,1,.3,1);}
+.mock-card:hover .mock-visual img{transform:scale(1.04);}
 .mock-caption{padding:20px 24px;}
 .mock-cap-t{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--sable);margin-bottom:4px;}
 .mock-cap-s{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.35);}
-/* double page */
-.mock-spread{position:absolute;inset:10% 8%;display:grid;grid-template-columns:1fr 1fr;gap:4px;box-shadow:0 24px 60px rgba(0,0,0,.6);}
-.mock-page{background:#F2EDE2;position:relative;overflow:hidden;}
-.mock-page.photo img{width:100%;height:100%;object-fit:cover;display:block;}
-.mock-page.text{padding:9% 10%;}
-.mline{height:5px;background:rgba(13,21,37,.14);border-radius:3px;margin-bottom:7px;}
-.mline.title{height:11px;width:70%;background:rgba(139,58,42,.5);margin-bottom:12px;}
-.mline.w80{width:80%;} .mline.w92{width:92%;} .mline.w60{width:60%;} .mline.w75{width:75%;}
-.mock-logo{position:absolute;bottom:8%;right:9%;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(13,21,37,.55);border:1px dashed rgba(13,21,37,.4);padding:5px 10px;border-radius:4px;background:rgba(201,168,76,.12);}
-/* couverture */
-.mock-cover{position:absolute;inset:6% 30%;background:linear-gradient(160deg,#101a2c,#1c2c48);box-shadow:0 24px 60px rgba(0,0,0,.65);display:flex;flex-direction:column;overflow:hidden;border-radius:2px 8px 8px 2px;}
-.mock-cover img{width:100%;height:56%;object-fit:cover;display:block;opacity:.9;}
-.mock-cover-body{flex:1;padding:9% 10%;display:flex;flex-direction:column;justify-content:space-between;}
-.mock-cover-title{font-family:'Cormorant Garamond',serif;font-size:clamp(11px,1.4vw,16px);color:var(--or-light);font-weight:700;line-height:1.2;}
-.mock-cover-sub{font-size:6px;letter-spacing:2px;text-transform:uppercase;color:rgba(245,236,215,.5);margin-top:4px;}
-.mock-cover-logo{align-self:flex-start;font-size:7px;letter-spacing:1.5px;text-transform:uppercase;color:var(--or);border:1px dashed rgba(201,168,76,.5);padding:4px 9px;border-radius:4px;background:rgba(201,168,76,.08);}
-/* placeholders cérémonie / collector */
-.mock-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:30px;background:radial-gradient(circle at 50% 40%,rgba(201,168,76,.09),transparent 65%);}
-.mock-ph svg.ic{width:44px;height:44px;opacity:.8;}
-.mock-ph-t{font-family:'Cormorant Garamond',serif;font-size:clamp(17px,2vw,22px);color:var(--sable);font-weight:600;line-height:1.35;max-width:340px;}
-.mock-ph-s{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);}
 
 /* ═══ §7 STRATÉGIE / CHARTS ═══ */
 #strategy{background:var(--nuit);}
@@ -576,61 +557,28 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;o
   </div>
   <div class="mock-grid">
     <div class="mock-card rv" style="transition-delay:.05s">
-      <div class="mock-visual">
-        <div class="mock-spread">
-          <div class="mock-page photo"><img loading="lazy" decoding="async" src="assets/presentation/img03-697f181fa7.jpg" alt="Maquette double page — photographie pleine page"></div>
-          <div class="mock-page text">
-            <div class="mline title"></div>
-            <div class="mline w92"></div><div class="mline w80"></div><div class="mline w92"></div>
-            <div class="mline w75"></div><div class="mline w80"></div><div class="mline w60"></div>
-            <div class="mock-logo">Votre logo</div>
-          </div>
-        </div>
-      </div>
+      <div class="mock-visual"><img loading="lazy" decoding="async" src="assets/mockups/double-page.jpg" alt="Double page prestige ouverte du beau-livre, photographie pleine page et texte avec emplacement logo sponsor"></div>
       <div class="mock-caption">
         <div class="mock-cap-t">Votre double page prestige</div>
         <div class="mock-cap-s">2 500 exemplaires · Tier 1</div>
       </div>
     </div>
     <div class="mock-card rv" style="transition-delay:.12s">
-      <div class="mock-visual">
-        <div class="mock-cover">
-          <img loading="lazy" decoding="async" src="assets/presentation/img01-373ce4f489.jpg" alt="Maquette couverture du livre">
-          <div class="mock-cover-body">
-            <div>
-              <div class="mock-cover-title">Sénégal, Terre d'Histoire<br>et de Rencontres</div>
-              <div class="mock-cover-sub">Patrimoine · UNESCO · Mémoire</div>
-            </div>
-            <div class="mock-cover-logo">Votre logo</div>
-          </div>
-        </div>
-      </div>
+      <div class="mock-visual"><img loading="lazy" decoding="async" src="assets/mockups/couverture.jpg" alt="Couverture du beau-livre Sénégal, Terre d'Histoire et de Rencontres, avec emplacement logo sponsor"></div>
       <div class="mock-caption">
         <div class="mock-cap-t">Votre logo sur la couverture</div>
         <div class="mock-cap-s">10 ans de visibilité · Tier 1</div>
       </div>
     </div>
     <div class="mock-card rv" style="transition-delay:.19s">
-      <div class="mock-visual">
-        <div class="mock-ph">
-          <svg class="ic" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M17 5H7v4a5 5 0 0 0 10 0V5zM17 6h3a2 2 0 0 1-2 4h-1M7 6H4a2 2 0 0 0 2 4h1"/></svg>
-          <div class="mock-ph-t">Cérémonie de lancement — Décembre 2027</div>
-          <div class="mock-ph-s">200 VIP · Ministres · Ambassadeurs</div>
-        </div>
-      </div>
+      <div class="mock-visual"><img loading="lazy" decoding="async" src="assets/mockups/ceremonie.jpg" alt="Cérémonie officielle de lancement du livre, salle de réception avec 200 invités VIP"></div>
       <div class="mock-caption">
         <div class="mock-cap-t">Cérémonie officielle</div>
         <div class="mock-cap-s">Votre marque devant les décideurs</div>
       </div>
     </div>
     <div class="mock-card rv" style="transition-delay:.26s">
-      <div class="mock-visual">
-        <div class="mock-ph">
-          <svg class="ic" viewBox="0 0 24 24"><path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4L4.2 7.7l5.4-.8z"/></svg>
-          <div class="mock-ph-t">Édition collector prestige — numérotée, dédicacée</div>
-          <div class="mock-ph-s">50 exemplaires remis à vos relations VIP</div>
-        </div>
-      </div>
+      <div class="mock-visual"><img loading="lazy" decoding="async" src="assets/mockups/collector.jpg" alt="Coffret édition collector du livre, boîtier bleu nuit avec dorure et ruban doré"></div>
       <div class="mock-caption">
         <div class="mock-cap-t">Exemplaire collector</div>
         <div class="mock-cap-s">L'objet-cadeau institutionnel par excellence</div>
