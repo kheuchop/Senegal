@@ -50,7 +50,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:20px 60px;display:f
 
 /* ═══ HERO ═══ */
 #hero{position:relative;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;overflow:hidden;}
-.hero-bg{position:absolute;inset:0;background:url('assets/presentation/img01-373ce4f489.jpg') center/cover no-repeat;z-index:1;overflow:hidden;}
+.hero-bg{position:absolute;inset:0;background:linear-gradient(135deg,#070B14 0%,#0D1525 60%,#111D30 100%);z-index:1;overflow:hidden;}
 .hero-bg iframe{position:absolute;top:50%;left:50%;width:177.78vh;height:100vh;min-width:100%;min-height:56.25vw;transform:translate(-50%,-50%);border:none;pointer-events:none;}
 .hero-overlay{position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,rgba(7,11,20,.78) 0%,rgba(7,11,20,.62) 40%,rgba(7,11,20,.78) 70%,rgba(7,11,20,.97) 100%);}
 .particles{position:absolute;inset:0;z-index:3;pointer-events:none;}
@@ -355,7 +355,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;o
 <!-- ═══════════ §1 HERO ═══════════ -->
 <section id="hero">
   <div class="hero-bg" role="img" aria-label="Sénégal, Terre d'Histoire et de Rencontres">
-    <iframe src="https://www.youtube.com/embed/FqvBLUcpFys?autoplay=1&mute=1&loop=1&playlist=FqvBLUcpFys&controls=0&showinfo=0&rel=0&modestbranding=1&cc_load_policy=3&iv_load_policy=3" allow="autoplay; encrypted-media" allowfullscreen title="Sénégal"></iframe>
+    <iframe id="hero-yt" src="https://www.youtube.com/embed/FqvBLUcpFys?autoplay=1&mute=1&loop=1&playlist=FqvBLUcpFys&controls=0&showinfo=0&rel=0&modestbranding=1&cc_load_policy=3&iv_load_policy=3&enablejsapi=1" allow="autoplay; encrypted-media" allowfullscreen title="Sénégal"></iframe>
   </div>
   <div class="hero-overlay"></div>
   <div class="particles" id="particles"></div>
@@ -761,6 +761,17 @@ if(!STATIC&&matchMedia('(hover:hover) and (pointer:fine)').matches){
     n.addEventListener('mouseenter',()=>{cur.style.width='20px';cur.style.height='20px';curF.style.borderColor='var(--or)';});
     n.addEventListener('mouseleave',()=>{cur.style.width='10px';cur.style.height='10px';curF.style.borderColor='rgba(201,168,76,.5)';});
   });
+}
+
+/* ═══ Sous-titres YouTube : décharge le module captions du player hero
+   (YouTube les réactive sur l'autoplay muet ; cc_load_policy ne suffit pas) ═══ */
+const heroYT=$('#hero-yt');
+if(heroYT){
+  const killCC=()=>{['captions','cc'].forEach(m=>{
+    try{heroYT.contentWindow.postMessage(JSON.stringify({event:'command',func:'unloadModule',args:[m]}),'*');}catch(e){}
+  });};
+  heroYT.addEventListener('load',killCC);
+  setInterval(killCC,1500);
 }
 
 /* ═══ Particules hero ═══ */

@@ -508,7 +508,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;o
 <section id="hero" style="background:linear-gradient(135deg,#070B14 0%,#0D1525 60%,#111D30 100%);">
   <!-- Video background -->
   <div class="video-bg">
-    <iframe src="https://www.youtube.com/embed/FqvBLUcpFys?autoplay=1&mute=1&loop=1&playlist=FqvBLUcpFys&controls=0&showinfo=0&rel=0&modestbranding=1&cc_load_policy=3&iv_load_policy=3" allow="autoplay; encrypted-media" allowfullscreen title="Sénégal"></iframe>
+    <iframe id="hero-yt" src="https://www.youtube.com/embed/FqvBLUcpFys?autoplay=1&mute=1&loop=1&playlist=FqvBLUcpFys&controls=0&showinfo=0&rel=0&modestbranding=1&cc_load_policy=3&iv_load_policy=3&enablejsapi=1" allow="autoplay; encrypted-media" allowfullscreen title="Sénégal"></iframe>
   </div>
   
   <div class="hero-overlay"></div>
@@ -1297,6 +1297,17 @@ if (contactSec) contactSec.classList.add('morph-bg');
 /* ═══ 11. FLOAT BADGE on hero badge ═══ */
 const hbadge = document.getElementById('hbadge');
 if (hbadge) hbadge.classList.add('float-badge');
+
+/* ═══ 12. Sous-titres YouTube : décharge le module captions du player hero
+   (YouTube les réactive sur l'autoplay muet ; cc_load_policy ne suffit pas) ═══ */
+const heroYT = document.getElementById('hero-yt');
+if (heroYT) {
+  const killCC = () => { ['captions','cc'].forEach(m => {
+    try { heroYT.contentWindow.postMessage(JSON.stringify({event:'command',func:'unloadModule',args:[m]}), '*'); } catch(e) {}
+  }); };
+  heroYT.addEventListener('load', killCC);
+  setInterval(killCC, 1500);
+}
 
 </script>
 </body>
