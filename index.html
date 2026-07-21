@@ -5217,6 +5217,8 @@ function saveStateToDB() {
     dailyChecklist: state.dailyChecklist,
     rolePins:       state.rolePins,
     a17MissionStartTs: state.a17MissionStartTs || null,
+    a17PlanBActive: a17State.planBActive || false,
+    a17Log:         a17State.log || [],
     lastMonthlyReport: state.lastMonthlyReport || null,
     auditLog:       state.auditLog || [],
     orsApiKey:      state.orsApiKey || null,
@@ -5774,6 +5776,8 @@ async function loadStateFromDB() {
     if (d.dailyChecklist && typeof d.dailyChecklist === 'object') state.dailyChecklist = { date: d.dailyChecklist.date || '', checked: d.dailyChecklist.checked || {} };
     if (d.rolePins && typeof d.rolePins === 'object') state.rolePins = d.rolePins;
     if (d.a17MissionStartTs) state.a17MissionStartTs = d.a17MissionStartTs;
+    if (typeof d.a17PlanBActive === 'boolean') a17State.planBActive = d.a17PlanBActive;
+    if (Array.isArray(d.a17Log)) a17State.log = d.a17Log;
     if (d.lastMonthlyReport) state.lastMonthlyReport = d.lastMonthlyReport;
     if (Array.isArray(d.auditLog)) state.auditLog = d.auditLog;
     if (typeof d.orsApiKey === 'string' && d.orsApiKey) state.orsApiKey = d.orsApiKey;
@@ -6592,6 +6596,7 @@ function applyCloudState(d) {
   if (typeof d.daysDone === 'number' && d.daysDone !== state.daysDone) { state.daysDone = d.daysDone; changed = true; }
   if (typeof d.sitesDone === 'number' && d.sitesDone !== state.sitesDone) { state.sitesDone = d.sitesDone; changed = true; }
   if (d.lastMonthlyReport && (!state.lastMonthlyReport || d.lastMonthlyReport > state.lastMonthlyReport)) { state.lastMonthlyReport = d.lastMonthlyReport; changed = true; }
+  if (typeof d.a17PlanBActive === 'boolean' && d.a17PlanBActive !== a17State.planBActive) { a17State.planBActive = d.a17PlanBActive; changed = true; }
   if (d.treasury && Array.isArray(d.treasury.encaissements) && JSON.stringify(d.treasury) !== JSON.stringify(state.treasury)) {
     state.treasury = { encaissements: d.treasury.encaissements, decaissements: d.treasury.decaissements || [] };
     changed = true;
@@ -6619,6 +6624,7 @@ function applyCloudState(d) {
     ['a13QrLibrary', () => a13State.qrLibrary, v => { a13State.qrLibrary = v; }],
     ['a16Backers',   () => a16State.backers,   v => { a16State.backers = v; }],
     ['a16Paliers',   () => a16State.paliers,   v => { a16State.paliers = v; }],
+    ['a17Log',       () => a17State.log,       v => { a17State.log = v; }],
     ['auditLog',     () => state.auditLog,     v => { state.auditLog = v; }],
   ];
   cloudListFields.forEach(([key, get, set]) => {
@@ -6627,6 +6633,7 @@ function applyCloudState(d) {
     const localVal = get() || [];
     if (JSON.stringify(cloudVal) !== JSON.stringify(localVal)) { set(cloudVal); changed = true; }
   });
+  if (changed && typeof a17RenderLog === 'function') { try { a17RenderLog(); } catch (e) {} }
 
   return changed;
 }
@@ -14430,15 +14437,18 @@ function a17Simulate() {
     `<div style="padding:8px 10px;margin-bottom:6px;border-radius:var(--r-sm);background:rgba(${colorMap[c]},0.08);border:1px solid rgba(${colorMap[c]},0.3);font-family:var(--font-mono);font-size:0.56rem;line-height:1.6;color:rgb(${colorMap[c]})">${msg}</div>`).join('');
   a17AddLog(`Simulation : retard ${jours}j${mcatRetard ? ' + MCAT retardée' : ''}`);
 }
-function a17AddLog(text) {
-  a17State.log.unshift({ text, time: now() });
+function a17RenderLog() {
   const list = document.getElementById('a17-log-list'); if (!list) return;
   list.innerHTML = '';
   a17State.log.slice(0, 10).forEach(l => {
     const div = document.createElement('div'); div.className = 'a17-log-item';
-    div.innerHTML = `<div class="a17-log-time">${l.time}</div><div class="a17-log-text">${l.text}</div>`;
+    div.innerHTML = `<div class="a17-log-time">${escapeHtml(l.time)}</div><div class="a17-log-text">${escapeHtml(l.text)}</div>`;
     list.appendChild(div);
   });
+}
+function a17AddLog(text) {
+  a17State.log.unshift({ text, time: now() });
+  a17RenderLog();
 }
 
 function initAgent17() {
