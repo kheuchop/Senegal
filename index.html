@@ -13348,7 +13348,7 @@ function a15RenderDevis() {
   const items = a15State.filter === 'all' ? a15State.devis : a15State.devis.filter(d => d.cat === a15State.filter);
   if (items.length === 0) { list.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);text-align:center;padding:16px">Aucun devis dans cette catégorie</div>'; return; }
   list.innerHTML = '';
-  const maxVal = Math.max(...items.map(d => Math.max(d.reel, d.est)));
+  const maxVal = Math.max(...items.map(d => Math.max(d.reel, d.est))) || 1; // évite NaN si tous les devis sont à 0
   items.forEach(d => {
     const delta = d.est - d.reel;
     const pctEst = Math.round(d.est / maxVal * 100);
