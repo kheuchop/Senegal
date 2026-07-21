@@ -3955,6 +3955,10 @@ textarea.input-field { resize: vertical; min-height: 80px; }
             <button class="btn btn-primary btn-sm" onclick="a10MarkSent(event)"><div class="spinner"></div><span class="btn-text">📤 Marquer Envoyé</span></button>
           </div>
         </div>
+        <div class="card" id="a10-demande-card" style="display:none">
+          <div class="card-title">📄 Demande d'Autorisation Générée <span class="pill pill-amber" style="margin-left:auto;font-size:0.45rem">Claude</span></div>
+          <div id="a10-demande-result"></div>
+        </div>
         <div class="card">
           <div class="card-title">Ajouter Autorisation</div>
           <div class="input-group"><label class="input-label">Site</label><select class="input-field" id="a10-new-site"></select></div>
@@ -4943,6 +4947,8 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 <!-- Feuilles de route Agent Terrain (Photographe/Vidéaste + plan Reportage BTS) — données statiques, doivent précéder le script principal -->
 <script src="route-sheets-seed.js"></script>
 <script src="reportage-bts-plan.js"></script>
+<!-- En-tête officielle Sénégal THR (image base64) pour les documents Word -->
+<script src="entete-thr.js"></script>
 
 <script>
 /* ============================================================
@@ -5403,27 +5409,47 @@ function _docxDownload(blob, filename) {
   document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
 }
-/* Lettre A4 : en-tête THR or, date à Dakar, objet, corps justifié,
-   signature co-gérants, pied de page contact. */
+/* En-tête officielle Sénégal THR (image, reprise telle quelle du PDF).
+   Retourne { xml, media } : le paragraphe image + l'entrée mediaFiles à
+   passer à _buildDocxBlob. Repli sur l'ancien en-tête texte or si
+   l'image (entete-thr.js) n'est pas chargée. Point unique : tous les
+   documents Word de l'app en héritent. */
+function _docxEnteteHeader() {
+  if (typeof ENTETE_THR === 'undefined' || !ENTETE_THR.dataUrl) {
+    // Repli texte (rare : entete-thr.js absent/non chargé)
+    const rGold = '<w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/><w:b/><w:color w:val="C4872A"/><w:sz w:val="28"/></w:rPr>';
+    const rContact = '<w:rPr><w:color w:val="555555"/><w:sz w:val="17"/></w:rPr>';
+    const xml = `<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="12" w:space="4" w:color="C4872A"/></w:pBdr></w:pPr>${_docxRun("SÉNÉGAL, TERRE D'HISTOIRE ET DE RENCONTRES", rGold)}</w:p>` +
+      `<w:p><w:pPr><w:jc w:val="right"/></w:pPr>${_docxRun('THR Éditions SARL\ncontact@senegalthr.com\nDakar, Sénégal', rContact)}</w:p>`;
+    return { xml, media: null };
+  }
+  // Largeur utile page A4 = 11906 - marges (1247+1247) = 9412 twips ; 1 twip = 635 EMU.
+  const cx = 9412 * 635;
+  const cy = Math.round(cx * (ENTETE_THR.h / ENTETE_THR.w));
+  const relId = 'rIdEntete';
+  const media = { relId, name: 'entete-thr.png', data: _dataUrlToBytes(ENTETE_THR.dataUrl) };
+  const xml = `<w:p><w:pPr><w:spacing w:after="120"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="900" name="En-tête THR"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="900" name="En-tête THR"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${relId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
+  return { xml, media };
+}
+
+/* Lettre A4 : en-tête THR (image officielle), date à Dakar, objet, corps
+   justifié, signature co-gérants, pied de page contact. */
 function exportWordDoc(filename, title, text, opts = {}) {
   const clean = humanizeDocText(text);
   const dateStr = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-  const rGold = '<w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/><w:b/><w:color w:val="C4872A"/><w:sz w:val="28"/></w:rPr>';
-  const rContact = '<w:rPr><w:color w:val="555555"/><w:sz w:val="17"/></w:rPr>';
   const rObjet = '<w:rPr><w:b/></w:rPr>';
   const rSign = '<w:rPr><w:sz w:val="19"/><w:color w:val="555555"/></w:rPr>';
   const rFooter = '<w:rPr><w:sz w:val="16"/><w:color w:val="888888"/></w:rPr>';
 
   const bodyParas = clean.split(/\n{2,}/).map(p =>
     `<w:p><w:pPr><w:spacing w:after="240" w:line="360" w:lineRule="auto"/><w:jc w:val="both"/></w:pPr>${_docxRun(p)}</w:p>`).join('');
-  const header = `<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="12" w:space="4" w:color="C4872A"/></w:pBdr></w:pPr>${_docxRun("SÉNÉGAL, TERRE D'HISTOIRE ET DE RENCONTRES", rGold)}</w:p>` +
-    `<w:p><w:pPr><w:jc w:val="right"/></w:pPr>${_docxRun('THR Éditions SARL\ncontact@senegalthr.com\nDakar, Sénégal', rContact)}</w:p>`;
+  const entete = _docxEnteteHeader();
   const dateP = `<w:p><w:pPr><w:jc w:val="right"/><w:spacing w:before="240" w:after="120"/></w:pPr>${_docxRun('Dakar, le ' + dateStr)}</w:p>`;
   const objetP = opts.objet === false ? '' : `<w:p><w:pPr><w:spacing w:after="240"/></w:pPr>${_docxRun('Objet : ' + (opts.objet || title), rObjet)}</w:p>`;
   const signP = opts.signature === false ? '' : `<w:p><w:pPr><w:spacing w:before="400"/></w:pPr>${_docxRun('Attab Sonko · Cheikh Anta Diop\nCo-gérants, THR Éditions · Mission « Sénégal, Terre d\'Histoire et de Rencontres »', rSign)}</w:p>`;
   const footerP = `<w:p><w:pPr><w:pBdr><w:top w:val="single" w:sz="4" w:space="4" w:color="BBBBBB"/></w:pBdr><w:spacing w:before="360"/></w:pPr>${_docxRun('THR Éditions SARL · contact@senegalthr.com · +221 77 612 82 21 / 77 336 11 42 · Dakar, Sénégal', rFooter)}</w:p>`;
 
-  const blob = _buildDocxBlob(title, header + dateP + objetP + bodyParas + signP + footerP);
+  const blob = _buildDocxBlob(title, entete.xml + dateP + objetP + bodyParas + signP + footerP, entete.media ? [entete.media] : []);
   _docxDownload(blob, filename);
   showToast('📄 Document Word téléchargé', 'ok');
 }
@@ -7842,18 +7868,17 @@ async function finExportJustificatifs(evt) {
     const dateStr = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
     const title = 'Justificatifs' + (moisStr.trim() ? ' — ' + moisStr.trim() : ' — Intégralité');
 
-    const rGold = '<w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/><w:b/><w:color w:val="C4872A"/><w:sz w:val="26"/></w:rPr>';
-    const rContact = '<w:rPr><w:color w:val="555555"/><w:sz w:val="16"/></w:rPr>';
     const rBold = '<w:rPr><w:b/></w:rPr>';
     const rMuted = '<w:rPr><w:color w:val="555555"/><w:sz w:val="18"/></w:rPr>';
     const rFooter = '<w:rPr><w:sz w:val="16"/><w:color w:val="888888"/></w:rPr>';
 
-    const header = `<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="12" w:space="4" w:color="C4872A"/></w:pBdr></w:pPr>${_docxRun("SÉNÉGAL, TERRE D'HISTOIRE ET DE RENCONTRES", rGold)}</w:p>` +
-      `<w:p><w:pPr><w:jc w:val="right"/></w:pPr>${_docxRun('THR Éditions SARL\nDakar, le ' + dateStr, rContact)}</w:p>`;
+    const entete = _docxEnteteHeader();
+    const header = entete.xml + `<w:p><w:pPr><w:jc w:val="right"/><w:spacing w:before="120"/></w:pPr>${_docxRun('Dakar, le ' + dateStr, rMuted)}</w:p>`;
     const introP = `<w:p><w:pPr><w:spacing w:before="240" w:after="240"/></w:pPr>${_docxRun('PIÈCES JUSTIFICATIVES — ' + (moisStr.trim() ? moisStr.trim().toUpperCase() : 'INTÉGRALITÉ'), rBold)}${_docxRun('\n' + receipts.length + ' justificatif(s) · Total : ' + fmtFCFA(total))}</w:p>`;
 
     const maxWEmu = 380 * 12700, maxHEmu = 280 * 12700;
     const mediaFiles = [];
+    if (entete.media) mediaFiles.push(entete.media);
     let entriesXml = '';
     for (let i = 0; i < receipts.length; i++) {
       const r = receipts[i];
@@ -11615,7 +11640,8 @@ function a10RenderTable() {
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">
       <div class="a10-auth-status s-${a.status}">${statusLabel[a.status]}</div>
-      ${a.status !== 'valide' ? `<button class="btn btn-primary btn-sm" style="min-height:28px;padding:3px 8px;font-size:0.5rem" onclick="a10GenRelance('${a.id}')">✉ Relance</button>` : ''}
+      <button class="btn btn-primary btn-sm" style="min-height:28px;padding:3px 8px;font-size:0.5rem" onclick="a10GenDemande('${a.id}', this)"><div class="spinner"></div><span class="btn-text">📄 Demande</span></button>
+      ${a.status !== 'valide' ? `<button class="btn btn-ghost btn-sm" style="min-height:28px;padding:3px 8px;font-size:0.5rem" onclick="a10GenRelance('${a.id}')">✉ Relance</button>` : ''}
       <button class="btn btn-ghost btn-sm" style="min-height:24px;padding:2px 6px;font-size:0.48rem" onclick="a10CycleStatus('${a.id}')">↻ Statut</button>
     </div>`;
     container.appendChild(div);
@@ -11826,6 +11852,41 @@ async function a10GenRelanceClaude(btn) {
 function a10MarkRelanceSentDirect(id) {
   const a = a10State.auths.find(x => x.id === id);
   if (a) { a.status = 'encours'; a10RenderTable(); a10AddJournal(`Relance envoyée : ${a.site}`); addActivity('📤', `Relance envoyée : ${a.site}`, now()); saveStateToDB(); showToast('📤 Marqué envoyé', 'ok'); }
+}
+
+/* ── A10 : Demande initiale d'autorisation (bouton par ligne du tableau) ──
+   Génère via Claude la lettre de demande de tournage, protocole adapté à
+   l'organisme, exportable en Word avec l'en-tête officielle Sénégal THR. */
+async function a10GenDemande(id, btn) {
+  if (btn) disableBtn(btn);
+  const auth = a10State.auths.find(a => a.id === id);
+  if (!auth) { showToast('Autorisation introuvable', 'warn'); if (btn) enableBtn(btn); return; }
+  const card = document.getElementById('a10-demande-card');
+  const div  = document.getElementById('a10-demande-result');
+  const site = SITES.find(s => s.name === auth.site) || {};
+  try {
+    const raw = await a10CallClaude(
+      'Rédige une lettre de DEMANDE INITIALE d\'autorisation de prises de vue (photo et vidéo) sur un site, adressée à l\'organisme compétent. Registre formel, courrier officiel, pas de listes à puces. Adapte le protocole selon le type d\'organisme (Présidence/Ministère = très formel administratif ; Khalife/Dahira/confrérie = formules de respect islamique et déférence ; UNESCO/Patrimoine = registre académique et patrimonial ; Mairie = administratif local ; Parc National/DPN = registre environnemental et scientifique ; communauté villageoise/coutumier = respect des autorités traditionnelles). Termine par une formule de politesse adaptée. N\'invente pas de numéro de référence, ne mets pas d\'en-tête ni de coordonnées d\'expéditeur (ils sont ajoutés automatiquement).' + HUMAN_DOC_STYLE,
+      `Site : ${auth.site}${site.zone ? ' (zone ' + site.zone + ')' : ''}\nOrganisme destinataire : ${auth.org}\nContact : ${auth.contact || '—'}\nRéférence dossier : ${auth.ref}\n\nRédige la lettre de demande d'autorisation complète. Contexte de la mission : livre d'art collector "Sénégal, Terre d'Histoire et de Rencontres", 210 pages, 500 exemplaires numérotés, trilingue français/anglais/arabe, budget 100 000 000 FCFA, mission de 56 jours sur le terrain valorisant le patrimoine sénégalais à l'international. Précise l'objet (autorisation de prises de vue photographiques et vidéo sur le site), la période envisagée, l'engagement au respect des lieux et des personnes, et la demande d'un interlocuteur sur place.`,
+      1200);
+    const text = humanizeDocText(raw);
+    const wBtn = wordBtnReg('a10dem_' + auth.id, 'Demande d\'autorisation · ' + auth.site, text, 'demande-autorisation-' + (auth.ref || auth.id), { objet: 'Demande d\'autorisation de prises de vue, ' + auth.site });
+    if (card) card.style.display = 'block';
+    if (div) div.innerHTML = `<div style="font-size:0.55rem;color:var(--text-muted);margin-bottom:6px">${escapeHtml(auth.site)} — ${escapeHtml(auth.org)}</div>
+      <div class="a10-doc-output">${escapeHtml(text)}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+        ${wBtn}
+        <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard?.writeText(${JSON.stringify(JSON.stringify(text))}).then(()=>showToast('📋 Copié','ok'))">📋 Copier</button>
+      </div>`;
+    a10AddJournal(`Demande d'autorisation générée : ${auth.site} (${auth.org})`);
+    addActivity('📄', `Demande d'autorisation — ${auth.site}`, now());
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } catch (e) {
+    const noKey = String(e.message).includes('NO_KEY') || String(e.message).includes('ANTHROPIC');
+    showToast('❌ ' + e.message + (noKey ? ' — clé IA non configurée sur Vercel' : ''), 'error');
+  } finally {
+    if (btn) enableBtn(btn);
+  }
 }
 
 /* ── A10 : Droit à l'Image ── */
