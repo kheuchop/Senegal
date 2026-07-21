@@ -9229,8 +9229,7 @@ function a5ChronoStart(planItem) {
   a5State.dayRef = activeItem;
   const siteName = activeItem && activeItem.site ? activeItem.site.name : 'Session libre';
   const startTime = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-  document.getElementById('a5-chrono-site')?.setAttribute && null;
-  const siteEl = document.getElementById('a5-chrono-site');
+  const siteEl = document.getElementById('a5-chrono-site-label');
   if (siteEl) siteEl.textContent = siteName;
   const sessionMeta = document.getElementById('a5-session-meta');
   if (sessionMeta) sessionMeta.style.display = 'flex';
@@ -9241,7 +9240,7 @@ function a5ChronoStart(planItem) {
   const startP = document.getElementById('a5-session-start');
   if (startP) startP.textContent = `Départ ${startTime}`;
   const gpsActive = state.gpsActive;
-  const gpsBadge = document.getElementById('a5-chrono-gps-badge');
+  const gpsBadge = document.getElementById('a5-gps-badge');
   if (gpsBadge) { gpsBadge.textContent = gpsActive ? '⬤ GPS ACTIF' : 'GPS INACTIF'; gpsBadge.classList.toggle('gps-live', gpsActive); }
   document.getElementById('a5-btn-start').style.display = 'none';
   document.getElementById('a5-btn-pause').style.display = 'inline-flex';
@@ -9283,7 +9282,7 @@ function a5ChronoReset() {
   document.getElementById('a5-btn-pause').style.display = 'none';
   document.getElementById('a5-btn-valider').style.display = 'none';
   document.getElementById('a5-session-meta').style.display = 'none';
-  const gpsBadge = document.getElementById('a5-chrono-gps-badge');
+  const gpsBadge = document.getElementById('a5-gps-badge');
   if (gpsBadge) { gpsBadge.textContent = 'GPS INACTIF'; gpsBadge.classList.remove('gps-live'); }
 }
 
