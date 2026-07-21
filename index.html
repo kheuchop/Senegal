@@ -9092,6 +9092,8 @@ function a5RenderRouteSheet() {
       <div class="a5-rs-text">${escapeHtml(bts.recommandations || '')}</div>
       <div class="a5-rs-subtitle">🎙️ À interviewer</div>
       <div class="a5-rs-text">${escapeHtml(bts.interviewSubject || '')}</div>
+      ${(bts.questions || []).length ? `<div class="a5-rs-subtitle">❓ Questions à poser</div>
+      <ul class="a5-rs-list">${bts.questions.map(q => `<li>${escapeHtml(q)}</li>`).join('')}</ul>` : ''}
       <div style="display:flex;gap:16px;margin-top:6px;flex-wrap:wrap">
         <div><div class="a5-rs-subtitle">⏱ Tournage max</div><div class="a5-rs-text">${escapeHtml(bts.tournageLimiteH || '')}</div></div>
         <div><div class="a5-rs-subtitle">🎞 Vidéo finale QR</div><div class="a5-rs-text">${escapeHtml(bts.videoFinaleMin || '')}</div></div>
@@ -9137,6 +9139,7 @@ function a5RsExportWord() {
       t += `Spots : ${(bts.spots || []).join(' · ')}\n`;
       t += `Technique : ${bts.recommandations}\n`;
       t += `À interviewer : ${bts.interviewSubject}\n`;
+      if ((bts.questions || []).length) t += `Questions à poser : ${bts.questions.join(' · ')}\n`;
       t += `Tournage max : ${bts.tournageLimiteH} — Vidéo finale QR : ${bts.videoFinaleMin}\n`;
     }
     return t;
