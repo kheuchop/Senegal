@@ -6285,7 +6285,28 @@ function findNearestSite(lat, lon) {
   return best ? { site: best, dist: bestDist } : null;
 }
 
-function onGpsError(err) { console.warn('GPS error:', err.message); }
+function onGpsError(err) {
+  console.warn('GPS error:', err.code, err.message);
+  // 1 = PERMISSION_DENIED : échec définitif → couper proprement et expliquer,
+  // sinon le bouton reste "actif" alors que rien n'arrivera jamais (le terrain
+  // croit que le GPS marche). 2/3 = position indisponible/timeout : transitoire,
+  // watchPosition continue d'essayer, on informe sans tout couper.
+  if (err.code === 1) {
+    if (state.gpsActive && state.gpsWatchId != null) navigator.geolocation.clearWatch(state.gpsWatchId);
+    clearTimeout(state.gpsWatchdog);
+    state.gpsActive = false;
+    state.gpsWatchId = null;
+    const btn = document.getElementById('gps-toggle-btn'); if (btn) btn.className = 'nav-btn';
+    const cd = document.getElementById('gps-coords-display'); if (cd) cd.textContent = 'GPS refusé';
+    const qEl = document.getElementById('gps-quality-display'); if (qEl) { qEl.textContent = '🚫 Autorisation de localisation refusée — active-la dans les réglages du navigateur/téléphone'; qEl.style.color = 'var(--red)'; }
+    updateMapPulse(null, false);
+    clearMyLocationMarker();
+    showToast('🚫 GPS refusé — autorise la localisation dans les réglages', 'warn');
+  } else {
+    const qEl = document.getElementById('gps-quality-display');
+    if (qEl && state.gpsActive) { qEl.textContent = '⏳ Recherche du signal GPS… (sors à ciel ouvert)'; qEl.style.color = 'var(--amber)'; }
+  }
+}
 
 function resetGpsWatchdog() {
   if (state.gpsWatchdog) clearTimeout(state.gpsWatchdog);
