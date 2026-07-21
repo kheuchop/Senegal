@@ -11,6 +11,20 @@
    Durées calibrées sur site.days (SITES) : 1j -> tournage court/
    vidéo 1'30-2'00 ; 2j -> tournage moyen/vidéo 2'30-3'00 ; 3j
    (sites majeurs) -> journée dédiée/vidéo 3'00-4'00.
+
+   LANGUE DES INTERVIEWS : les questions sont écrites en français,
+   langue de travail de l'équipe — mais l'interlocuteur répond dans SA
+   langue, quelle qu'elle soit. Le montage final (sous-titré FR/EN/AR
+   comme le livre) se fait après coup ; sur le terrain, prévoir un
+   guide/interprète local si l'interlocuteur ne parle pas français,
+   plutôt que de traduire les questions à l'avance dans une langue
+   figée. Probabilité plus élevée d'avoir besoin d'un interprète :
+   Guet Ndar id:17 (wolof), Podor id:18 (pulaar), Joal-Fadiouth id:24
+   (sérère), forêts sacrées Diola id:31 / Carabane id:36 / Cap Skirring
+   id:32 (diola), Pays Bassari id:30 (langues bassari/bédik). Les
+   interlocuteurs "institutionnels" (conservateurs, guides UNESCO,
+   rangers, responsables religieux désignés) parlent en général
+   français couramment.
    ============================================================ */
 const REPORTAGE_BTS_PLAN = {
   // ZONE A — Dakar et Périphérie
