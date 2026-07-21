@@ -2326,6 +2326,13 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <div id="install-app-body"></div>
         </div>
 
+        <!-- État des intégrations IA / services -->
+        <div class="card">
+          <div class="card-title">🔌 État des Services <button class="btn btn-ghost btn-sm" style="margin-left:auto;padding:2px 8px;font-size:0.5rem" onclick="refreshServiceStatus()">🔄</button></div>
+          <div id="service-status-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:0.56rem"></div>
+          <div style="font-family:var(--font-mono);font-size:0.46rem;color:var(--text-muted);margin-top:6px;line-height:1.5">Un service « absent » désactive les fonctions IA associées (les documents déjà rédigés restent affichés). Voir le guide pour configurer une clé.</div>
+        </div>
+
         <!-- Diagnostic de synchronisation -->
         <div class="card">
           <div class="card-title">🩺 Diagnostic Synchronisation</div>
@@ -2940,6 +2947,12 @@ textarea.input-field { resize: vertical; min-height: 80px; }
               <div class="a5-kpi-label">Chrono GPS</div>
             </div>
           </div>
+        </div>
+
+        <!-- A5: Prêt pour le terrain — récap transversal du site du jour -->
+        <div class="card">
+          <div class="card-title">🚦 Prêt pour le Terrain <span class="pill" id="a5-ready-site" style="margin-left:auto;font-size:0.5rem;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</span></div>
+          <div id="a5-ready-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px"></div>
         </div>
 
         <!-- A5: Chronomètre GPS terrain -->
@@ -4385,6 +4398,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <div class="card-title">QR Code — <span id="a13-qr-site-label"></span></div>
           <div class="a13-qr-display"><canvas id="a13-qr-canvas" width="200" height="200"></canvas></div>
           <div class="a13-qr-meta" id="a13-qr-meta"></div>
+          <div id="a13-bts-brief" style="display:none;margin-top:10px"></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
             <button class="btn btn-ghost btn-sm" onclick="a13DownloadQR()">💾 Télécharger PNG</button>
             <button class="btn btn-primary btn-sm" onclick="a13CopyURL()">📋 Copier URL</button>
@@ -6361,7 +6375,7 @@ function switchTab(idx) {
     updateFinancialUI();
     printCfgPopulate();
   }
-  if (idx === 0) { try { renderMorningBrief(); renderAuditLog(); } catch (e) {} }
+  if (idx === 0) { try { renderMorningBrief(); renderAuditLog(); refreshServiceStatus(); } catch (e) {} }
 }
 function scrollTabIntoView(idx) {
   const tabs = document.querySelectorAll('.agent-tab');
@@ -9053,6 +9067,66 @@ function a5RsInit() {
     SITES.forEach(s => { const o = document.createElement('option'); o.value = s.id; o.textContent = `[Z${s.zone}] S${s.id} — ${s.name}`; sel.appendChild(o); });
   }
   a5RenderRouteSheet();
+  a5RenderReadiness();
+}
+
+/* ── Prêt pour le terrain : croise A10 (autorisation), A11 (matériel),
+   A5 (feuille de route) et A14 (météo) pour le site du jour, en un
+   coup d'œil avant le départ. Chaque ligne = vert / orange / rouge. */
+function a5NearestWeatherRegion(site) {
+  if (!site || !site.coords || !a14State || !a14State.regions) return null;
+  let best = null, bestD = Infinity;
+  Object.keys(a14State.regions).forEach(key => {
+    const r = a14State.regions[key];
+    const d = Math.hypot((r.lat - site.coords[0]), (r.lon - site.coords[1]));
+    if (d < bestD) { bestD = d; best = key; }
+  });
+  return best;
+}
+function a5RenderReadiness() {
+  const grid = document.getElementById('a5-ready-grid');
+  if (!grid) return;
+  const dayNum = Math.min(state.daysDone + 1, MISSION.joursTerrain);
+  const site = getPlannedSiteForDay(dayNum);
+  const sitePill = document.getElementById('a5-ready-site');
+  if (!site) { if (sitePill) sitePill.textContent = 'Mission terminée'; grid.innerHTML = ''; return; }
+  if (sitePill) sitePill.textContent = `J${dayNum} · ${site.name}`;
+
+  // 1. Autorisation (A10) — même rapprochement que le Risk Manager
+  const auth = a10State.auths.find(a => a.site && (a.site.includes(site.name) || site.name.includes(a.site.split('(')[0].trim())));
+  const authState = !auth ? 'red' : auth.status === 'valide' ? 'green' : 'amber';
+  const authTxt = !auth ? 'aucune demande' : auth.status === 'valide' ? 'validée' : (auth.status === 'relance' ? 'à relancer' : 'en cours');
+
+  // 2. Matériel opérationnel (A11)
+  const opCount = (a11State.equipment || []).filter(e => e.status === 'operationnel').length;
+  const matState = opCount === 0 ? 'red' : opCount < 3 ? 'amber' : 'green';
+  const matTxt = opCount === 0 ? 'aucun matériel prêt' : `${opCount} équipement(s)`;
+
+  // 3. Feuille de route (A5) — générée par IA ou contenu par défaut disponible
+  const hasSheet = (a5State.routeSheets?.photo?.[site.id] || a5State.routeSheets?.video?.[site.id] ||
+    (typeof ROUTE_SHEETS_SEED !== 'undefined' && (ROUTE_SHEETS_SEED.photo?.[site.id] || ROUTE_SHEETS_SEED.video?.[site.id])));
+  const rsState = hasSheet ? 'green' : 'amber';
+  const rsTxt = hasSheet ? 'disponible' : 'à préparer';
+
+  // 4. Météo (A14) — région la plus proche du site, si données chargées
+  const reg = a5NearestWeatherRegion(site);
+  const live = reg && a14State.live ? a14State.live[reg] : null;
+  const photoScore = live?.photo; // 'bad' | 'warn' | 'ok' (a14PhotoScore renvoie une chaîne)
+  const meteoState = !live ? 'amber' : photoScore === 'bad' ? 'red' : photoScore === 'warn' ? 'amber' : 'green';
+  const meteoTxt = !live ? 'à consulter (A14)' : `${live.temp}° · ${live.cond}`;
+
+  const dot = { green:'🟢', amber:'🟠', red:'🔴' };
+  const border = { green:'rgba(0,230,118,.25)', amber:'rgba(255,171,64,.3)', red:'rgba(255,82,82,.3)' };
+  const col = { green:'var(--emerald)', amber:'var(--amber)', red:'var(--red)' };
+  const cell = (icon, label, st, txt) => `<div style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--bg-card-2);border-radius:6px;border:1px solid ${border[st]}">
+      <span>${dot[st]}</span>
+      <div style="line-height:1.25"><div style="font-size:0.58rem;color:var(--text-primary)">${icon} ${label}</div><div style="font-family:var(--font-mono);font-size:0.46rem;color:${col[st]}">${escapeHtml(txt)}</div></div>
+    </div>`;
+  grid.innerHTML =
+    cell('📜', 'Autorisation', authState, authTxt) +
+    cell('🎒', 'Matériel', matState, matTxt) +
+    cell('📋', 'Feuille de route', rsState, rsTxt) +
+    cell('🌤', 'Météo', meteoState, meteoTxt);
 }
 
 function a5RsSetRole(role) {
@@ -12798,6 +12872,29 @@ function a13GenerateQR(evt) {
     if (meta) meta.textContent = `Type: ${type} · Style: ${style} · Site ${siteId}\n${url}`;
     document.getElementById('a13-qr-output-card').style.display = 'block';
 
+    // Behind The Scenes : rappelle le plan reportage du site (thème, durée
+    // cible de la vidéo, spots) pour que la vidéo derrière le QR soit
+    // tournée/montée conformément à ce qui a été préparé côté Terrain.
+    const btsEl = document.getElementById('a13-bts-brief');
+    if (btsEl) {
+      const bts = (type === 'bts' && typeof REPORTAGE_BTS_PLAN !== 'undefined') ? REPORTAGE_BTS_PLAN[siteId] : null;
+      if (bts) {
+        btsEl.style.display = 'block';
+        btsEl.innerHTML = `<div style="border:1px solid rgba(214,165,58,.3);border-radius:6px;padding:10px;background:rgba(214,165,58,.05)">
+          <div style="font-size:0.58rem;font-weight:600;color:var(--gold);margin-bottom:4px">🎬 Vidéo à placer derrière ce QR</div>
+          <div style="font-size:0.6rem;font-style:italic;color:var(--gold);line-height:1.4;margin-bottom:6px">« ${escapeHtml(bts.reportageTheme)} »</div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted);margin-bottom:6px">
+            <span>🎞 Durée cible : <b style="color:var(--text-primary)">${escapeHtml(bts.videoFinaleMin || '—')}</b></span>
+            <span>⏱ Tournage max : <b style="color:var(--text-primary)">${escapeHtml(bts.tournageLimiteH || '—')}</b></span>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:0.46rem;color:var(--text-muted);line-height:1.5">Plans clés : ${(bts.spots || []).map(escapeHtml).join(' · ')}</div>
+        </div>`;
+      } else {
+        btsEl.style.display = 'none';
+        btsEl.innerHTML = '';
+      }
+    }
+
     // Add to library
     const libCanvas = document.createElement('canvas');
     libCanvas.width = 40; libCanvas.height = 40;
@@ -14060,6 +14157,47 @@ function displaySwVersion() {
 /* Diagnostic de synchronisation — montre EXACTEMENT ce qui bloque (réseau,
    session expirée, droits Supabase…) au lieu de laisser échouer en silence.
    Copiable pour être signalé tel quel. */
+/* ── Indicateur d'état des services (clés serveur + clés client) ──
+   Clés serveur (Claude, Gemini) : sondées via /api/status qui ne renvoie
+   que des booléens, jamais la valeur. Clés client (météo, routage) :
+   lues directement dans l'état local/synchronisé. */
+let _serviceStatusCache = null;
+async function refreshServiceStatus() {
+  const grid = document.getElementById('service-status-grid');
+  if (!grid) return;
+  const row = (label, ok, hint) => `<div style="display:flex;align-items:center;gap:5px;padding:5px 7px;background:var(--bg-card-2);border-radius:6px;border:1px solid ${ok?'rgba(0,230,118,.25)':'rgba(255,82,82,.25)'}">
+      <span>${ok?'🟢':'🔴'}</span>
+      <div style="line-height:1.25"><div style="color:var(--text-primary)">${label}</div><div style="font-family:var(--font-mono);font-size:0.44rem;color:${ok?'var(--emerald)':'var(--red)'}">${ok?'configuré':(hint||'absent')}</div></div>
+    </div>`;
+
+  // Clés client — connues immédiatement
+  const meteoOk = !!(a14State && a14State.apiKey);
+  const orsOk = !!(state && state.orsApiKey);
+
+  // Clés serveur — placeholder pendant la requête (garde le dernier résultat connu)
+  let anthropicOk = _serviceStatusCache?.anthropic ?? null;
+  let geminiOk = _serviceStatusCache?.gemini ?? null;
+  const render = () => {
+    grid.innerHTML =
+      row('Agents IA (Claude)', anthropicOk === true, anthropicOk === null ? 'vérification…' : 'clé absente sur Vercel') +
+      row('Génération d\'images', geminiOk === true, geminiOk === null ? 'vérification…' : 'repli Pollinations') +
+      row('Météo terrain', meteoOk, 'clé à saisir (A14)') +
+      row('Itinéraire routier', orsOk, 'guidage à vol d\'oiseau');
+  };
+  render();
+
+  try {
+    const res = await fetch('/api/status', { method: 'GET' });
+    if (res.ok) {
+      const d = await res.json();
+      _serviceStatusCache = d;
+      anthropicOk = !!d.anthropic;
+      geminiOk = !!d.gemini;
+    } else { anthropicOk = false; geminiOk = false; }
+  } catch (e) { anthropicOk = false; geminiOk = false; }
+  render();
+}
+
 async function runSyncDiagnostic(evt) {
   const btn = evt && evt.currentTarget; if (btn) disableBtn(btn);
   const out = document.getElementById('sync-diag-result');
