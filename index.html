@@ -10929,7 +10929,7 @@ async function a7GenFromNotes(btn) {
     const data = await a7CallClaudeJSON(sys, userContent, 1000);
     a7State.lastOutput = { fr: data.fr||'', en: data.en||'', ar: data.ar||'' };
     a7RenderOutput();
-    if (div) div.innerHTML = `<div style="color:var(--emerald);font-size:12px">✓ ${data.titre ? '"'+data.titre+'"' : 'Prose générée'} — voir sortie ci-dessus</div>`;
+    if (div) div.innerHTML = `<div style="color:var(--emerald);font-size:12px">✓ ${data.titre ? '"'+escapeHtml(data.titre)+'"' : 'Prose générée'} — voir sortie ci-dessus</div>`;
     addActivity('🎒', `Notes terrain → prose (${register})`, now());
   } catch(e) { showToast('Erreur : ' + e.message, 'error'); if (div) div.innerHTML = `<div style="color:var(--red);font-size:12px">${e.message}</div>`; }
   enableBtn(btn);
@@ -11071,7 +11071,7 @@ function a8Analyser() {
     if (verdict) verdict.style.color = score >= 80 ? 'var(--emerald)' : score >= 60 ? 'var(--amber)' : 'var(--red)';
     if (verdictSub) verdictSub.textContent = `Score : ${score}/100 · Mode : ${a8State.currentMode} · Contexte : ${ctx}`;
     const critList = document.getElementById('a8-criteria-list');
-    if (critList) { critList.innerHTML = ''; criteria.forEach(c => { const div = document.createElement('div'); div.className = `a8-criterion crit-${c.cls}`; div.innerHTML = `<div class="a8-crit-icon">${c.icon}</div><div class="a8-crit-body"><div class="a8-crit-name">${c.name}</div><div class="a8-crit-detail">${c.detail}</div></div>`; critList.appendChild(div); }); }
+    if (critList) { critList.innerHTML = ''; criteria.forEach(c => { const div = document.createElement('div'); div.className = `a8-criterion crit-${c.cls}`; div.innerHTML = `<div class="a8-crit-icon">${escapeHtml(c.icon)}</div><div class="a8-crit-body"><div class="a8-crit-name">${escapeHtml(c.name)}</div><div class="a8-crit-detail">${escapeHtml(c.detail)}</div></div>`; critList.appendChild(div); }); }
     const annotList = document.getElementById('a8-annotations');
     if (annotList) { annotList.innerHTML = ''; annotations.forEach(a => { const div = document.createElement('div'); div.className = `a8-annot annot-${a.cls}`; div.textContent = a.text; annotList.appendChild(div); }); }
     const corrWrap = document.getElementById('a8-corrected-wrap');
@@ -14348,7 +14348,11 @@ function a17StartWatcher() {
     a17UpdateQueueDisplay();
   }, 2000);
 
-  // Drift observer — check every 30s
+  // Drift observer — check every 30s. Nettoie un éventuel observateur déjà en
+  // place : a17ForceWatcherCycle() remet watcherInterval à null puis rappelle
+  // cette fonction, sans quoi un nouveau drift observer serait empilé à chaque
+  // clic (l'ancien continuant de tourner indéfiniment — fuite de timer).
+  if (a17State.driftObserverInterval) clearInterval(a17State.driftObserverInterval);
   a17State.driftObserverInterval = setInterval(() => {
     a17UpdateDriftUI();
     a17UpdateQueueDisplay();
