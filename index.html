@@ -2360,7 +2360,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
               <div class="ring-label" id="ring-pct">0%</div>
             </div>
             <div class="ring-info">
-              <div class="ring-info-val" id="days-done-coo">0 / 59</div>
+              <div class="ring-info-val" id="days-done-coo">0 / 56</div>
               <div class="ring-info-sub">jours terrain effectués</div>
               <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
                 <span class="pill pill-cyan" id="coo-sites-done">0 sites</span>
@@ -2935,7 +2935,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
               <div class="a5-kpi-label">J. Effectués</div>
             </div>
             <div class="a5-kpi-box">
-              <div class="a5-kpi-val" id="a5-days-left">54</div>
+              <div class="a5-kpi-val" id="a5-days-left">56</div>
               <div class="a5-kpi-label">J. Restants</div>
             </div>
             <div class="a5-kpi-box">
@@ -6693,23 +6693,26 @@ function approveItem(id, evt) {
   disableBtn(btn);
   setTimeout(() => {
     const a = state.approvals.find(x=>x.id===id);
-    if (a) {
-      a.status='approved';
-      addActivity('✅', `Approbation accordée : ${a.source}`, 'À l\'instant');
-      // Dépense approuvée → elle entre maintenant réellement dans le budget
-      if (a.type === 'expense' && a.tx) {
-        state.transactionQueue.push(a.tx);
-        processTransactionQueue();
-        showToast('✅ Dépense CPF approuvée : ' + fmtFCFA(a.tx.amount), 'ok');
-      }
-      saveStateToDB(); renderApprovals();
+    // Garde d'idempotence : ne jamais ré-approuver une demande déjà décidée.
+    // Sans ça, une approbation sur un 2e appareil (encore "pending" localement
+    // le temps que le Realtime arrive) ré-injecterait la dépense dans le budget
+    // → double dépense. Le merge cloud protège la décision, pas le double-spend.
+    if (!a || a.status !== 'pending') { renderApprovals(); enableBtn(btn); return; }
+    a.status='approved';
+    addActivity('✅', `Approbation accordée : ${a.source}`, 'À l\'instant');
+    // Dépense approuvée → elle entre maintenant réellement dans le budget
+    if (a.type === 'expense' && a.tx) {
+      state.transactionQueue.push(a.tx);
+      processTransactionQueue();
+      showToast('✅ Dépense CPF approuvée : ' + fmtFCFA(a.tx.amount), 'ok');
     }
+    saveStateToDB(); renderApprovals();
     enableBtn(btn);
   }, 800);
 }
 function rejectItem(id, evt) {
   const btn = evt.currentTarget; disableBtn(btn);
-  setTimeout(() => { const a = state.approvals.find(x=>x.id===id); if(a){a.status='rejected'; addActivity('❌', `Demande refusée : ${a.source}`, 'À l\'instant'); auditLog('❌ Demande refusée', a.msg || a.source); saveStateToDB(); renderApprovals(); } enableBtn(btn); }, 800);
+  setTimeout(() => { const a = state.approvals.find(x=>x.id===id); if(a && a.status === 'pending'){a.status='rejected'; addActivity('❌', `Demande refusée : ${a.source}`, 'À l\'instant'); auditLog('❌ Demande refusée', a.msg || a.source); saveStateToDB(); renderApprovals(); } else { renderApprovals(); } enableBtn(btn); }, 800);
 }
 function addNotification(n) {
   state.notifications.unshift({ ...n, id: 'n' + Date.now() });
