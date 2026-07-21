@@ -237,7 +237,7 @@ L'agent le plus complet. Il guide les prises de vue ET construit le livre.
 
 **📐 Maquette du Livre :** la structure page à page.
 1. Choisir la **Langue(s)** (FR, bilingue, trilingue FR+EN+AR).
-2. Choisir le **Nombre de pages cible** (128 à 288, défaut 210 — la structure réelle du Livre Vivant pour 36 sites).
+2. Choisir le **Nombre de pages cible** (128 à 288, défaut 224 — la structure réelle du Livre Vivant pour 36 sites).
 3. **📐 Générer maquette** → Claude conçoit la structure : pleines pages, doubles pages, légendes, chapitres, emplacements sponsors.
 4. **📋 Copier** pour récupérer le plan.
 
