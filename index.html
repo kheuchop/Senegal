@@ -7496,31 +7496,33 @@ Réponds UNIQUEMENT avec ce JSON valide, sans markdown ni backticks :
     let displayText = '', displayTitle = '', displayHash = '';
 
     if (plat === 'tiktok') {
-      displayText = `${content.tiktok.hook}\n\n${content.tiktok.text}`;
-      displayHash = content.tiktok.hashtags;
+      displayText = `${content.tiktok?.hook || ''}\n\n${content.tiktok?.text || ''}`.trim();
+      displayHash = content.tiktok?.hashtags || '';
     } else if (plat === 'youtube') {
-      displayTitle = content.youtube.title;
-      displayText  = content.youtube.description;
+      displayTitle = content.youtube?.title || '';
+      displayText  = content.youtube?.description || '';
     } else if (plat === 'linkedin') {
-      displayText = content.linkedin.text;
+      displayText = content.linkedin?.text || '';
     } else if (plat === 'facebook') {
-      displayText = content.facebook.text;
-      displayHash = content.facebook.hashtags;
+      displayText = content.facebook?.text || '';
+      displayHash = content.facebook?.hashtags || '';
     } else if (plat === 'twitter') {
       displayText = content.twitter?.text || content.instagram?.caption || '';
       displayHash = content.twitter?.hashtags || '';
     } else {
-      displayText = content.instagram.caption;
-      displayHash = content.instagram.hashtags;
+      displayText = content.instagram?.caption || '';
+      displayHash = content.instagram?.hashtags || '';
     }
+    // Claude a répondu mais sans le bloc de la plateforme demandée
+    if (!displayText.trim()) throw new Error(`Claude n'a pas renvoyé de contenu pour ${plat} — réessayez ou changez de plateforme`);
 
     previewEl.className = 'preview-box';
     previewEl.innerHTML = `
-      <div class="preview-platform-badge" style="color:${platColors[plat]}">🤖 Claude Vision · ${plat.toUpperCase()} · ${siteName}</div>
-      <div class="cm-ia-badge">📸 ${content.description}</div>
-      ${displayTitle ? `<strong style="display:block;margin-bottom:8px;font-size:0.72rem">${displayTitle}</strong>` : ''}
-      <div class="preview-text">${displayText}</div>
-      ${displayHash ? `<div class="preview-hashtags">${displayHash}</div>` : ''}
+      <div class="preview-platform-badge" style="color:${platColors[plat]}">🤖 Claude Vision · ${escapeHtml(plat.toUpperCase())} · ${escapeHtml(siteName)}</div>
+      <div class="cm-ia-badge">📸 ${escapeHtml(content.description)}</div>
+      ${displayTitle ? `<strong style="display:block;margin-bottom:8px;font-size:0.72rem">${escapeHtml(displayTitle)}</strong>` : ''}
+      <div class="preview-text">${escapeHtml(displayText)}</div>
+      ${displayHash ? `<div class="preview-hashtags">${escapeHtml(displayHash)}</div>` : ''}
       <div class="preview-meta">Claude Haiku · Écriture humaine · Analyse visuelle réelle</div>`;
 
     document.getElementById('copy-btn').style.display = 'inline-flex';
@@ -7537,7 +7539,7 @@ Réponds UNIQUEMENT avec ce JSON valide, sans markdown ni backticks :
   } catch (err) {
     statusEl.textContent = `❌ ${err.message}`;
     previewEl.className = 'preview-box';
-    previewEl.innerHTML = `<div class="preview-empty" style="color:var(--red)">Erreur : ${err.message}</div>`;
+    previewEl.innerHTML = `<div class="preview-empty" style="color:var(--red)">Erreur : ${escapeHtml(err.message)}</div>`;
     showToast(`Erreur Claude : ${err.message}`, 'error');
   }
   enableBtn(btn);
@@ -13142,11 +13144,11 @@ async function a13GenSequenceLancement(evt) {
     const bodyEnc = encodeURIComponent('Objet : ' + em.objet + '\n\n' + (em.corps||''));
     html += `<div style="border:1px solid var(--border);border-radius:6px;margin-bottom:8px;overflow:hidden">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg-card-2);cursor:pointer" onclick="const d=this.nextElementSibling;d.style.display=d.style.display==='none'?'block':'none'">
-        <span style="font-size:0.65rem;font-weight:600">${em.etape||''} — ${em.date||''}</span>
+        <span style="font-size:0.65rem;font-weight:600">${escapeHtml(em.etape||'')} — ${escapeHtml(em.date||'')}</span>
         <span style="font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted)">▼</span>
       </div>
       <div style="padding:12px;display:${i===0?'block':'none'}">
-        <div style="font-size:0.6rem;font-weight:600;margin-bottom:6px;color:var(--gold)">Objet : ${em.objet||''}</div>
+        <div style="font-size:0.6rem;font-weight:600;margin-bottom:6px;color:var(--gold)">Objet : ${escapeHtml(em.objet||'')}</div>
         <div style="font-size:0.6rem;line-height:1.7;white-space:pre-wrap;color:var(--text-1)">${(em.corps||'').replace(/</g,'&lt;')}</div>
         <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="navigator.clipboard?.writeText(decodeURIComponent('${bodyEnc}')).then(()=>showToast('📋 Email copié','ok'))">📋 Copier cet email</button>
       </div>
