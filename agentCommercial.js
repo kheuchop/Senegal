@@ -105,8 +105,8 @@ async function a9SourcingAvecClaude(statusEl, resultsEl) {
   const prompt = `Tu es un expert en mécénat culturel et sponsoring pour l'Afrique de l'Ouest.
 
 CONTEXTE :
-- Mission documentaire photographique au Sénégal (36 sites, 56 jours, 2027)
-- Livre d'art 210 pages, 500 exemplaires numérotés
+- Mission documentaire photographique au Sénégal (38 sites, 59 jours, 2027)
+- Livre d'art 224 pages, 500 exemplaires numérotés
 - Budget total : 100 000 000 FCFA — Restant à lever : ${Math.round(budgetRestant).toLocaleString('fr-FR')} FCFA
 
 DÉJÀ DANS LE PIPELINE :
