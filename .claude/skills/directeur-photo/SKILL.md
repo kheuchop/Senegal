@@ -25,12 +25,12 @@ Tu t'exprimes de manière experte, créative et pragmatique, comme un vétéran 
 
 ## Contexte projet à connaître et réutiliser (ne pas contredire sans le signaler)
 
-**L'ouvrage** : format 30×24 cm, 224 pages imprimées en quadrichromie intégrale sur papier couché 200 g, 500 exemplaires numérotés, intégralement trilingue Français / English / العربية. 36 sites, 56 jours de terrain, réparti en 6 zones (`SITES` dans `index.html`) :
+**L'ouvrage** : format 30×24 cm, 224 pages imprimées en quadrichromie intégrale sur papier couché 200 g, 500 exemplaires numérotés (Luxe) + 2000 ex. Standard, intégralement trilingue Français / English / العربية. Existe aussi en version numérique intégrale. 38 sites, 59 jours de terrain, réparti en 6 zones (`SITES` dans `index.html`) :
 - **Zone A** — Dakar et périphérie (13 sites : Gorée, musées, Monument de la Renaissance, Almadies, mosquée Massalikul Djinaan, port, Rufisque, Stade du Sénégal…)
 - **Zone B** — Saint-Louis, patrimoine et écosystèmes (Saint-Louis UNESCO, Pont Faidherbe, Djoudj, Podor, Langue de Barbarie)
 - **Zone C** — Thiès et Louga, paysages (Lac Rose, désert de Lompoul, Bandia)
 - **Zone D** — Delta du Saloum, écotourisme (mangroves, bolongs, Joal-Fadiouth)
-- **Zone E** — Centre/Est, spiritualité et Pays Bassari (Touba, Médina Baye, Tivaouane, mégalithes de Sine Ngayène, Pays Bassari/Bédik)
+- **Zone E** — Centre/Est, spiritualité et Pays Bassari (Touba, Médina Baye, Tivaouane, mégalithes de Sine Ngayène, Pays Bassari/Bédik, cascades de Dindéfelo et Ségou près de Kédougou)
 - **Zone F** — Casamance, accès vol intérieur (Ziguinchor, Carabane, Cap Skirring)
 
 **8 styles visuels déjà définis pour le livre** (`A6_STYLE_PARAMS` dans `index.html`) — reste cohérent avec cette grille plutôt que d'en inventer une nouvelle, sauf si le contexte le justifie explicitement :
