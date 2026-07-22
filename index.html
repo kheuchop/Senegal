@@ -3356,6 +3356,18 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           <div id="a6-book-strip" class="a6-book-strip"></div>
         </div>
 
+        <!-- A6-IA-10 : Carnet Making-of — exclusif Collector -->
+        <div class="card">
+          <div class="card-title">📓 Carnet Making-of — <span style="color:var(--gold)">exclusif Collector</span>
+            <span class="pill pill-cyan" id="a6-makingof-pill" style="margin-left:auto;font-size:0.45rem">0 page</span>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:8px;line-height:1.5">Livret SÉPARÉ de 16 pages (~22×17 cm), glissé dans le coffret magnétique du Collector — PAS relié dans le livre (qui reste identique au Standard). Planches-contact, avant/après, récits de terrain, signatures numérotées.</div>
+          <button class="btn btn-primary btn-sm btn-full" style="margin-bottom:10px" onclick="a6InitMakingof(this)">
+            <div class="spinner"></div><span class="btn-text">📓 Initialiser le carnet (16 p.)</span>
+          </button>
+          <div id="a6-makingof-strip"></div>
+        </div>
+
       </div><!-- /agent-direction-artistique -->
 
       <!-- =====================================================
@@ -5725,13 +5737,13 @@ async function backupRestoreAll(input) {
    (signature bon marché), sinon chaque sauvegarde réécrirait des Mo. */
 let _bookLastSig = null;
 function _bookSignature() {
-  let sig = a6State.bookPages.length * 1e9 + a6State.bookGallery.length * 1e6;
-  a6State.bookPages.forEach(p => {
-    sig += (p.thumbnail ? p.thumbnail.length : 0)
+  let sig = a6State.bookPages.length * 1e9 + a6State.bookGallery.length * 1e6 + (a6State.makingofPages ? a6State.makingofPages.length * 1e3 : 0);
+  const acc = p => (p.thumbnail ? p.thumbnail.length : 0)
         + (p.textFr || '').length + (p.textEn || '').length + (p.textAr || '').length
         + (p.caption_fr || '').length + (p.caption_en || '').length + (p.caption_ar || '').length
         + (p.qrUrl || '').length + (p.notes_da || '').length + (p.siteName || '').length;
-  });
+  a6State.bookPages.forEach(p => { sig += acc(p); });
+  (a6State.makingofPages || []).forEach(p => { sig += acc(p); });
   a6State.bookGallery.forEach(g => { sig += (g.thumbnail ? g.thumbnail.length : 0) + (g.site || '').length; });
   return sig;
 }
@@ -5740,7 +5752,7 @@ function saveBookIfChanged(force) {
     const sig = _bookSignature();
     if (!force && sig === _bookLastSig) return;
     _bookLastSig = sig;
-    dbWrite('bookstore', { id: 1, gallery: a6State.bookGallery, pages: a6State.bookPages })
+    dbWrite('bookstore', { id: 1, gallery: a6State.bookGallery, pages: a6State.bookPages, makingof: a6State.makingofPages || [] })
       .catch(e => console.warn('[Livre] sauvegarde:', e));
   } catch (e) { console.warn('[Livre] signature:', e); }
 }
@@ -5807,6 +5819,7 @@ async function loadStateFromDB() {
     if (hasStore) {
       if (Array.isArray(bookRows[0].gallery)) a6State.bookGallery = bookRows[0].gallery;
       if (Array.isArray(bookRows[0].pages))   a6State.bookPages   = bookRows[0].pages;
+      if (Array.isArray(bookRows[0].makingof)) a6State.makingofPages = bookRows[0].makingof;
       _bookLastSig = _bookSignature(); // évite une réécriture inutile au premier save
     } else if (a6State.bookPages.length > 0 || a6State.bookGallery.length > 0) {
       // MIGRATION : livre hérité du blob d'état → écrit immédiatement dans le
@@ -9510,7 +9523,7 @@ function initAgent5() {
 /* ============================================================
    AGENT 6 — DIRECTION ARTISTIQUE
    ============================================================ */
-const a6State = { style: 'natgeo', briefs: [], currentBrief: null, currentPrompt: null, bookGallery: [], bookPages: [] };
+const a6State = { style: 'natgeo', briefs: [], currentBrief: null, currentPrompt: null, bookGallery: [], bookPages: [], makingofPages: [] };
 
 const A6_STYLE_PARAMS = {
   natgeo:  { label:'National Geographic', lens:'85mm f/1.4', iso:'ISO 100-400', light:'Lumière naturelle dorée, contre-jour maîtrisé', tech:'Règle des tiers stricte, profondeur de champ sélective', mood:'Grandiose & intemporel' },
@@ -9727,6 +9740,7 @@ function initAgent6() {
   }
   a6RenderGallery();
   if (a6State.bookPages.length > 0) a6RenderBook();
+  a6RenderMakingof();
 }
 
 /* ============================================================
@@ -10171,6 +10185,76 @@ function a6BuildDefaultPages() {
 
   pages.forEach((p, i) => { p.num = i + 1; });
   a6State.bookPages = pages;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CARNET MAKING-OF — livret SÉPARÉ de 16 pages, EXCLUSIF à l'édition
+   Collector, glissé dans le coffret magnétique (PAS relié dans le
+   livre principal, qui reste identique au Standard — cf. devis ARTRON
+   "same text block"). Format ~22×17 cm, 500 ex. Voir
+   ARTRON-email-revalidation.md et STRATEGIE-NUMERIQUE-QR.md.
+   ══════════════════════════════════════════════════════════════ */
+function a6BuildMakingof() {
+  if (a6State.makingofPages && a6State.makingofPages.length) {
+    if (!confirm('Le carnet making-of existe déjà. Réinitialiser sa structure ? Les textes déjà saisis seront perdus.')) return false;
+  }
+  const pages = [];
+  let n = 0;
+  const mk = ov => {
+    n++;
+    return Object.assign({ id:'mk_'+n, num:n, type:'texte', layout:'texte', siteId:null, siteName:'', thumbnail:null, caption_fr:'', caption_en:'', caption_ar:'', qrUrl:'', notes_da:'', status:'vide' }, ov);
+  };
+  // 16 pages = 1 cahier ARTRON. Structure "dossier d'initié".
+  pages.push(mk({ type:'mk_couverture', siteName:'Carnet de Mission — Couverture' }));
+  pages.push(mk({ type:'mk_edito',      siteName:'Mot d\'intention — pourquoi ce carnet' }));
+  pages.push(mk({ type:'mk_contact',    siteName:'Planche-contact annotée 1 — le choix éditorial' }));
+  pages.push(mk({ type:'mk_contact',    siteName:'Planche-contact annotée 2 — le choix éditorial' }));
+  pages.push(mk({ type:'mk_avantapres', siteName:'Avant / Après 1 — brute vs image étalonnée' }));
+  pages.push(mk({ type:'mk_avantapres', siteName:'Avant / Après 2 — brute vs image étalonnée' }));
+  pages.push(mk({ type:'mk_recit',      siteName:'Récit de terrain 1 — l\'attente de la lumière (Dindéfelo)' }));
+  pages.push(mk({ type:'mk_recit',      siteName:'Récit de terrain 2 — négociation & respect (Touba)' }));
+  pages.push(mk({ type:'mk_recit',      siteName:'Récit de terrain 3 — la pirogue (Delta du Saloum)' }));
+  pages.push(mk({ type:'mk_carte',      siteName:'Carte du parcours réel — 59 jours, 11 850 km' }));
+  pages.push(mk({ type:'mk_coulisses',  siteName:'Coulisses — l\'équipe au travail 1' }));
+  pages.push(mk({ type:'mk_coulisses',  siteName:'Coulisses — l\'équipe au travail 2' }));
+  pages.push(mk({ type:'mk_materiel',   siteName:'Le matériel & les conditions extrêmes' }));
+  pages.push(mk({ type:'mk_qr',         siteName:'Renvoi vidéos Behind The Scenes (QR)' }));
+  pages.push(mk({ type:'mk_remerciements', siteName:'Remerciements du terrain' }));
+  pages.push(mk({ type:'mk_signature',  siteName:'Exemplaire N° ___ / 500 — Signatures des auteurs' }));
+  pages.forEach((p, i) => { p.num = i + 1; });
+  a6State.makingofPages = pages;
+  return true;
+}
+
+function a6InitMakingof(btn) {
+  if (btn) disableBtn(btn);
+  const ok = a6BuildMakingof();
+  if (ok) {
+    a6RenderMakingof();
+    saveStateToDB(); saveBookIfChanged(true);
+    showToast('📓 Carnet Making-of initialisé — 16 pages (exclusif Collector)', 'ok');
+    addActivity('📓', 'Carnet Making-of initialisé — 16 pages (Collector)', now());
+  }
+  if (btn) setTimeout(() => enableBtn(btn), 500);
+}
+
+function a6RenderMakingof() {
+  const strip = document.getElementById('a6-makingof-strip');
+  const pill = document.getElementById('a6-makingof-pill');
+  if (!strip) return;
+  const pages = a6State.makingofPages || [];
+  if (pill) pill.textContent = pages.length + ' page' + (pages.length > 1 ? 's' : '');
+  if (!pages.length) { strip.innerHTML = '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:16px">Carnet non initialisé. Clique « Initialiser le carnet » pour créer les 16 pages exclusives Collector.</div>'; return; }
+  const done = pages.filter(p => p.caption_fr || p.thumbnail).length;
+  strip.innerHTML = `<div style="font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted);margin-bottom:8px">${done}/${pages.length} pages renseignées · livret séparé ~22×17 cm, glissé dans le coffret (500 ex.)</div>` +
+    pages.map(p => {
+      const filled = p.caption_fr || p.thumbnail;
+      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid var(--border)">
+        <div style="font-family:var(--font-mono);font-size:0.6rem;color:var(--gold);width:22px;flex-shrink:0">${String(p.num).padStart(2,'0')}</div>
+        <div style="flex:1;font-size:0.62rem;line-height:1.3">${escapeHtml(p.siteName)}</div>
+        <div style="font-size:0.7rem;flex-shrink:0">${filled ? '✅' : '○'}</div>
+      </div>`;
+    }).join('');
 }
 
 function a6AutoLinkAllPhotos() {
