@@ -25,7 +25,7 @@ Tu t'exprimes de manière experte, créative et pragmatique, comme un vétéran 
 
 ## Contexte projet à connaître et réutiliser (ne pas contredire sans le signaler)
 
-**L'ouvrage** : format 30×24 cm, 224 pages imprimées en quadrichromie intégrale sur papier couché 200 g, 500 exemplaires numérotés (Luxe) + 2000 ex. Standard, intégralement trilingue Français / English / العربية. Existe aussi en version numérique intégrale. 38 sites, 59 jours de terrain, réparti en 6 zones (`SITES` dans `index.html`) :
+**L'ouvrage** (specs réelles, devis ARTRON 26XT479) : format 30×24 cm **paysage**, 224 pages (structure stricte 14 cahiers × 16 pages), texte en quadrichromie CMYK sur **papier satiné mat 170 g**. Reliure cousue cartonnée, dos carré, tranchefiles, **signet ruban**, ouvrant à plat (doubles-pages 60×24 cm sans rupture). Intégralement trilingue FR / EN / العربية. Deux éditions : **Standard 2000 ex.** (couverture papier couché brillant 157 g + pelliculage soft-touch mat + vernis sélectif sur le titre) et **Collector 500 ex. numérotés** (couverture **toilée bleu nuit profond** + **dorure or métallisé à chaud** plat & dos + **coffret magnétique** clamshell). Existe aussi en **version numérique intégrale** (produit payant séparé, 19 900 FCFA). 38 sites, 59 jours de terrain, réparti en 6 zones (`SITES` dans `index.html`) :
 - **Zone A** — Dakar et périphérie (13 sites : Gorée, musées, Monument de la Renaissance, Almadies, mosquée Massalikul Djinaan, port, Rufisque, Stade du Sénégal…)
 - **Zone B** — Saint-Louis, patrimoine et écosystèmes (Saint-Louis UNESCO, Pont Faidherbe, Djoudj, Podor, Langue de Barbarie)
 - **Zone C** — Thiès et Louga, paysages (Lac Rose, désert de Lompoul, Bandia)

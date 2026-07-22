@@ -9764,7 +9764,7 @@ function a6GetBriefText() {
 
 const A6_DA_IDENTITY = `Agis en tant que Directeur Artistique de renommée internationale, expert en infographie et en édition de "beaux-livres" (photographie haut de gamme, culture, art). Tu possèdes le niveau d'exigence des plus grandes maisons d'édition de luxe, combiné à l'œil photographique de National Geographic.
 
-Tu supervises la direction visuelle, graphique et éditoriale du projet : « Sénégal, Terre d'Histoire et de Rencontres ». Ouvrage de prestige, fruit d'une mission de documentation sur 38 sites au Sénégal, 59 jours de terrain. Format : 30×24 cm, 224 pages imprimées en quadrichromie intégrale sur papier couché 200 g, 500 exemplaires numérotés.
+Tu supervises la direction visuelle, graphique et éditoriale du projet : « Sénégal, Terre d'Histoire et de Rencontres ». Ouvrage de prestige, fruit d'une mission de documentation sur 38 sites au Sénégal, 59 jours de terrain. Format : 30×24 cm paysage, 224 pages, texte quadrichromie CMYK sur papier satiné mat 170 g. Reliure cousue cartonnée, dos carré, tranchefiles, signet ruban, ouvrant à plat (doubles-pages sans rupture). Tirage : 2000 ex. Standard + 500 ex. Collector numérotés (couverture toilée bleu nuit profond + dorure or à chaud sur plat et dos + coffret magnétique). Imprimeur ARTRON (devis 26XT479).
 
 CONTRAINTE FONDAMENTALE — TRILINGUE : Le livre est intégralement trilingue Français / English / عربية (arabe). TOUTES les légendes, captions, textes de pages, introductions, ouvertures de chapitres, 4e de couverture et notes de terrain doivent être produits dans les TROIS langues simultanément, avec le même soin et la même qualité littéraire dans chaque langue. L'arabe est en direction droite-gauche, registre soutenu.
 
@@ -10636,7 +10636,7 @@ async function a6GenMaquette(btn) {
   const gallery = a6State.bookGallery.length > 0 ? `\nPhotos déjà sélectionnées pour le livre : ${a6State.bookGallery.map(e=>e.site).join(', ')}.` : '';
   const equip = a6GetEquipmentContext();
   const sitesList = SITES.map(s => `#${s.id} [Zone ${s.zone}] ${s.name}`).join(', ');
-  const prompt = `Mission documentaire SÉNÉGAL V3 : 38 sites, 59 jours, livre collector.\nSites : ${sitesList}\nFormat livre : 30×24 cm, ${pages} pages, quadrichromie intégrale sur papier couché 200 g, impression offset luxe.\nLangue(s) : ${langLabel}.${sponsorLine}${gallery}${equip}\n\nConçois la maquette structurée du livre. Chaque section = un objet JSON.\nJSON :\n{"titre_livre":"...","accroche":"phrase de couverture","sections":[{"pages":"p.1-2","type":"couverture|page_titre|intro|chapitre|pleine_page|double_page|portfolio|legendes|sponsor|colophon|quatrieme","titre":"...","contenu":"description du contenu","note_da":"conseil pour le DA"}],"notes_generales":"conseils globaux"}`;
+  const prompt = `Mission documentaire SÉNÉGAL V3 : 38 sites, 59 jours, livre collector.\nSites : ${sitesList}\nFormat livre : 30×24 cm, ${pages} pages, quadrichromie CMYK sur papier satiné mat 170 g, impression offset luxe.\nLangue(s) : ${langLabel}.${sponsorLine}${gallery}${equip}\n\nConçois la maquette structurée du livre. Chaque section = un objet JSON.\nJSON :\n{"titre_livre":"...","accroche":"phrase de couverture","sections":[{"pages":"p.1-2","type":"couverture|page_titre|intro|chapitre|pleine_page|double_page|portfolio|legendes|sponsor|colophon|quatrieme","titre":"...","contenu":"description du contenu","note_da":"conseil pour le DA"}],"notes_generales":"conseils globaux"}`;
   try {
     const data = await a6CallClaude(
       'Tu es directeur artistique et maquettiste expert en livres de photographie documentaire de luxe.',
@@ -10727,7 +10727,7 @@ async function a6GenEquipmentRecs(btn, mode) {
 const a7State = { lang: 'fr', outputMode: 'fr', library: [], lastOutput: { fr:'', en:'', ar:'' } };
 
 /* ── Identité rédacteur A7 ── */
-const A7_WRITER_IDENTITY = `Tu es rédacteur et traducteur en chef de la mission documentaire SÉNÉGAL V3 : « Sénégal, Terre d'Histoire et de Rencontres ». Tu rédiges pour un livre collector luxe 224 pages, format 30×24 cm, quadrichromie intégrale sur papier couché 200 g. Registre littéraire et journalistique haut de gamme : précis, sensible, ancré dans le réel, jamais générique. Même niveau d'exigence dans chaque langue.`;
+const A7_WRITER_IDENTITY = `Tu es rédacteur et traducteur en chef de la mission documentaire SÉNÉGAL V3 : « Sénégal, Terre d'Histoire et de Rencontres ». Tu rédiges pour un livre collector luxe 224 pages, format 30×24 cm, quadrichromie CMYK sur papier satiné mat 170 g. Registre littéraire et journalistique haut de gamme : précis, sensible, ancré dans le réel, jamais générique. Même niveau d'exigence dans chaque langue.`;
 
 async function a7CallClaude(systemPrompt, userContent, maxTok) {
   // userContent : chaîne (texte) OU tableau de blocs (image + texte) pour Claude Vision

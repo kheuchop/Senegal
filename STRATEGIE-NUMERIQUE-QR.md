@@ -1,6 +1,7 @@
 # Stratégie numérique, QR codes & protection vidéo
 **Livre « Sénégal, Terre d'Histoire et de Rencontres »**
-30 × 24 cm · 224 pages · quadrichromie intégrale · papier couché 200 g · trilingue FR/EN/AR
+30 × 24 cm paysage · 224 pages · quadrichromie CMYK · papier satiné mat 170 g · trilingue FR/EN/AR
+Reliure cousue cartonnée ouvrant à plat · Collector : toilée bleu nuit + dorure or + coffret magnétique (devis ARTRON 26XT479)
 38 sites · 6 zones · Standard 2 000 ex. / Luxe 500 ex. numérotés
 
 > Document de référence. Conseil du directeur de la photographie / éditeur de beaux-livres.
