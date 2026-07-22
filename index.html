@@ -9198,11 +9198,13 @@ function a5RenderRouteSheet() {
       <ul class="a5-rs-list">${(bts.spots || []).map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ul>
       <div class="a5-rs-subtitle">🎥 Recommandation technique</div>
       <div class="a5-rs-text">${escapeHtml(bts.recommandations || '')}</div>
-      <div class="a5-rs-subtitle">🎙️ À interviewer</div>
-      <div class="a5-rs-text">${escapeHtml(bts.interviewSubject || '')}</div>
-      ${(bts.questions || []).length ? `<div class="a5-rs-subtitle">❓ Questions à poser</div>
-      <ul class="a5-rs-list">${bts.questions.map(q => `<li>${escapeHtml(q)}</li>`).join('')}</ul>` : ''}
-      <div style="display:flex;gap:16px;margin-top:6px;flex-wrap:wrap">
+      <div style="margin-top:10px;padding:10px;border-radius:8px;background:rgba(79,195,247,.06);border:1px solid rgba(79,195,247,.3)">
+        <div style="font-size:0.62rem;font-weight:700;color:#4fc3f7;margin-bottom:4px">🎙️ Interview</div>
+        <div class="a5-rs-text" style="margin-bottom:6px"><b>Qui :</b> ${escapeHtml(bts.interviewSubject || '')}</div>
+        ${(bts.questions || []).length ? `<div style="font-size:0.56rem;font-weight:600;color:#4fc3f7;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Questions à poser</div>
+        <ol class="a5-rs-list" style="padding-left:18px">${bts.questions.map(q => `<li style="margin-bottom:4px">${escapeHtml(q)}</li>`).join('')}</ol>` : '<div class="a5-rs-text" style="color:var(--text-muted)">Pas de questions préparées pour ce site.</div>'}
+      </div>
+      <div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap">
         <div><div class="a5-rs-subtitle">⏱ Tournage max</div><div class="a5-rs-text">${escapeHtml(bts.tournageLimiteH || '')}</div></div>
         <div><div class="a5-rs-subtitle">🎞 Vidéo finale QR</div><div class="a5-rs-text">${escapeHtml(bts.videoFinaleMin || '')}</div></div>
       </div>
@@ -12916,7 +12918,11 @@ function a13GenerateQR(evt) {
             <span>🎞 Durée cible : <b style="color:var(--text-primary)">${escapeHtml(bts.videoFinaleMin || '—')}</b></span>
             <span>⏱ Tournage max : <b style="color:var(--text-primary)">${escapeHtml(bts.tournageLimiteH || '—')}</b></span>
           </div>
-          <div style="font-family:var(--font-mono);font-size:0.46rem;color:var(--text-muted);line-height:1.5">Plans clés : ${(bts.spots || []).map(escapeHtml).join(' · ')}</div>
+          <div style="font-family:var(--font-mono);font-size:0.46rem;color:var(--text-muted);line-height:1.5;margin-bottom:6px">Plans clés : ${(bts.spots || []).map(escapeHtml).join(' · ')}</div>
+          <div style="padding:8px;border-radius:6px;background:rgba(79,195,247,.06);border:1px solid rgba(79,195,247,.3)">
+            <div style="font-size:0.55rem;font-weight:700;color:#4fc3f7;margin-bottom:3px">🎙️ Interview — ${escapeHtml(bts.interviewSubject || '')}</div>
+            ${(bts.questions || []).length ? `<ol style="margin:0;padding-left:16px;font-size:0.52rem;line-height:1.5;color:var(--text-primary)">${bts.questions.map(q => `<li style="margin-bottom:3px">${escapeHtml(q)}</li>`).join('')}</ol>` : ''}
+          </div>
         </div>`;
       } else {
         btsEl.style.display = 'none';
