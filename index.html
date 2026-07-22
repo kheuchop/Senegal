@@ -3346,12 +3346,13 @@ textarea.input-field { resize: vertical; min-height: 80px; }
           </div>
           <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-muted);margin-bottom:8px">Maquette complète mise à jour automatiquement au fil des photos. Captions trilingues FR+EN+AR générées par Claude. QR codes immersifs par site.</div>
           <div class="a6-book-progress-bar"><div class="a6-book-progress-fill" id="a6-book-pbar" style="width:0%"></div></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
             <button class="btn btn-primary btn-sm" onclick="a6InitBook(this)">
               <div class="spinner"></div><span class="btn-text">📖 Initialiser le livre</span>
             </button>
             <button class="btn btn-ghost btn-sm" onclick="a6BookExport()">📋 Exporter</button>
           </div>
+          <button class="btn btn-ghost btn-sm btn-full" style="margin-bottom:10px;border-color:rgba(214,165,58,.35);color:var(--gold)" onclick="a6AutoPlaceQR(this)">🔲 Placer les QR (stratégie ~21 codes)</button>
           <div id="a6-book-strip" class="a6-book-strip"></div>
         </div>
 
@@ -4379,7 +4380,8 @@ textarea.input-field { resize: vertical; min-height: 80px; }
               <option value="galerie">🖼️ Galerie photo immersive</option>
               <option value="audio">🎙️ Narration audio du site</option>
               <option value="map">📍 Carte &amp; coordonnées GPS</option>
-              <option value="achat">🛒 Page achat directe</option>
+              <option value="achat">🛒 Page achat livre (précommande)</option>
+              <option value="numerique">🔓 Acheter la version numérique</option>
               <option value="bts">🎬 Behind The Scenes</option>
             </select>
           </div>
@@ -10296,7 +10298,7 @@ function a6RenderBook() {
         <div class="a6-bkb-qr">
           ${qrImgHtml}
           <div style="flex:1">
-            <div style="font-family:var(--font-mono);font-size:0.42rem;color:var(--text-muted);margin-bottom:4px">URL CONTENU IMMERSIF</div>
+            <div style="font-family:var(--font-mono);font-size:0.42rem;color:var(--text-muted);margin-bottom:4px">URL CONTENU IMMERSIF${p.qrType ? ` · <span style="color:var(--gold)">${escapeHtml(p.qrType)}</span>` : ''}</div>
             <input class="input-field" style="font-size:0.52rem;padding:5px 8px" placeholder="https://youtube.com/…" value="${escapeHtml(p.qrUrl||'')}" onblur="a6SetBookQR('${pid}',this.value)">
           </div>
         </div>
@@ -10351,9 +10353,76 @@ async function a6GenPageCaption(id, btn) {
   }
 }
 
+/* Constructeur d'URL unique pour les QR du livre — partagé avec l'Agent
+   Numérique (A13) pour que papier et app pointent vers le même schéma
+   gated senegalthr.com/livre/{type}/{slug}. Les pages derrière restent à
+   construire (accès vérifié + streaming), voir STRATEGIE-NUMERIQUE-QR.md. */
+function buildLivreQrUrl(typeSlug, site) {
+  // Normalise les accents (é→e, Î→i…) AVANT de retirer les caractères non
+  // alphanumériques, pour un slug propre : "Île de Gorée" → "ile-de-goree".
+  const slug = (site && site.name ? site.name : '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').replace(/-+/g, '-');
+  const coords = site && site.coords ? `&coords=${site.coords[0].toFixed(4)},${site.coords[1].toFixed(4)}` : '';
+  return `https://www.senegalthr.com/livre/${typeSlug}/${slug}?site=${site ? site.id : ''}${coords}`;
+}
+
+/* Stratégie QR (reco directeur-photo) : ~21 codes, jamais 1 par site.
+   Sites "héros" → vidéo Behind The Scenes sur la pleine page ;
+   sites "signature sonore" → audio sur la page de légendes ;
+   chaque ouverture de zone → reel vidéo de zone ;
+   colophon → achat de la version numérique (payante, séparée) ;
+   4e de couverture → boutique/précommande. */
+const A6_QR_HERO_SITES = [1, 13, 15, 17, 19, 23, 27, 30, 32, 37]; // Gorée, St-Louis, Djoudj, Guet Ndar, Lac Rose, Delta Saloum, Touba, Bassari, Cap Skirring, Dindéfelo
+const A6_QR_AUDIO_SITES = [15, 17, 26, 27]; // Djoudj (oiseaux), Guet Ndar (pêche), Mangroves, Touba (chants, avec autorisation)
+
+function a6AutoPlaceQR(btn) {
+  if (btn) disableBtn(btn);
+  if (!a6State.bookPages || !a6State.bookPages.length) {
+    showToast('Initialise d\'abord la maquette du livre', 'warn');
+    if (btn) enableBtn(btn);
+    return;
+  }
+  // Repart d'une base propre : on efface les QR auto précédents (garde ceux saisis à la main via qrManual)
+  let count = 0;
+  a6State.bookPages.forEach(p => {
+    if (p.qrManual) return; // ne pas écraser un QR posé manuellement
+    let url = '', qrType = '';
+    const site = p.siteId ? SITES.find(s => s.id === p.siteId) : null;
+    if (p.type === 'chapitre') {
+      const zoneLetter = (p.chapter || '').replace(/[^A-F]/g, '') || '?';
+      url = `https://www.senegalthr.com/livre/reel-zone/zone-${zoneLetter}`;
+      qrType = '🎬 Reel de zone (vidéo)';
+    } else if (p.type === 'pleine_page' && site && A6_QR_HERO_SITES.includes(site.id)) {
+      url = buildLivreQrUrl('behind-scenes', site);
+      qrType = '🎬 Behind the Scenes (vidéo)';
+    } else if (p.type === 'legendes' && site && A6_QR_AUDIO_SITES.includes(site.id)) {
+      url = buildLivreQrUrl('narration-audio', site);
+      qrType = '🎙️ Signature sonore (audio)';
+    } else if (p.type === 'colophon') {
+      url = 'https://www.senegalthr.com/livre/version-numerique';
+      qrType = '🛒 Version numérique (achat)';
+    } else if (p.type === 'quatrieme') {
+      url = 'https://www.senegalthr.com/livre/boutique';
+      qrType = '🛒 Boutique / précommande';
+    } else {
+      // page sans QR selon la stratégie : on retire un éventuel QR auto obsolète
+      if (p.qrType) { p.qrUrl = ''; p.qrType = ''; }
+      return;
+    }
+    p.qrUrl = url; p.qrType = qrType; count++;
+  });
+  a6RenderBook();
+  saveStateToDB();
+  showToast(`🔲 ${count} QR codes placés dans la maquette (stratégie beau-livre)`, 'ok');
+  addActivity('🔲', `${count} QR codes placés dans la maquette du livre`, now());
+  if (btn) setTimeout(() => enableBtn(btn), 500);
+}
+
 function a6SetBookQR(id, url) {
   const page = (a6State.bookPages || []).find(p => p.id === id);
   if (!page || page.qrUrl === url.trim()) return;
+  page.qrManual = !!url.trim(); // marque comme QR manuel (protégé de l'auto-placement)
   page.qrUrl = url.trim();
   saveStateToDB();
   const qrRow = document.querySelector(`#bkbody-${id} .a6-bkb-qr`);
@@ -12887,8 +12956,13 @@ function a13GenerateQR(evt) {
   const style = document.getElementById('a13-qr-style')?.value;
   if (!siteId) { showToast('Sélectionner un site', 'warn'); enableBtn(btn); return; }
   const site = SITES.find(s => s.id == siteId) || OFFSHORE.find(s => s.id == siteId);
-  const typeLabel = { galerie:'galerie-photo', audio:'narration-audio', map:'carte-gps', achat:'precommande', bts:'behind-scenes' };
-  const url = `https://www.senegalthr.com/livre/${typeLabel[type] || 'site'}/${site.name.toLowerCase().replace(/\s+/g,'-').replace(/[^\w-]/g,'')}?site=${siteId}&coords=${site.coords[0].toFixed(4)},${site.coords[1].toFixed(4)}`;
+  const typeLabel = { galerie:'galerie-photo', audio:'narration-audio', map:'carte-gps', achat:'precommande', bts:'behind-scenes', numerique:'version-numerique' };
+  // Type "numérique" = page de VENTE de la version numérique (produit payant
+  // séparé), pas un accès libre au livre. URL construite via le helper partagé
+  // avec la maquette (buildLivreQrUrl) pour un schéma d'URL unique.
+  const url = type === 'numerique'
+    ? 'https://www.senegalthr.com/livre/version-numerique'
+    : buildLivreQrUrl(typeLabel[type] || 'site', site);
   a13State.currentURL = url;
 
   setTimeout(() => {
