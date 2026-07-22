@@ -11803,7 +11803,7 @@ Nous restons à votre entière disposition pour tout renseignement complémentai
 Dans l'attente de votre retour, veuillez agréer, Madame, Monsieur, l'expression de nos salutations distinguées.
 
 Direction Mission Documentaire Sénégal
-mission@documentaire-senegal.sn
+contact@senegalthr.com
 Date : ${today}`;
 
   const card = document.getElementById('a10-relance-card');
@@ -12888,7 +12888,7 @@ function a13GenerateQR(evt) {
   if (!siteId) { showToast('Sélectionner un site', 'warn'); enableBtn(btn); return; }
   const site = SITES.find(s => s.id == siteId) || OFFSHORE.find(s => s.id == siteId);
   const typeLabel = { galerie:'galerie-photo', audio:'narration-audio', map:'carte-gps', achat:'precommande', bts:'behind-scenes' };
-  const url = `https://documentaire-senegal.sn/${typeLabel[type] || 'site'}/${site.name.toLowerCase().replace(/\s+/g,'-').replace(/[^\w-]/g,'')}?site=${siteId}&coords=${site.coords[0].toFixed(4)},${site.coords[1].toFixed(4)}`;
+  const url = `https://www.senegalthr.com/livre/${typeLabel[type] || 'site'}/${site.name.toLowerCase().replace(/\s+/g,'-').replace(/[^\w-]/g,'')}?site=${siteId}&coords=${site.coords[0].toFixed(4)},${site.coords[1].toFixed(4)}`;
   a13State.currentURL = url;
 
   setTimeout(() => {
