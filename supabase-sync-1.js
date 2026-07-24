@@ -205,6 +205,21 @@
     }
   }
 
+  function _pushCoalesced(entry) {
+    const q = _readQueueUnsafe();
+    // Fusion des instantanés d'état : mission_state est un upsert singleton
+    // (id=1, dernier gagne). Empiler un snapshot complet à chaque modification
+    // pendant des jours hors-ligne gonfle le localStorage (~5 Mo) jusqu'au
+    // dépassement de quota → l'écriture échoue et des données ne partent jamais.
+    // On ne conserve donc que le dernier sync_state. Les transactions (sync_tx)
+    // sont individuelles et toutes préservées.
+    const base = entry.type === 'sync_state'
+      ? q.filter(o => o.type !== 'sync_state')
+      : q;
+    base.push(entry);
+    _writeQueueUnsafe(base);
+  }
+
   async function _enqueue(op) {
     const entry = {
       ...op,
@@ -214,16 +229,12 @@
 
     if (!navigator.locks) {
       // Fallback : navigateur sans Web Locks API
-      const q = _readQueueUnsafe();
-      q.push(entry);
-      _writeQueueUnsafe(q);
+      _pushCoalesced(entry);
       return;
     }
 
     await navigator.locks.request(LOCK_NAME, async () => {
-      const q = _readQueueUnsafe();
-      q.push(entry);
-      _writeQueueUnsafe(q);
+      _pushCoalesced(entry);
     });
   }
 

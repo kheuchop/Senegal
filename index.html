@@ -5150,7 +5150,21 @@ async function apiFetch(url, options = {}) {
       }
     }
   } catch (e) { /* sans session : le serveur répondra 401 */ }
-  return fetch(url, { ...options, headers });
+  // Délai d'expiration réseau : sur le terrain (2G/EDGE, réseau intermittent),
+  // un fetch sans limite peut rester bloqué indéfiniment — l'agent afficherait
+  // un chargement éternel sans jamais d'erreur. On coupe à 60s (surchargeable
+  // via options.timeoutMs) : assez pour une génération IA complète, tout en
+  // évitant le blocage infini. Erreur nette que les appelants traitent comme
+  // une panne réseau. Si l'appelant fournit son propre signal, on le respecte
+  // et on ne surajoute pas de timeout.
+  if (options.signal) return fetch(url, { ...options, headers });
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), options.timeoutMs || 60000);
+  try {
+    return await fetch(url, { ...options, headers, signal: ctrl.signal });
+  } finally {
+    clearTimeout(timer);
+  }
 }
 window.apiFetch = apiFetch;
 
