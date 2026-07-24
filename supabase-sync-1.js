@@ -365,7 +365,18 @@
     let count = 0;
     let op;
 
-    while ((op = await _dequeue()) !== null) {
+    // Borne le traitement au nombre d'opérations présentes AU DÉPART.
+    // _syncState/_syncTransaction ne lèvent pas d'exception en cas d'échec
+    // Supabase : ils réinjectent l'op dans la file et retournent normalement
+    // (le catch ci-dessous ne les intercepte donc pas). Sur un portail captif
+    // — navigator.onLine=true mais Supabase injoignable (wifi d'hôtel/aéroport)
+    // — ces réinjections rendraient _dequeue() éternellement non-null : boucle
+    // infinie qui martèle le réseau et vide la batterie. Avec cette borne, on
+    // fait au plus un tour de file puis on s'arrête ; le prochain flush (60s ou
+    // reconnexion) réessaiera.
+    let budget = _queueSize();
+
+    while (budget-- > 0 && (op = await _dequeue()) !== null) {
       try {
         if      (op.type === 'sync_state') await _syncState(op.data);
         else if (op.type === 'sync_tx')    await _syncTransaction(op.data);

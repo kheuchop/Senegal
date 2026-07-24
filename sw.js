@@ -7,7 +7,7 @@
  *  - Tuiles OSM : cache opportuniste plafonné (les zones visitées restent visibles hors-ligne)
  *  - /api/, Supabase, Make : réseau uniquement (jamais de cache — la file SupaSync gère l'offline)
  */
-const VERSION = 'mission-ctrl-v99';
+const VERSION = 'mission-ctrl-v100';
 const SHELL_CACHE = `shell-${VERSION}`;
 const RUNTIME_CACHE = `runtime-${VERSION}`;
 const TILE_CACHE = `tiles-${VERSION}`;
@@ -91,8 +91,17 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(req)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(SHELL_CACHE).then((c) => c.put('./index.html', copy));
+          // On ne remplace le shell en cache QUE si la réponse est bien notre
+          // app : OK, non redirigée, même origine, HTML. Sinon un portail captif
+          // (wifi d'hôtel/aéroport renvoyant sa page de login en 200) ou une
+          // erreur serveur 5xx écraserait index.html → app cassée hors-ligne.
+          // On sert quand même la réponse réseau, mais on conserve le dernier
+          // bon index.html pour le fallback offline.
+          const ct = res.headers.get('content-type') || '';
+          if (res.ok && !res.redirected && res.type === 'basic' && ct.includes('text/html')) {
+            const copy = res.clone();
+            caches.open(SHELL_CACHE).then((c) => c.put('./index.html', copy));
+          }
           return res;
         })
         .catch(() => caches.match('./index.html'))

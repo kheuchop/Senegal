@@ -7727,7 +7727,7 @@ function addExpense(evt) {
   };
   // Reçu/facture joint → archivage galerie (IndexedDB, hors state — pas de gonflement)
   if (finReceipt) {
-    const rcptId = 'rcpt_' + Date.now();
+    const rcptId = uid('rcpt_');
     tx.receiptId = rcptId;
     dbWrite('receipts', {
       id: rcptId, txId: tx.id, dataUrl: finReceipt.dataUrl, thumb: finReceipt.thumb,
