@@ -5139,6 +5139,20 @@ window.escapeAttr = escapeAttr;
    SÉCURITÉ — apiFetch : fetch vers /api/* avec le jeton Supabase
    Les endpoints serverless refusent désormais les requêtes anonymes.
    ============================================================ */
+/* Identifiant unique inter-appareils. Les id basés sur le seul Date.now()
+   (milliseconde) pouvaient entrer en collision entre deux téléphones qui
+   enregistrent une opération dans la même milliseconde. Pour les transactions,
+   synchronisées ligne par ligne vers Supabase en upsert onConflict:'id', cette
+   collision écrasait SILENCIEUSEMENT une écriture → dépense perdue. On ajoute
+   donc une composante aléatoire (UUID en contexte sécurisé, sinon Math.random). */
+function uid(prefix) {
+  const rnd = (self.crypto && crypto.randomUUID)
+    ? crypto.randomUUID().slice(0, 8)
+    : Math.random().toString(36).slice(2, 10);
+  return (prefix || '') + Date.now().toString(36) + '-' + rnd;
+}
+window.uid = uid;
+
 async function apiFetch(url, options = {}) {
   const headers = { ...(options.headers || {}) };
   try {
@@ -7704,7 +7718,7 @@ function addExpense(evt) {
   }
 
   const tx = {
-    id:          'tx_' + Date.now(),
+    id:          uid('tx_'),
     cat,
     amount:      amt,
     description: desc.substring(0, 200),
@@ -7732,7 +7746,7 @@ function addExpense(evt) {
   if (amt >= CPF_SEUIL_APPROBATION) {
     const niveau = amt >= CPF_SEUIL_MAJEUR ? 'NIVEAU 3 — délibération CPF + PV requis' : 'NIVEAU 2 — bon de commande, 2 signatures';
     state.approvals.unshift({
-      id: 'apr_' + Date.now(), type: 'expense', tx,
+      id: uid('apr_'), type: 'expense', tx,
       source: '💸 Dépense ' + (CAT_LABELS[cat] || cat),
       msg: tx.description + ' — ' + fmtFCFA(amt) + ' · ' + niveau,
       time: now(), status: 'pending'
@@ -7953,7 +7967,7 @@ function finPerDiemToday(evt) {
   if (state.transactions.some(t => t.description.startsWith('Per diem J' + dayNum) && new Date(t.ts).toDateString() === today)) {
     if (!confirm('⚠️ Un per diem J' + dayNum + ' existe déjà aujourd\'hui. Enregistrer quand même ?')) { if (btn) enableBtn(btn); return; }
   }
-  const tx = { id: 'tx_' + Date.now(), cat: 'nourriture', amount: total, description: desc.substring(0, 200), ts: Date.now(), type: 'debit' };
+  const tx = { id: uid('tx_'), cat: 'nourriture', amount: total, description: desc.substring(0, 200), ts: Date.now(), type: 'debit' };
   state.transactionQueue.push(tx);
   processTransactionQueue();
   showToast('🍽 Per diem enregistré : ' + fmtFCFA(total), 'ok');
@@ -8376,7 +8390,7 @@ function treasuryOfferEncaissement(source, montant) {
   if (!confirm('💰 Créer l\'encaissement Trésorerie correspondant ?\n\n' + source + '\n' + fmtFCFA(montant) + ' (statut : Reçu)')) return;
   treasurySeedIfEmpty();
   state.treasury.encaissements.push({
-    id: 'enc-man-' + Date.now(), mois: 0, montant: Math.round(montant),
+    id: uid('enc-man-'), mois: 0, montant: Math.round(montant),
     source: String(source).substring(0, 120), statut: 'recu', dateRecu: Date.now(), manual: true
   });
   saveStateToDB();
@@ -8432,7 +8446,7 @@ function treasuryAddEncaissement(ev) {
     montantFCFA = Math.round(montant * taux);
     noteDevise = ` (${montant.toLocaleString('fr-FR')} $ × ${taux})`;
   }
-  state.treasury.encaissements.push({ id: 'enc-man-' + Date.now(), mois, montant: montantFCFA, montantOriginal: montant, devise, source: (src + noteDevise).substring(0, 120), statut, dateRecu: statut === 'recu' ? Date.now() : null, manual: true });
+  state.treasury.encaissements.push({ id: uid('enc-man-'), mois, montant: montantFCFA, montantOriginal: montant, devise, source: (src + noteDevise).substring(0, 120), statut, dateRecu: statut === 'recu' ? Date.now() : null, manual: true });
   if (srcEl) srcEl.value = '';
   if (montEl) montEl.value = '';
   saveStateToDB();
@@ -8570,7 +8584,7 @@ function updatePrintCfg(save = true) {
   if (save) saveStateToDB();
 }
 function addAPIcostDeduction(amount, description) {
-  const tx = { id: 'api_' + Date.now(), cat:'api', amount: Math.round(amount), description, ts: Date.now(), type:'debit' };
+  const tx = { id: uid('api_'), cat:'api', amount: Math.round(amount), description, ts: Date.now(), type:'debit' };
   state.transactionQueue.push(tx);
   processTransactionQueue();
 }
@@ -11686,7 +11700,7 @@ function a9SaveSponsor() {
   const status = document.getElementById('a9-sp-status')?.value;
   const contra = document.getElementById('a9-sp-contra')?.value.trim();
   if (!name || amount < 0) { showToast('Nom et montant requis', 'warn'); enableBtn(btn); return; }
-  const sponsor = { id: 'sp_' + Date.now(), name, type, amount, status, contra, ts: Date.now() };
+  const sponsor = { id: uid('sp_'), name, type, amount, status, contra, ts: Date.now() };
   a9State.sponsors.unshift(sponsor);
   // Si versé, injecter dans la file de transactions globale comme crédit (impact positif sur budget affiché)
   if (status === 'verse') {
@@ -13826,7 +13840,7 @@ function a15EngagerDevis(id) {
   if (!confirm('💸 Engager ce devis ?\n\n' + d.nom + ' — ' + fmtFCFA(d.reel) + '\nLa dépense sera créée' + (d.reel >= CPF_SEUIL_APPROBATION ? ' et passera par l\'approbation CPF (≥ 200 000 F).' : ' directement.'))) return;
   const catMap = { impression:'impression', transport:'transport', hebergement:'hebergement', pirogue:'transport', guide:'divers', autre:'divers' };
   const tx = {
-    id: 'tx_' + Date.now(),
+    id: uid('tx_'),
     cat: catMap[d.cat] || 'divers',
     amount: Math.round(d.reel),
     description: ('Devis engagé · ' + d.nom + (d.note ? ' — ' + d.note : '')).substring(0, 200),
@@ -13835,7 +13849,7 @@ function a15EngagerDevis(id) {
   };
   if (tx.amount >= CPF_SEUIL_APPROBATION) {
     const niveau = tx.amount >= CPF_SEUIL_MAJEUR ? 'NIVEAU 3 — délibération CPF + PV requis' : 'NIVEAU 2 — bon de commande, 2 signatures';
-    state.approvals.unshift({ id: 'apr_' + Date.now(), type: 'expense', tx, source: '💸 Devis ' + (CAT_LABELS[tx.cat] || tx.cat), msg: tx.description + ' — ' + fmtFCFA(tx.amount) + ' · ' + niveau, time: now(), status: 'pending' });
+    state.approvals.unshift({ id: uid('apr_'), type: 'expense', tx, source: '💸 Devis ' + (CAT_LABELS[tx.cat] || tx.cat), msg: tx.description + ' — ' + fmtFCFA(tx.amount) + ' · ' + niveau, time: now(), status: 'pending' });
     saveStateToDB(); renderApprovals();
     sendPushToTeam('🛃 Approbation CPF requise', tx.description + ' — ' + fmtFCFA(tx.amount), 'cpf');
     showToast('🛃 Envoyé en approbation CPF (Superviseur)', 'warn');
@@ -14765,7 +14779,7 @@ function a17ActivatePlanB(evt) {
   const btn = evt.currentTarget; disableBtn(btn);
   const d = a17CalcDrift();
   const surprint = Math.round(Math.abs(d.deltaDays) * 120000);
-  const txObj = { id: Date.now(), type: 'rebalance', cat: 'transport', amount: surprint, description: `Plan B Critique — Surcoût logistique recalibration (${Math.abs(d.deltaHours)}h retard)`, ts: Date.now() };
+  const txObj = { id: uid('tx_'), type: 'rebalance', cat: 'transport', amount: surprint, description: `Plan B Critique — Surcoût logistique recalibration (${Math.abs(d.deltaHours)}h retard)`, ts: Date.now() };
   state.transactionQueue.push(txObj);
   a17State.planBActive = true;
   a17AddLog(`Plan B activé — TX rebalance injecté : ${fmtFCFA(surprint)}`);
@@ -14825,7 +14839,7 @@ function a17ForceWatcherCycle() {
 }
 
 function a17InjectTestTx() {
-  const testTx = { id: Date.now(), type: 'test', cat: 'divers', amount: 50000, description: 'Transaction test Risk Manager', ts: Date.now() };
+  const testTx = { id: uid('tx_'), type: 'test', cat: 'divers', amount: 50000, description: 'Transaction test Risk Manager', ts: Date.now() };
   state.transactionQueue.push(testTx);
   a17AddLog(`TX test injectée : ${fmtFCFA(50000)}`);
   a17UpdateQueueDisplay();
