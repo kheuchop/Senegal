@@ -6,7 +6,7 @@ Guide complet pour l'équipe. À lire avant la première utilisation, à garder 
 
 ## 1. C'EST QUOI CETTE APPLICATION ?
 
-**MISSION CTRL · SÉNÉGAL V3** est le centre de pilotage de la mission documentaire photographique au Sénégal : 36 sites, 56 jours de terrain, 11 700 km, budget 100 millions FCFA, parution du livre en 2027.
+**MISSION CTRL · SÉNÉGAL V3** est le centre de pilotage de la mission documentaire photographique au Sénégal : 38 sites, 59 jours de terrain, 11 850 km, budget 100 millions FCFA, parution du livre en 2027 (livre d'art 30 × 24 cm, 224 pages, éditions Standard et Collector).
 
 C'est une **PWA** (application web installable) : elle s'ouvre dans le navigateur mais s'installe sur le téléphone comme une vraie app, et **fonctionne sans connexion internet**.
 
@@ -111,12 +111,14 @@ Les agents sont regroupés ici par métier pour faciliter la formation.
 #### 05 · Coordination Terrain — le chronomètre de mission
 **Rôle :** suivre le temps réel passé sur chaque site.
 **Ce qu'il fait :**
+- **🚦 Prêt pour le Terrain** : feux vert/orange/rouge pour le site du jour (autorisation, matériel, feuille de route, météo) — la check-list avant de partir
+- **📋 Feuille de Route par site** : prises de vue, matériel, horaires + plan reportage (thème, spots, **questions d'interview**), en mode Photographe ou Vidéaste, exportable en Word
 - **Chronomètre GPS** : à lancer en arrivant sur un site, à arrêter en partant
-- **Planning** des 56 jours de terrain
+- **Planning** des 59 jours de terrain
 - **Journal de terrain** : noter ce qui s'est passé dans la journée
 - **Historique des sessions GPS**
 
-**Comment l'utiliser :** sur chaque site, lancer le chrono. Le soir, mettre à jour les jours/sites faits. C'est ce qui nourrit le Risk Manager.
+**Comment l'utiliser :** vérifier le « Prêt pour le Terrain » et la feuille de route du site avant de partir. Sur place, lancer le chrono. Le soir, mettre à jour les jours/sites faits. C'est ce qui nourrit le Risk Manager.
 
 > 🗺 Sur la **Carte** (onglet dédié), un point bleu façon Google Maps montre ta position exacte avec un indicateur de qualité du signal (🎯 précis / 📶 correct / 📡 approximatif Wi-Fi) — sortir à ciel ouvert donne toujours le signal le plus précis. La navigation GPS propose un vrai itinéraire routier si une clé OpenRouteService (gratuite) est configurée, sinon un guidage à vol d'oiseau.
 
@@ -152,9 +154,12 @@ Les agents sont regroupés ici par métier pour faciliter la formation.
 
 **Comment l'utiliser :** sélectionner la plateforme, charger une photo de terrain, générer le post, ajuster, publier. *(Les fonctions IA nécessitent la clé Claude.)*
 
-#### 06 · Direction Artistique — la cohérence visuelle
-**Rôle :** définir le style et les briefs visuels de la mission.
-**Ce qu'il fait :** génère des briefs techniques et visuels (cadrage, lumière, références) pour guider les prises de vue.
+#### 06 · Direction Artistique — la cohérence visuelle ET la maquette du livre
+**Rôle :** définir le style visuel, puis construire le livre page par page.
+**Ce qu'il fait :**
+- Génère des **briefs techniques et visuels** (cadrage, lumière, références) pour guider les prises de vue
+- **Livre Vivant** : la maquette complète du livre (224 pages), avec légendes trilingues et le bouton **🔲 Placer les QR** (place automatiquement ~22 QR selon la stratégie beau-livre)
+- **📓 Carnet Making-of** : le livret exclusif de 16 pages de l'édition Collector (planches-contact, avant/après, récits de terrain, signatures) — chaque page a un bouton **✍️ Générer le texte (IA)**
 
 #### 07 · Rédacteur — les textes du livre
 **Rôle :** rédiger et structurer les textes de l'ouvrage.
@@ -167,9 +172,11 @@ Les agents sont regroupés ici par métier pour faciliter la formation.
 #### 13 · Numérique — l'expérience digitale du livre
 **Rôle :** outils numériques liés au livre.
 **Ce qu'il fait :**
-- Génération de **QR codes** (4 styles, dont un style Luxe doré)
-- **Certificat d'authenticité** pour les exemplaires numérotés (PNG + impression)
+- Génération de **QR codes** (4 styles, dont un style Luxe doré) : galerie photo, narration audio, carte GPS, achat livre, **achat de la version numérique**, et **Behind The Scenes** (avec rappel du thème, de la durée vidéo et des questions d'interview)
+- **Certificat d'authenticité** pour les exemplaires numérotés (PNG + impression) — sert aussi de clé pour la version numérique offerte avec le Collector
 - Pages de vente et séquences d'emails de pré-lancement *(IA)*
+
+> 📱 **La version numérique intégrale** du livre est un **produit payant séparé** (≈ 19 900 FCFA), offert avec l'édition Collector. Les QR du livre papier donnent des **bonus** (vidéos, audio) — jamais le livre entier gratuitement. Voir le document *Stratégie numérique*.
 
 ---
 

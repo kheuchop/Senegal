@@ -10249,12 +10249,66 @@ function a6RenderMakingof() {
   strip.innerHTML = `<div style="font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted);margin-bottom:8px">${done}/${pages.length} pages renseignées · livret séparé ~22×17 cm, glissé dans le coffret (500 ex.)</div>` +
     pages.map(p => {
       const filled = p.caption_fr || p.thumbnail;
-      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid var(--border)">
-        <div style="font-family:var(--font-mono);font-size:0.6rem;color:var(--gold);width:22px;flex-shrink:0">${String(p.num).padStart(2,'0')}</div>
-        <div style="flex:1;font-size:0.62rem;line-height:1.3">${escapeHtml(p.siteName)}</div>
-        <div style="font-size:0.7rem;flex-shrink:0">${filled ? '✅' : '○'}</div>
+      const cap = txt => txt ? `<div class="a5-rs-text" style="margin-top:6px;white-space:pre-wrap">${escapeHtml(txt)}</div>` : '';
+      return `<div style="border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer" onclick="a6ToggleMakingof('${p.id}')">
+          <div style="font-family:var(--font-mono);font-size:0.6rem;color:var(--gold);width:22px;flex-shrink:0">${String(p.num).padStart(2,'0')}</div>
+          <div style="flex:1;font-size:0.62rem;line-height:1.3">${escapeHtml(p.siteName)}</div>
+          <div style="font-size:0.7rem;flex-shrink:0">${filled ? '✅' : '○'}</div>
+        </div>
+        <div id="mkbody-${p.id}" style="display:none;padding:4px 8px 10px 32px">
+          <button class="btn btn-primary btn-sm" onclick="a6GenMakingofPage('${p.id}',this)"><div class="spinner"></div><span class="btn-text">✍️ ${filled ? 'Régénérer' : 'Générer'} le texte (IA)</span></button>
+          ${p.caption_fr ? `<div class="a5-rs-subtitle" style="margin-top:8px">FR</div>${cap(p.caption_fr)}` : ''}
+          ${p.caption_en ? `<div class="a5-rs-subtitle" style="margin-top:6px">EN</div>${cap(p.caption_en)}` : ''}
+          ${p.caption_ar ? `<div class="a5-rs-subtitle" style="margin-top:6px">AR</div><div class="a5-rs-text" style="direction:rtl;white-space:pre-wrap">${escapeHtml(p.caption_ar)}</div>` : ''}
+          ${p.notes_da ? `<div class="a5-rs-note" style="margin-top:6px">DA : ${escapeHtml(p.notes_da)}</div>` : ''}
+        </div>
       </div>`;
     }).join('');
+}
+function a6ToggleMakingof(id) {
+  const body = document.getElementById('mkbody-' + id);
+  if (body) body.style.display = body.style.display === 'none' ? 'block' : 'none';
+}
+
+/* Brief IA par type de page du carnet — chaque page a un ton et un but
+   propres (récit de terrain ≠ légende de planche-contact ≠ mot final). */
+const A6_MAKINGOF_BRIEF = {
+  mk_couverture: 'Propose un titre et un sous-titre pour ce carnet de coulisses (« Carnet de Mission »), sobres et évocateurs, dignes d\'un dossier d\'initié accompagnant un livre d\'art de collection.',
+  mk_edito: 'Écris un mot d\'intention (100-140 mots) : pourquoi ce carnet accompagne l\'édition Collector — montrer l\'envers de la fabrique, le choix des images, l\'humain derrière l\'objectif.',
+  mk_contact: 'Écris un texte (80-110 mots) accompagnant une planche-contact annotée : comment se fait le choix éditorial d\'une image parmi des dizaines, ce que le directeur artistique regarde et écarte.',
+  mk_avantapres: 'Écris un texte (70-100 mots) commentant un « avant/après » : la photo brute sortie du boîtier face à l\'image finale étalonnée — le travail de la lumière et de la couleur.',
+  mk_recit: 'Écris un récit de terrain à la première personne (120-160 mots), brut et sensoriel, dans le ton d\'un carnet griffonné le soir même. Ancre-le précisément dans le site cité dans le titre de la page.',
+  mk_carte: 'Écris une légende (60-90 mots) pour la carte du parcours réel : 59 jours, 11 850 km, 38 sites, 6 zones.',
+  mk_coulisses: 'Écris une légende (60-90 mots) pour une photo de coulisses montrant l\'équipe au travail sur le terrain.',
+  mk_materiel: 'Écris un texte (80-110 mots) sur le matériel et les conditions extrêmes du terrain sénégalais (poussière, chaleur, embruns, éloignement, sauvegarde des données).',
+  mk_qr: 'Écris un court texte (50-70 mots) invitant le détenteur à scanner les QR codes du livre pour accéder aux vidéos Behind The Scenes de chaque site.',
+  mk_remerciements: 'Écris des remerciements de terrain (70-100 mots), chaleureux et sincères, adressés aux communautés, guides et hôtes rencontrés.',
+  mk_signature: 'Écris un court mot final (40-60 mots) adressé au détenteur de l\'exemplaire numéroté, à placer au-dessus de la ligne « Exemplaire N° ___ / 500 » et des signatures manuscrites des auteurs.'
+};
+async function a6GenMakingofPage(id, btn) {
+  const page = (a6State.makingofPages || []).find(p => p.id === id);
+  if (!page) return;
+  disableBtn(btn);
+  const brief = A6_MAKINGOF_BRIEF[page.type] || 'Écris un texte éditorial court et soigné pour cette page du carnet making-of.';
+  const prompt = `Carnet Making-of (livret séparé exclusif de l'édition Collector du livre « Sénégal, Terre d'Histoire et de Rencontres ») — page : "${page.siteName}".\n${brief}\nTon : dossier d'initié haut de gamme, humain, sensible, jamais corporate.\nJSON UNIQUEMENT : {"fr":"texte français","en":"English text","ar":"النص العربي","note_da":"note courte du DA sur la mise en page"}`;
+  try {
+    const data = await a6CallClaude('Tu es directeur artistique et rédacteur d\'un carnet de coulisses accompagnant un livre d\'art de collection. Même sensibilité et même exigence dans les trois langues.', [{ type:'text', text: prompt }], 1000);
+    page.caption_fr = data.fr || '';
+    page.caption_en = data.en || '';
+    page.caption_ar = data.ar || '';
+    page.notes_da   = data.note_da || '';
+    page.status = 'caption';
+    a6RenderMakingof();
+    const body = document.getElementById('mkbody-' + id); if (body) body.style.display = 'block';
+    saveStateToDB(); saveBookIfChanged(true);
+    showToast('✍️ Texte généré — ' + page.siteName, 'ok');
+  } catch (e) {
+    const noKey = String(e.message).includes('NO_KEY') || String(e.message).includes('ANTHROPIC');
+    showToast('❌ ' + e.message + (noKey ? ' — la clé IA n\'est pas configurée sur Vercel' : ''), 'warn');
+  } finally {
+    enableBtn(btn);
+  }
 }
 
 function a6AutoLinkAllPhotos() {

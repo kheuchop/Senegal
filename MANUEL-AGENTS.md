@@ -36,11 +36,12 @@ Les **7 codes de rôle** (et le PIN du Coffre-Fort) se synchronisent désormais 
 
 C'est l'écran d'accueil, la vue d'ensemble.
 
-- **☀️ Brief du Jour** *(en tête d'écran)* : l'essentiel en un coup d'œil — jour X/56 (ou **⏳ J-XXX** avant le départ), **site du jour** (planning), **météo du site** (si clé configurée), disponible trésorerie, approbations en attente, risques actifs. Bouton **📣 Envoyer à l'équipe** → le brief part dans le groupe Telegram. Le rituel du matin.
+- **☀️ Brief du Jour** *(en tête d'écran)* : l'essentiel en un coup d'œil — jour X/59 (ou **⏳ J-XXX** avant le départ), **site du jour** (planning), **météo du site** (si clé configurée), disponible trésorerie, approbations en attente, risques actifs. Bouton **📣 Envoyer à l'équipe** → le brief part dans le groupe Telegram. Le rituel du matin.
 - **🔔 Notifications push** : bouton **toujours visible**, qui bascule entre **« Activer »** et **« Désactiver les notifications sur cet appareil »** selon l'état réel de l'abonnement — les alertes importantes (approbation CPF à valider, alertes Direction, météo à risque) arrivent **même app fermée** une fois activées.
 
   > ⚠️ **Sur iPhone/iPad**, Safari refuse les notifications tant que l'app n'est pas **installée sur l'écran d'accueil** (voir « Installer l'application » ci-dessous) — c'est une règle d'Apple. Le bouton l'indique clairement s'il faut installer d'abord.
 - **📲 Installer l'application** : sur **Android/Chrome**, un bouton **« Installer l'application »** apparaît automatiquement dès que possible. Sur **iPhone/iPad (Safari)**, l'installation n'est **jamais automatique** (limitation d'Apple, pas un bug) — la carte affiche la marche à suivre : **Partager 📤 → « Sur l'écran d'accueil » → Ajouter**.
+- **🔌 État des Services** : en un coup d'œil, quelles intégrations sont actives — **Agents IA (Claude)**, **Génération d'images**, **Météo**, **Itinéraire routier**. Un service en 🔴 signifie que ses fonctions IA sont désactivées (les documents déjà rédigés restent affichés). Bouton 🔄 pour rafraîchir.
 - **🩺 Diagnostic Synchronisation** : affiche la **version réellement active** sur l'appareil (utile pour vérifier qu'une mise à jour a bien été appliquée). Si des données ajoutées sur un appareil n'apparaissent pas sur un autre, appuie sur **« Tester la synchronisation »** : le test vérifie dans l'ordre réseau, session, lecture, droit d'écriture, file d'attente hors-ligne — et affiche exactement lequel bloque (message d'erreur exact). Bouton **📋 Copier le diagnostic** pour le transmettre tel quel si besoin d'aide.
 
 > 🔄 **Mises à jour automatiques :** l'app vérifie elle-même s'il existe une nouvelle version (à l'ouverture et toutes les heures) et se recharge automatiquement dès qu'elle en installe une. Plus besoin de fermer/rouvrir manuellement pour être à jour.
@@ -180,7 +181,13 @@ Le cœur du suivi terrain.
 
 **🏕 Mode Journée Terrain** : bouton sous le chronomètre → **écran plein format à gros boutons** (lisible en plein soleil) : jour, site, météo, chrono, Démarrer/Pause/Valider, note rapide vers le journal.
 
-**Planning Mission :** liste des 56 jours de terrain avec leur statut.
+**🚦 Prêt pour le Terrain :** un coup d'œil pour le site du jour, en feux vert/orange/rouge — autorisation (Juridique) ? matériel opérationnel (Logistique) ? feuille de route prête ? météo de la région ? La check-list avant de partir, en un seul endroit.
+
+**📋 Feuille de Route — Reportage Site :** choisir un site + bascule **📷 Photographe / 🎥 Vidéaste**. Affiche les prises de vue à faire, le matériel, la logistique horaire, PUIS le **plan reportage** du QR Behind The Scenes : thème, spots, recommandation technique, et le bloc **🎙️ Interview** (qui interviewer + **questions à poser** sur le terrain). Boutons **🔄 Régénérer via IA** et **📄 Export Word** (les 38 sites).
+
+> 💬 **Langue des interviews** : les questions sont en français (langue de travail). L'interlocuteur répond dans SA langue ; prévoir un guide/interprète local si besoin (pulaar à Podor, sérère à Joal, diola en Casamance, langues bassari au Pays Bassari).
+
+**Planning Mission :** liste des 59 jours de terrain avec leur statut.
 
 **Journal de Terrain (chaque soir) :**
 1. Renseigner **Site visité**, **Conditions terrain**, **Note de terrain**, **Prises validées (nb)**.
@@ -233,23 +240,28 @@ L'agent le plus complet. Il guide les prises de vue ET construit le livre.
 
 **📚 Galerie du Livre :** rassemble les photos validées (via « Meilleure Photo » → « Ajouter au livre »). Le compteur indique le nombre de photos.
 
-**📖 Séquençage Narratif :** **📖 Générer séquençage** → Claude propose l'ordre des 36 sites pour une vraie narration.
+**📖 Séquençage Narratif :** **📖 Générer séquençage** → Claude propose l'ordre des 38 sites pour une vraie narration.
 
 **📐 Maquette du Livre :** la structure page à page.
 1. Choisir la **Langue(s)** (FR, bilingue, trilingue FR+EN+AR).
-2. Choisir le **Nombre de pages cible** (128 à 288, défaut 224 — la structure réelle du Livre Vivant pour 36 sites).
+2. Choisir le **Nombre de pages cible** (128 à 288, défaut 224 — la structure réelle du Livre Vivant pour 38 sites).
 3. **📐 Générer maquette** → Claude conçoit la structure : pleines pages, doubles pages, légendes, chapitres, emplacements sponsors.
 4. **📋 Copier** pour récupérer le plan.
 
 **📖 Livre Vivant — Page par Page :** la maquette complète et évolutive.
-1. **📖 Initialiser le livre** → crée la structure.
+1. **📖 Initialiser le livre** → crée la structure (224 pages).
 2. La barre de progression se remplit au fur et à mesure des photos ajoutées.
-3. Légendes trilingues (FR+EN+AR) générées par Claude, QR codes par site.
-4. **📋 Exporter** pour sortir la maquette complète.
+3. Légendes trilingues (FR+EN+AR) générées par Claude.
+4. **🔲 Placer les QR (stratégie)** → place automatiquement ~22 QR aux bons endroits selon la stratégie beau-livre : 6 reels de zone, 10 Behind The Scenes sur les sites héros, 4 signatures audio, 1 achat de la version numérique (colophon), 1 boutique (4e de couverture). Chaque page indique le type de QR. Les QR posés à la main sont protégés.
+5. **📋 Exporter** pour sortir la maquette complète.
 
-**🛍️ Recommandations Matériel :** **🎒 Besoins mission** (matériel idéal pour les 36 sites) ou **🔧 Optimiser mon parc** (à partir de l'existant).
+**📓 Carnet Making-of — exclusif Collector :** un livret SÉPARÉ de 16 pages (~22×17 cm), glissé dans le coffret de l'édition Collector (PAS relié dans le livre, qui reste identique au Standard).
+1. **📓 Initialiser le carnet** → crée les 16 pages (planches-contact annotées, avant/après, récits de terrain, carte du parcours, renvoi QR vidéos, page numéro + signatures).
+2. Cliquer une page → **✍️ Générer le texte (IA)** : Claude rédige le contenu trilingue de cette page dans le ton « dossier d'initié ».
 
-> **En résumé, le livre se construit ainsi :** on shoote en suivant les briefs → on charge les photos dans « Meilleure Photo » → Claude sélectionne → « Ajouter au livre » remplit la Galerie → « Maquette » et « Livre Vivant » assemblent tout, page par page, avec légendes et QR codes.
+**🛍️ Recommandations Matériel :** **🎒 Besoins mission** (matériel idéal pour les 38 sites) ou **🔧 Optimiser mon parc** (à partir de l'existant).
+
+> **En résumé, le livre se construit ainsi :** on shoote en suivant les briefs → on charge les photos dans « Meilleure Photo » → Claude sélectionne → « Ajouter au livre » remplit la Galerie → « Maquette » et « Livre Vivant » assemblent tout, page par page, avec légendes et QR codes → le Carnet Making-of prépare le livret exclusif du Collector.
 
 ---
 
@@ -403,11 +415,15 @@ Outils numériques du livre.
 
 **Générateur QR Codes Immersifs :**
 1. Choisir **Site source**, **Type de contenu**, **Style visuel** (4 styles dont Luxe doré).
-2. **⬡ Générer QR Code** → s'ajoute à la **Bibliothèque QR**.
+2. **Types de contenu** : 🖼️ Galerie photo · 🎙️ Narration audio · 📍 Carte & GPS · 🛒 Page achat livre (précommande) · **🔓 Acheter la version numérique** (mène à la page de VENTE du numérique, produit payant séparé — pas un accès libre) · 🎬 Behind The Scenes.
+3. Pour un QR **Behind The Scenes**, le brief rappelle sous le QR le thème du reportage, la durée cible de la vidéo, les plans clés ET le bloc **🎙️ Interview** (qui interviewer + questions à poser).
+4. **⬡ Générer QR Code** → s'ajoute à la **Bibliothèque QR**.
+
+> 💡 **Stratégie QR** (voir le document *Stratégie numérique*) : environ 21 QR pour tout le livre, jamais un par site. Les QR papier livrent des **bonus d'expérience** (vidéo/audio/coulisses) ; le livre numérique intégral, lui, est un **produit payant séparé** (19 900 FCFA). Les URL pointent vers `senegalthr.com/livre/…` — les pages et vidéos derrière restent à construire et héberger (streaming protégé + DRM + filigrane).
 
 **Certificat d'Authenticité (Luxe) :**
 1. Saisir le **N° exemplaire (1–500)** et le **Propriétaire** (optionnel).
-2. **✦ Générer le certificat** → image téléchargeable et imprimable.
+2. **✦ Générer le certificat** → image téléchargeable et imprimable. Ce numéro sert aussi de **clé d'accès à la version numérique offerte** avec le Collector.
 
 **Page de Vente *(IA)* :** Canal + Édition + Langue → **✍️ Rédiger avec Claude**.
 
