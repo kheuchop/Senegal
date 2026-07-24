@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mission Ctrl · Grand Magal de Touba — Proposition de coordination numérique</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,700&family=Outfit:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --or:#C9A84C; --or-light:#F0D080; --or-dim:rgba(201,168,76,0.12);
+  --terre:#8B3A2A; --vert:#2D6A4F; --vert2:#52B788;
+  --sable:#F5ECD7; --nuit:#070B14; --nuit2:#0D1525; --nuit3:#111D30;
+  --blanc:#FFFFFF; --glass:rgba(255,255,255,0.04);
+  --glass-b:rgba(255,255,255,0.08); --r:20px;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Outfit',sans-serif;background:var(--nuit);color:var(--blanc);overflow-x:hidden;}
+a:focus-visible,button:focus-visible,.cta-btn:focus-visible{outline:2px solid var(--or-light);outline-offset:3px;border-radius:6px;}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important;}}
+
+#scroll-progress{position:fixed;top:0;left:0;height:2px;width:0%;background:linear-gradient(90deg,var(--vert2),var(--or),var(--or-light));z-index:9999;transition:width .1s linear;box-shadow:0 0 8px rgba(201,168,76,.6);}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:20px 60px;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);background:rgba(7,11,20,.7);border-bottom:1px solid rgba(201,168,76,.1);}
+.nav-logo{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:var(--or);letter-spacing:1.5px;text-transform:uppercase;}
+.nav-links{display:flex;gap:36px;list-style:none;}
+.nav-links a{color:rgba(255,255,255,.6);text-decoration:none;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;transition:color .3s;}
+.nav-links a:hover{color:var(--or);}
+.nav-cta{background:var(--or)!important;color:var(--nuit)!important;padding:10px 24px!important;border-radius:100px!important;font-weight:600!important;}
+
+#hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;background:radial-gradient(ellipse at 50% 0%,#1a1408 0%,var(--nuit) 55%),linear-gradient(180deg,#0a0704 0%,#070B14 100%);padding:160px 30px 100px;}
+#hero::before{content:'';position:absolute;inset:0;background:
+  radial-gradient(circle at 20% 30%,rgba(201,168,76,.08),transparent 40%),
+  radial-gradient(circle at 80% 70%,rgba(45,106,79,.10),transparent 45%);}
+.hero-content{position:relative;z-index:2;max-width:820px;}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(201,168,76,.4);color:var(--or);font-size:10px;font-weight:500;letter-spacing:4px;text-transform:uppercase;padding:8px 22px;border-radius:100px;margin-bottom:36px;backdrop-filter:blur(12px);background:rgba(201,168,76,.08);}
+.hero-badge::before{content:'';width:6px;height:6px;background:var(--or);border-radius:50%;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(1.5);}}
+.hero-title{font-family:'Cormorant Garamond',serif;font-size:clamp(40px,6.5vw,78px);font-weight:700;line-height:1.02;color:var(--or-light);margin-bottom:20px;}
+.hero-title em{font-style:italic;color:var(--sable);font-weight:300;}
+.hero-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(17px,2.4vw,23px);color:rgba(245,236,215,.75);margin-bottom:50px;font-weight:300;max-width:620px;margin-left:auto;margin-right:auto;line-height:1.5;}
+.hero-stats{display:flex;justify-content:center;gap:50px;flex-wrap:wrap;}
+.hs-val{font-family:'Cormorant Garamond',serif;font-size:clamp(30px,4.5vw,46px);font-weight:700;color:var(--or);display:block;line-height:1;}
+.hs-lbl{font-size:10px;color:rgba(255,255,255,.4);letter-spacing:2px;text-transform:uppercase;margin-top:6px;}
+.hs-sep{width:1px;background:rgba(201,168,76,.2);align-self:stretch;}
+
+section{position:relative;padding:110px 80px;}
+.slabel{font-size:10px;font-weight:500;letter-spacing:5px;text-transform:uppercase;color:var(--or);margin-bottom:20px;display:flex;align-items:center;gap:12px;}
+.slabel::before{content:'';width:30px;height:1px;background:var(--or);}
+h2.stitle{font-family:'Cormorant Garamond',serif;font-size:clamp(34px,4.6vw,58px);font-weight:700;line-height:1.08;color:var(--blanc);margin-bottom:22px;}
+h2.stitle em{font-style:italic;color:var(--or-light);}
+.sbody{font-size:16px;color:rgba(255,255,255,.55);line-height:1.9;max-width:640px;font-weight:300;}
+
+.rv{opacity:0;transform:translateY(40px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1);}
+.rvl{opacity:0;transform:translateX(-50px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1);}
+.rvr{opacity:0;transform:translateX(50px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1);}
+.rv.vis,.rvl.vis,.rvr.vis{opacity:1;transform:translate(0);}
+
+#overview{padding:56px 80px;background:var(--nuit2);border-top:1px solid rgba(201,168,76,.1);border-bottom:1px solid rgba(201,168,76,.1);display:grid;grid-template-columns:repeat(4,1fr);}
+.ov{padding:36px;text-align:center;border-right:1px solid rgba(255,255,255,.06);}
+.ov:last-child{border-right:none;}
+.ov-val{font-family:'Cormorant Garamond',serif;font-size:clamp(36px,4.5vw,54px);font-weight:700;color:var(--or);display:block;line-height:1;}
+.ov-lbl{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-top:10px;}
+.ov-desc{font-size:13px;color:rgba(255,255,255,.5);margin-top:6px;font-weight:300;}
+
+#problem{background:var(--nuit);}
+.pb-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:50px;}
+.pb-card{background:var(--glass);border:1px solid var(--glass-b);border-radius:var(--r);padding:28px;position:relative;transition:all .4s cubic-bezier(.16,1,.3,1);}
+.pb-card:hover{border-color:rgba(201,168,76,.2);transform:translateY(-4px);background:rgba(255,255,255,.06);}
+.pb-card h4{font-size:14px;font-weight:500;color:var(--sable);margin-bottom:8px;line-height:1.4;}
+.pb-card p{font-size:12.5px;color:rgba(255,255,255,.42);line-height:1.7;font-weight:300;}
+.pb-card.wide{grid-column:1/-1;}
+
+#solution{background:var(--nuit2);}
+.mod-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:56px;}
+.mod-card{background:var(--glass);border:1px solid var(--glass-b);border-radius:var(--r);padding:30px 24px;transition:all .4s cubic-bezier(.16,1,.3,1);position:relative;overflow:hidden;}
+.mod-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--or);transform:scaleX(0);transition:transform .4s;transform-origin:left;}
+.mod-card:hover::before{transform:scaleX(1);}
+.mod-card:hover{transform:translateY(-6px);border-color:rgba(201,168,76,.2);}
+.mod-icon{font-size:26px;margin-bottom:16px;display:block;}
+.mod-title{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:600;color:var(--blanc);margin-bottom:10px;line-height:1.25;}
+.mod-desc{font-size:12.5px;color:rgba(255,255,255,.45);line-height:1.7;font-weight:300;margin-bottom:14px;}
+.mod-tag{font-size:9.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--or);background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);padding:4px 12px;border-radius:100px;display:inline-block;}
+
+#preuve{background:var(--nuit);}
+.pr-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;}
+.pr-checks{display:flex;flex-direction:column;gap:14px;margin-top:34px;}
+.pr-check{display:flex;align-items:flex-start;gap:16px;padding:20px;background:var(--glass);border:1px solid var(--glass-b);border-radius:16px;transition:all .3s;}
+.pr-check:hover{border-color:rgba(201,168,76,.22);background:rgba(255,255,255,.05);}
+.pr-icon{width:30px;height:30px;flex-shrink:0;background:rgba(82,183,136,.15);border:1px solid rgba(82,183,136,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;margin-top:1px;color:var(--vert2);}
+.pr-text{font-size:13.5px;color:rgba(255,255,255,.6);line-height:1.7;font-weight:300;}
+.pr-text strong{color:var(--sable);font-weight:500;}
+.pr-panel{background:linear-gradient(135deg,rgba(201,168,76,.1),rgba(201,168,76,.02));border:1px solid rgba(201,168,76,.2);border-radius:24px;padding:44px;}
+.pr-stat{margin-bottom:26px;}
+.pr-stat:last-child{margin-bottom:0;}
+.pr-sv{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:700;color:var(--or);line-height:1;}
+.pr-sl{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-top:4px;}
+
+#pilote{background:var(--nuit2);}
+.pil-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:56px;}
+.pil-card{background:var(--glass);border:1px solid var(--glass-b);border-radius:var(--r);padding:34px 28px;transition:all .4s cubic-bezier(.16,1,.3,1);}
+.pil-card:hover{transform:translateY(-6px);border-color:rgba(201,168,76,.2);}
+.pil-step{font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:700;color:var(--or);opacity:.5;line-height:1;margin-bottom:14px;}
+.pil-title{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:600;color:var(--blanc);margin-bottom:10px;}
+.pil-desc{font-size:12.5px;color:rgba(255,255,255,.45);line-height:1.7;font-weight:300;}
+.pil-note{margin-top:44px;padding:24px 28px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.18);border-radius:16px;font-size:13px;color:rgba(245,236,215,.75);line-height:1.7;font-weight:300;}
+.pil-note strong{color:var(--or-light);font-weight:600;}
+
+#contact{background:linear-gradient(135deg,var(--nuit2),var(--nuit));padding:110px 80px;text-align:center;border-top:1px solid rgba(201,168,76,.1);}
+.ctitle{font-family:'Cormorant Garamond',serif;font-size:clamp(32px,5.5vw,60px);font-weight:700;color:var(--or-light);margin-bottom:18px;}
+.csub{font-size:15px;color:rgba(255,255,255,.45);margin-bottom:54px;font-weight:300;max-width:560px;margin-left:auto;margin-right:auto;}
+.cc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;max-width:760px;margin:0 auto 50px;}
+.cc{background:var(--glass);border:1px solid var(--glass-b);border-radius:var(--r);padding:28px 18px;}
+.cc-icon{font-size:24px;margin-bottom:12px;display:block;}
+.cc-val{font-size:13px;font-weight:500;color:var(--sable);margin-bottom:4px;word-break:break-word;}
+.cc-lbl{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);}
+.cta-btn{display:inline-flex;align-items:center;gap:12px;background:var(--or);color:var(--nuit);font-size:14px;font-weight:600;letter-spacing:.5px;padding:18px 46px;border-radius:100px;text-decoration:none;transition:all .3s;}
+.cta-btn:hover{background:var(--or-light);transform:scale(1.04);box-shadow:0 20px 60px rgba(201,168,76,.35);}
+.confidentiel{margin-top:70px;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.15);}
+
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;opacity:.02;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+@media(max-width:1000px){
+  section{padding:80px 32px;}
+  #problem .pb-cards{grid-template-columns:1fr;}
+  .mod-grid{grid-template-columns:1fr 1fr;}
+  .pr-grid{grid-template-columns:1fr;gap:40px;}
+  .pil-grid{grid-template-columns:1fr;}
+  nav{padding:16px 24px;}
+  .nav-links{display:none;}
+  #overview{grid-template-columns:1fr 1fr;}
+  .cc-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<div id="scroll-progress"></div>
+
+<nav>
+  <div class="nav-logo">Mission Ctrl · Magal</div>
+  <ul class="nav-links">
+    <li><a href="#problem">Constat</a></li>
+    <li><a href="#solution">Modules</a></li>
+    <li><a href="#preuve">Preuve</a></li>
+    <li><a href="#pilote">Pilote</a></li>
+    <li><a href="#contact" class="nav-cta">Contact</a></li>
+  </ul>
+</nav>
+
+<section id="hero">
+  <div class="hero-content">
+    <div class="hero-badge">Proposition de partenariat technologique</div>
+    <h1 class="hero-title">GRAND MAGAL DE TOUBA<br><em>Un centre de pilotage numérique<br>pour la logistique du Magal</em></h1>
+    <p class="hero-sub">Outil de coordination terrain conçu pour suivre en temps réel les chantiers prioritaires — eau, santé, sécurité, énergie — entre services préfectoraux, comité d'organisation et volontaires, avec ou sans connexion internet sur site.</p>
+    <div class="hero-stats">
+      <div><span class="hs-val">4</span><span class="hs-lbl">Chantiers prioritaires suivis</span></div>
+      <div class="hs-sep"></div>
+      <div><span class="hs-val">100%</span><span class="hs-lbl">Fonctionnel hors-ligne</span></div>
+      <div class="hs-sep"></div>
+      <div><span class="hs-val">1</span><span class="hs-lbl">Tableau de bord partagé</span></div>
+    </div>
+  </div>
+</section>
+
+<div id="overview">
+  <div class="ov rv"><span class="ov-val">Eau</span><div class="ov-lbl">Réseau hydraulique</div><div class="ov-desc">Extension, fuites, points de rupture</div></div>
+  <div class="ov rv" style="transition-delay:.08s"><span class="ov-val">Santé</span><div class="ov-lbl">Postes & secours</div><div class="ov-desc">Couverture sanitaire par zone</div></div>
+  <div class="ov rv" style="transition-delay:.16s"><span class="ov-val">Sécurité</span><div class="ov-lbl">Circulation & flux</div><div class="ov-desc">Déplacements nocturnes des fidèles</div></div>
+  <div class="ov rv" style="transition-delay:.24s"><span class="ov-val">Énergie</span><div class="ov-lbl">Réseau électrique</div><div class="ov-desc">Délestages, éclairage public</div></div>
+</div>
+
+<section id="problem">
+  <div class="rvl">
+    <div class="slabel">01 · Constat</div>
+    <h2 class="stitle">Une coordination<br><em>éclatée entre acteurs.</em></h2>
+    <p class="sbody">Chaque édition du Magal mobilise le comité d'organisation, les préfectures de Diourbel et Mbacké, la sous-préfecture de Touba, les services régionaux et des milliers de volontaires — sur des chantiers d'infrastructure critiques suivis aujourd'hui sans outil de coordination partagé en temps réel.</p>
+  </div>
+  <div class="pb-cards">
+    <div class="pb-card wide"><h4>Suivi de chantiers dispersé entre services</h4><p>Eau, santé, sécurité, énergie : chaque priorité est gérée par un service différent, sans vision d'ensemble consolidée et actualisée pour le comité d'organisation.</p></div>
+    <div class="pb-card"><h4>Zéro connectivité sur le terrain</h4><p>Les zones de préparatifs autour de Touba ont un réseau mobile saturé ou absent pendant les pics d'affluence — un outil qui dépend d'internet y devient inutile au pire moment.</p></div>
+    <div class="pb-card"><h4>Coordination de milliers de volontaires</h4><p>Les Baye Fall et autres volontaires assurent une grande partie de la logistique sans point de suivi centralisé de l'avancement des tâches qui leur sont confiées.</p></div>
+    <div class="pb-card"><h4>Remontée d'information lente</h4><p>Un incident (fuite, panne, point de tension sur un axe) met du temps à remonter jusqu'aux décideurs capables de mobiliser une réponse.</p></div>
+    <div class="pb-card"><h4>Aucune mémoire d'une édition à l'autre</h4><p>Chaque édition repart sans capitaliser précisément sur les incidents et solutions de l'édition précédente.</p></div>
+  </div>
+</section>
+
+<section id="solution">
+  <div class="rvl" style="margin-bottom:10px;">
+    <div class="slabel">02 · Notre solution</div>
+    <h2 class="stitle">Mission Ctrl,<br><em>adapté au Magal.</em></h2>
+    <p class="sbody">Une application déjà construite et éprouvée sur le terrain sénégalais, reconfigurée avec les seuls modules pertinents pour l'organisation du Magal — pas de fonctionnalités superflues.</p>
+  </div>
+  <div class="mod-grid">
+    <div class="mod-card rv">
+      <span class="mod-icon">💧</span>
+      <div class="mod-title">Terrain & Carte</div>
+      <div class="mod-desc">Localisation GPS des chantiers et points sensibles (eau, lampadaires, postes de santé) sur une carte partagée, mise à jour par les équipes sur place.</div>
+      <span class="mod-tag">Module Terrain</span>
+    </div>
+    <div class="mod-card rv" style="transition-delay:.06s">
+      <span class="mod-icon">⚠️</span>
+      <div class="mod-title">Risk Manager</div>
+      <div class="mod-desc">Remontée d'incident en un geste (fuite, panne, point de tension) avec alerte immédiate aux responsables du chantier concerné.</div>
+      <span class="mod-tag">Module Risk Manager</span>
+    </div>
+    <div class="mod-card rv" style="transition-delay:.12s">
+      <span class="mod-icon">📋</span>
+      <div class="mod-title">Logistique</div>
+      <div class="mod-desc">Suivi de l'avancement de chaque chantier prioritaire, par zone et par équipe, visible en un coup d'œil pour le comité d'organisation.</div>
+      <span class="mod-tag">Module Logistique</span>
+    </div>
+    <div class="mod-card rv" style="transition-delay:.18s">
+      <span class="mod-icon">🤝</span>
+      <div class="mod-title">Juridique / Coordination</div>
+      <div class="mod-desc">Registre des interlocuteurs et engagements par service (préfecture, sous-préfecture, comité), avec suivi des points en attente.</div>
+      <span class="mod-tag">Module Juridique</span>
+    </div>
+  </div>
+  <p style="margin-top:36px;font-size:12.5px;color:rgba(255,255,255,.35);font-weight:300;">Fonctionne intégralement hors-ligne (les données se synchronisent automatiquement dès qu'une connexion redevient disponible) — conçu pour les zones à réseau saturé ou absent.</p>
+</section>
+
+<section id="preuve">
+  <div class="pr-grid">
+    <div class="rvl">
+      <div class="slabel">03 · Déjà éprouvé</div>
+      <h2 class="stitle">Pas un concept.<br><em>Un outil qui tourne déjà.</em></h2>
+      <div class="pr-checks">
+        <div class="pr-check"><div class="pr-icon">✓</div><div class="pr-text"><strong>38 sites</strong> coordonnés simultanément sur l'ensemble du territoire sénégalais, avec suivi logistique, juridique et financier au quotidien.</div></div>
+        <div class="pr-check"><div class="pr-icon">✓</div><div class="pr-text">Synchronisation cloud <strong>multi-appareils validée</strong> — les mêmes données accessibles au bureau et sur le terrain, y compris sans réseau.</div></div>
+        <div class="pr-check"><div class="pr-icon">✓</div><div class="pr-text">Module d'autorisations déjà utilisé pour suivre des relations avec <strong>des organismes religieux</strong> (khalifats de Tivaouane et Médina Baye), interlocuteur par interlocuteur.</div></div>
+        <div class="pr-check"><div class="pr-icon">✓</div><div class="pr-text">Suivi budgétaire en temps réel déjà validé sur une opération à <strong>plusieurs dizaines de millions de FCFA</strong>.</div></div>
+      </div>
+    </div>
+    <div class="pr-panel rvr">
+      <div class="pr-stat"><div class="pr-sv">59 jours</div><div class="pr-sl">de coordination terrain déjà pilotés</div></div>
+      <div class="pr-stat"><div class="pr-sv">38 sites</div><div class="pr-sl">suivis simultanément, tout le pays</div></div>
+      <div class="pr-stat"><div class="pr-sv">100% offline</div><div class="pr-sl">app installable, aucune dépendance réseau</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="pilote">
+  <div class="rvl" style="margin-bottom:10px;">
+    <div class="slabel">04 · Proposition</div>
+    <h2 class="stitle">Un pilote,<br><em>sans engagement.</em></h2>
+    <p class="sbody">L'objectif n'est pas de vendre un outil inconnu, mais de le mettre à l'épreuve sur un seul chantier avant toute décision.</p>
+  </div>
+  <div class="pil-grid">
+    <div class="pil-card rv">
+      <div class="pil-step">01</div>
+      <div class="pil-title">Un chantier, une édition</div>
+      <div class="pil-desc">Suivi gratuit d'un seul chantier prioritaire (ex. réseau hydraulique) pour l'édition 2026, en parallèle des méthodes actuelles — aucun remplacement d'outil imposé.</div>
+    </div>
+    <div class="pil-card rv" style="transition-delay:.08s">
+      <div class="pil-step">02</div>
+      <div class="pil-title">Démonstration sur mesure</div>
+      <div class="pil-desc">Présentation de l'outil pré-configuré avec les données réelles du chantier choisi, devant le comité d'organisation.</div>
+    </div>
+    <div class="pil-card rv" style="transition-delay:.16s">
+      <div class="pil-step">03</div>
+      <div class="pil-title">Décision après usage</div>
+      <div class="pil-desc">Extension aux autres chantiers, et modalités de licence pour les éditions suivantes, décidées uniquement après validation sur le terrain.</div>
+    </div>
+  </div>
+  <div class="pil-note">
+    <strong>Note :</strong> les données présentées dans ce document proviennent de sources publiques sur l'organisation du Magal 2026. Toute donnée chiffrée propre au comité d'organisation (budgets, effectifs exacts, échéances) sera intégrée uniquement avec leur accord, lors du cadrage du pilote.
+  </div>
+</section>
+
+<section id="contact">
+  <div class="ctitle">Discutons du pilote</div>
+  <div class="csub">Un premier échange suffit pour cadrer un pilote sur un seul chantier, sans engagement.</div>
+  <div class="cc-grid">
+    <div class="cc"><span class="cc-icon">✉️</span><div class="cc-val">boutigosenegal@gmail.com</div><div class="cc-lbl">Email</div></div>
+    <div class="cc"><span class="cc-icon">📞</span><div class="cc-val">[À compléter]</div><div class="cc-lbl">Téléphone</div></div>
+    <div class="cc"><span class="cc-icon">📍</span><div class="cc-val">Dakar, Sénégal</div><div class="cc-lbl">Basé à</div></div>
+  </div>
+  <a href="mailto:boutigosenegal@gmail.com?subject=Mission%20Ctrl%20%C2%B7%20Proposition%20pilote%20Grand%20Magal" class="cta-btn">Proposer un échange</a>
+  <div class="confidentiel">Document de présentation confidentiel — usage interne uniquement</div>
+</section>
+
+<script>
+document.addEventListener('scroll',()=>{
+  const h=document.documentElement;
+  const p=(h.scrollTop)/(h.scrollHeight-h.clientHeight)*100;
+  document.getElementById('scroll-progress').style.width=p+'%';
+});
+const io=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('vis');io.unobserve(e.target);}});
+},{threshold:.15});
+document.querySelectorAll('.rv,.rvl,.rvr').forEach(el=>io.observe(el));
+</script>
+
+</body>
+</html>

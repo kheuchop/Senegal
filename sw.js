@@ -7,7 +7,7 @@
  *  - Tuiles OSM : cache opportuniste plafonné (les zones visitées restent visibles hors-ligne)
  *  - /api/, Supabase, Make : réseau uniquement (jamais de cache — la file SupaSync gère l'offline)
  */
-const VERSION = 'mission-ctrl-v97';
+const VERSION = 'mission-ctrl-v98';
 const SHELL_CACHE = `shell-${VERSION}`;
 const RUNTIME_CACHE = `runtime-${VERSION}`;
 const TILE_CACHE = `tiles-${VERSION}`;
@@ -129,7 +129,12 @@ async function tileStrategy(req) {
   if (cached) return cached;
   try {
     const res = await fetch(req);
-    if (res.ok) {
+    // Les tuiles OSM/Esri sont chargées par Leaflet via <img> sans CORS : la
+    // réponse est *opaque* (status:0, ok:false). Sans ce cas, RIEN n'était mis
+    // en cache et la carte restait grise hors-ligne — critique en zone reculée.
+    // On accepte donc opaque ; seules les vraies erreurs réseau (catch) sont
+    // ignorées.
+    if (res.ok || res.type === 'opaque') {
       await cache.put(req, res.clone());
       trimTileCache(cache); // non bloquant
     }

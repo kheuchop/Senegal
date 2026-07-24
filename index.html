@@ -3002,7 +3002,7 @@ textarea.input-field { resize: vertical; min-height: 80px; }
 
         <!-- A5: Planning 59 jours -->
         <div class="card">
-          <div class="card-title">Planning Mission — 56 Jours Terrain</div>
+          <div class="card-title">Planning Mission — 59 Jours Terrain</div>
           <div class="a5-plan-filter">
             <button class="a5-filter-btn active" onclick="a5FilterPlan('all',this)">Tous</button>
             <button class="a5-filter-btn" onclick="a5FilterPlan('done',this)">✅ Faits</button>
@@ -5157,6 +5157,23 @@ window.apiFetch = apiFetch;
 /* ============================================================
    INDEXEDDB — Isolated readwrite transactions
    ============================================================ */
+/* Stockage persistant : sans ça, le système d'exploitation traite IndexedDB
+   comme du cache jetable et peut l'effacer sous pression mémoire — ou, sur
+   iPhone/Safari, après 7 jours d'inactivité. Sur une mission de 59 jours, ça
+   signifierait perdre transactions, autorisations et maquette du livre. On
+   demande donc le mode persistant au démarrage (silencieux si déjà accordé ou
+   si l'API n'existe pas). */
+async function requestPersistentStorage() {
+  try {
+    if (!navigator.storage || !navigator.storage.persist) return;
+    const already = navigator.storage.persisted ? await navigator.storage.persisted() : false;
+    if (already) { window._storagePersisted = true; return; }
+    const granted = await navigator.storage.persist();
+    window._storagePersisted = granted;
+    if (!granted) console.warn('[Stockage] mode persistant refusé — risque d\'éviction des données.');
+  } catch (e) { console.warn('[Stockage] persist() indisponible:', e); }
+}
+
 let db = null;
 function initDB() {
   return new Promise((res, rej) => {
@@ -5747,12 +5764,27 @@ function _bookSignature() {
   a6State.bookGallery.forEach(g => { sig += (g.thumbnail ? g.thumbnail.length : 0) + (g.site || '').length; });
   return sig;
 }
+let _bookSaveWarnedAt = 0;
 function saveBookIfChanged(force) {
   try {
     const sig = _bookSignature();
     if (!force && sig === _bookLastSig) return;
-    _bookLastSig = sig;
     dbWrite('bookstore', { id: 1, gallery: a6State.bookGallery, pages: a6State.bookPages, makingof: a6State.makingofPages || [] })
+      .then(ok => {
+        if (ok === null) {
+          // Échec (souvent quota dépassé) : NE PAS marquer comme sauvegardé, pour
+          // qu'une prochaine tentative réessaie. Avertir l'utilisateur (au plus
+          // une fois toutes les 30s pour ne pas spammer).
+          console.warn('[Livre] sauvegarde échouée — stockage plein ?');
+          const now = Date.now();
+          if (now - _bookSaveWarnedAt > 30000 && typeof showToast === 'function') {
+            _bookSaveWarnedAt = now;
+            showToast('⚠️ Livre non sauvegardé — stockage saturé. Libérez de l\'espace (photos) puis rouvrez la maquette.', 'warn');
+          }
+        } else {
+          _bookLastSig = sig; // marqué sauvegardé seulement en cas de succès réel
+        }
+      })
       .catch(e => console.warn('[Livre] sauvegarde:', e));
   } catch (e) { console.warn('[Livre] signature:', e); }
 }
@@ -6301,6 +6333,15 @@ function findNearestSite(lat, lon) {
   return best ? { site: best, dist: bestDist } : null;
 }
 
+/* Réglages GPS partagés par tous les watchPosition.
+   - enableHighAccuracy: true → on garde la précision réelle (indispensable sur site)
+   - maximumAge: 12000 → autorise la réutilisation d'un point vieux de ≤12s : le
+     téléphone n'allume plus la puce GPS en continu → forte économie de batterie
+     sur une journée de terrain (le point reste assez frais pour naviguer)
+   - timeout: 27000 → plus tolérant sous canopée (forêts sacrées) ou en canyon
+     (cascades de Dindéfelo/Ségou) avant de déclencher une erreur */
+const GPS_WATCH_OPTS = { enableHighAccuracy: true, timeout: 27000, maximumAge: 12000 };
+
 function onGpsError(err) {
   console.warn('GPS error:', err.code, err.message);
   // 1 = PERMISSION_DENIED : échec définitif → couper proprement et expliquer,
@@ -6329,7 +6370,7 @@ function resetGpsWatchdog() {
   state.gpsWatchdog = setTimeout(() => {
     if (state.gpsActive) {
       navigator.geolocation.clearWatch(state.gpsWatchId);
-      state.gpsWatchId = navigator.geolocation.watchPosition(onGpsPosition, onGpsError, { enableHighAccuracy:true, timeout:15000, maximumAge:0 });
+      state.gpsWatchId = navigator.geolocation.watchPosition(onGpsPosition, onGpsError, GPS_WATCH_OPTS);
     }
   }, 60000);
 }
@@ -6356,7 +6397,7 @@ function toggleGPS() {
     state.gpsActive = true;
     state.mapFollowUser = true;
     btn.className = 'gps-on';
-    state.gpsWatchId = navigator.geolocation.watchPosition(onGpsPosition, onGpsError, { enableHighAccuracy:true, timeout:15000, maximumAge:0 });
+    state.gpsWatchId = navigator.geolocation.watchPosition(onGpsPosition, onGpsError, GPS_WATCH_OPTS);
     resetGpsWatchdog();
     showToast('GPS activé', 'ok');
   }
@@ -6465,8 +6506,12 @@ function initMap() {
     state.leafletMap = map;
 
     // --- Fonds de carte : Plan / Satellite / Hybride ---
+    // subdomains:'a' — on force un seul serveur (a.tile…) au lieu de la rotation
+    // a/b/c par défaut : c'est le même hôte que le préchargement hors-ligne
+    // (downloadZoneTiles), sinon 2/3 des tuiles affichées ne correspondaient pas
+    // au cache téléchargé et la carte restait grise sur le terrain.
     const planLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19, className: 'tiles-plan', attribution: '© OpenStreetMap'
+      maxZoom: 19, className: 'tiles-plan', subdomains: 'a', attribution: '© OpenStreetMap'
     });
     const satUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
     const labelsUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
@@ -7123,33 +7168,33 @@ const CM_TEMPLATES = {
   youtube: (site, tone, duration) => {
     const dur = duration || 'medium';
     const titles = { inspiring:`${site.name} — Quand le Sénégal vous coupe le souffle | Documentaire 4K`, informative:`[DOCUMENTAIRE] ${site.name} : Zone ${site.zone} | Mission Photographique Sénégal`, exciting:`INCROYABLE ! 38 sites en 87 jours — On était à ${site.name} 🔥`, cultural:`${site.name} — Histoire & Patrimoine du Sénégal | Série Documentaire`, promotional:`${site.name} : Le livre qui va changer votre regard sur l'Afrique` };
-    const descs = `🎬 DESCRIPTION\nCette vidéo fait partie de notre série documentaire sur les 38 sites emblématiques du Sénégal.\n\nSite ${site.id} sur 36 — Zone ${site.zone}\n📍 ${site.name}\n🗺️ Coordonnées : ${site.coords[0].toFixed(4)}°N / ${Math.abs(site.coords[1]).toFixed(4)}°W\n⏱ ${site.days} jour${site.days>1?'s':''} de tournage\n🚗 ~${site.km}km depuis Dakar\n\n${dur==='short'?'🎯 Format court — Highlights & Best-of':''}${dur==='medium'?'📽 Format documentaire web — Histoire complète du site':''}${dur==='long'?'🎬 Documentaire complet — Récit immersif et archives':''}`;
+    const descs = `🎬 DESCRIPTION\nCette vidéo fait partie de notre série documentaire sur les 38 sites emblématiques du Sénégal.\n\nSite ${site.id} sur 38 — Zone ${site.zone}\n📍 ${site.name}\n🗺️ Coordonnées : ${site.coords[0].toFixed(4)}°N / ${Math.abs(site.coords[1]).toFixed(4)}°W\n⏱ ${site.days} jour${site.days>1?'s':''} de tournage\n🚗 ~${site.km}km depuis Dakar\n\n${dur==='short'?'🎯 Format court — Highlights & Best-of':''}${dur==='medium'?'📽 Format documentaire web — Histoire complète du site':''}${dur==='long'?'🎬 Documentaire complet — Récit immersif et archives':''}`;
     const timestamps = dur !== 'short' ? '\n\n⏰ CHAPITRES\n00:00 Introduction\n01:30 Contexte historique\n04:00 Tournage sur site\n${dur==="long"?"08:00 Témoignages & interviews\n15:00 Conclusion":""}\n' : '';
     return { title: titles[tone], text: descs + timestamps, hashtags: `#${site.name.replace(/\s+/g,'')} #Sénégal #Documentaire #Africa4K #Patrimoine`, meta: `Durée recommandée : ${dur==='short'?'< 5 min':dur==='medium'?'5-20 min':'20-60 min'} · Catégorie : Voyage & Événements · Langue : Français` };
   },
   linkedin: (site, tone) => {
-    const texts = { inspiring:`Après ${site.km}km parcourus pour atteindre ${site.name}, je comprends mieux pourquoi ce pays mérite un documentaire de cette envergure.\n\nSite ${site.id}/36 de notre mission photographique nationale. Zone ${site.zone}. ${site.days} jour${site.days>1?'s':''} d'immersion.\n\n🎯 Notre mission : rendre accessible le patrimoine sénégalais à travers un livre documentaire produit avec un budget de 100M FCFA.\n\nL'Afrique mérite des récits à la hauteur de sa beauté.\n\n#Leadership #Afrique #Documentaire #Patrimoine #Sénégal`, informative:`📊 Point d'avancement — Mission Documentaire Sénégal V3\n\n✅ Site ${site.id} : ${site.name} (Zone ${site.zone})\n📍 ${site.coords[0].toFixed(4)}°N\n⏱ ${site.days} jour${site.days>1?'s':''} terrain\n🚗 ${site.km}km depuis Dakar\n\nÉtat global mission :\n• 38 sites · 59j terrain · 87j total\n• ~11 850 km à parcourir\n• Budget : 100 000 000 FCFA\n\n#Gestion de Projet #Documentary #Sénégal`, exciting:'', cultural:`🌍 Héritage Culturel — ${site.name}\n\nSite Zone ${site.zone} de notre série documentaire sur le Sénégal.\n\nCe n'est pas qu'un lieu — c'est une mémoire vivante. Notre équipe y a passé ${site.days} jour${site.days>1?'s':''} pour en capturer chaque nuance.\n\nLe documentaire sort en 2027. Réservez votre exemplaire.\n\n#Culture #Afrique #Heritage #Sénégal`, promotional:`🎥 Nous recherchons des partenaires pour notre documentaire sur les 38 sites emblématiques du Sénégal.\n\nSite en cours : ${site.name} — Zone ${site.zone}\n\nOpportunités :\n• Sponsoring institutionnel\n• Placement de marque\n• Co-production\n• Distribution internationale\n\nContactez notre équipe.\n\n#Sponsoring #Partenariat #Sénégal #Investissement` };
+    const texts = { inspiring:`Après ${site.km}km parcourus pour atteindre ${site.name}, je comprends mieux pourquoi ce pays mérite un documentaire de cette envergure.\n\nSite ${site.id}/38 de notre mission photographique nationale. Zone ${site.zone}. ${site.days} jour${site.days>1?'s':''} d'immersion.\n\n🎯 Notre mission : rendre accessible le patrimoine sénégalais à travers un livre documentaire produit avec un budget de 100M FCFA.\n\nL'Afrique mérite des récits à la hauteur de sa beauté.\n\n#Leadership #Afrique #Documentaire #Patrimoine #Sénégal`, informative:`📊 Point d'avancement — Mission Documentaire Sénégal V3\n\n✅ Site ${site.id} : ${site.name} (Zone ${site.zone})\n📍 ${site.coords[0].toFixed(4)}°N\n⏱ ${site.days} jour${site.days>1?'s':''} terrain\n🚗 ${site.km}km depuis Dakar\n\nÉtat global mission :\n• 38 sites · 59j terrain · 87j total\n• ~11 850 km à parcourir\n• Budget : 100 000 000 FCFA\n\n#Gestion de Projet #Documentary #Sénégal`, exciting:'', cultural:`🌍 Héritage Culturel — ${site.name}\n\nSite Zone ${site.zone} de notre série documentaire sur le Sénégal.\n\nCe n'est pas qu'un lieu — c'est une mémoire vivante. Notre équipe y a passé ${site.days} jour${site.days>1?'s':''} pour en capturer chaque nuance.\n\nLe documentaire sort en 2027. Réservez votre exemplaire.\n\n#Culture #Afrique #Heritage #Sénégal`, promotional:`🎥 Nous recherchons des partenaires pour notre documentaire sur les 38 sites emblématiques du Sénégal.\n\nSite en cours : ${site.name} — Zone ${site.zone}\n\nOpportunités :\n• Sponsoring institutionnel\n• Placement de marque\n• Co-production\n• Distribution internationale\n\nContactez notre équipe.\n\n#Sponsoring #Partenariat #Sénégal #Investissement` };
     const t = texts[tone] || texts['informative'];
     return { text: t, hashtags: '', meta: `Réseau professionnel · Format recommandé : 1200-2000 caractères · Image haute résolution conseillée` };
   },
   facebook: (site, tone) => {
     const texts = {
-      inspiring: `Je suis debout depuis 5h pour être à ${site.name} au lever du soleil.\n\nZone ${site.zone}. Site ${site.id} sur 36. Et franchement, ça valait chaque kilomètre parcouru.\n\nOn tourne un documentaire sur le Sénégal. 38 sites. 59 jours terrain. Un livre qui sera collector.\n\nSi tu veux suivre l'aventure, partage ce post. 🙏`,
-      informative: `📍 Mise à jour mission : ${site.name}\n\nSite ${site.id}/36 · Zone ${site.zone} · ${site.km}km de Dakar · ${site.days} jour${site.days>1?'s':''} sur place\n\nOn avance. Chaque site est un chapitre. Chaque photo une preuve que ce pays mérite mieux qu'une brochure touristique.\n\nLe livre sort en 2027. Laissez "intéressé" en commentaire 👇`,
-      exciting: `ON EST À ${site.name.toUpperCase()} ET C'EST INCROYABLE 🔥\n\nSite ${site.id} sur 36. Zone ${site.zone}. ${site.km}km. ${site.days} jour${site.days>1?'s':''}.\n\nOn ne s'arrête pas.\n\nTagguez quelqu'un qui doit voir ça 👇`,
+      inspiring: `Je suis debout depuis 5h pour être à ${site.name} au lever du soleil.\n\nZone ${site.zone}. Site ${site.id} sur 38. Et franchement, ça valait chaque kilomètre parcouru.\n\nOn tourne un documentaire sur le Sénégal. 38 sites. 59 jours terrain. Un livre qui sera collector.\n\nSi tu veux suivre l'aventure, partage ce post. 🙏`,
+      informative: `📍 Mise à jour mission : ${site.name}\n\nSite ${site.id}/38 · Zone ${site.zone} · ${site.km}km de Dakar · ${site.days} jour${site.days>1?'s':''} sur place\n\nOn avance. Chaque site est un chapitre. Chaque photo une preuve que ce pays mérite mieux qu'une brochure touristique.\n\nLe livre sort en 2027. Laissez "intéressé" en commentaire 👇`,
+      exciting: `ON EST À ${site.name.toUpperCase()} ET C'EST INCROYABLE 🔥\n\nSite ${site.id} sur 38. Zone ${site.zone}. ${site.km}km. ${site.days} jour${site.days>1?'s':''}.\n\nOn ne s'arrête pas.\n\nTagguez quelqu'un qui doit voir ça 👇`,
       cultural: `${site.name}, Zone ${site.zone}\n\nIl y a des endroits qui te changent. Pas de façon dramatique. Juste... tu repars différent.\n\n${site.days} jour${site.days>1?'s':''} sur place. ${site.km}km depuis Dakar. Et des images qu'on n'oubliera pas.\n\nCe documentaire, c'est pour garder vivante cette mémoire. 🇸🇳`,
-      promotional: `🎬 TOURNAGE EN COURS : ${site.name}\n\nSite ${site.id} sur 36. Le livre documentaire sur le Sénégal le plus ambitieux jamais produit avance.\n\n📖 500 exemplaires · 38 sites · 100M FCFA de production\n✅ Précommandes ouvertes\n\nLaissez "intéressé" en commentaire et on vous contacte 👇`
+      promotional: `🎬 TOURNAGE EN COURS : ${site.name}\n\nSite ${site.id} sur 38. Le livre documentaire sur le Sénégal le plus ambitieux jamais produit avance.\n\n📖 500 exemplaires · 38 sites · 100M FCFA de production\n✅ Précommandes ouvertes\n\nLaissez "intéressé" en commentaire et on vous contacte 👇`
     };
     return { text: texts[tone] || texts['informative'], hashtags: `#Sénégal #${site.name.replace(/[^\w]/g,'')} #Documentaire #Afrique #WestAfrica #${site.zone==='A'?'Dakar':site.zone==='C'?'Casamance':'Sénégal'}`, meta: `Réseau communautaire · Post texte ou carrousel · Épingler les annonces importantes` };
   },
   instagram: (site, tone) => {
-    const captions = { inspiring:`✨ ${site.name}\n\nCertains endroits ne se décrivent pas. Ils se ressentent.\n\nZone ${site.zone} · Site ${site.id} sur 36\n${site.coords[0].toFixed(4)}°N · ${site.days}j de tournage\n\nCe documentaire est pour vous 🎬\n\n📖 Lien en bio pour précommander`, informative:`📍 ${site.name}\n\n🗺 Zone ${site.zone} · Site ${site.id}/36\n📏 ${site.km}km de Dakar\n⏱ ${site.days} jour${site.days>1?'s':''} sur place\n\nNotre équipe capture l'essence de chaque lieu pour un livre documentaire exceptionnel sur le Sénégal.\n\n📖 38 sites · 100M FCFA · 2027`, exciting:`🔥🔥🔥 ${site.name.toUpperCase()}\n\nON EST LÀ ET C'EST INSANE 🎥\n\nZone ${site.zone} · ${site.km}km · ${site.days}j\n36 SITES. 11850KM. UN LIVRE. 💥\n\nSave this post si tu veux être notifié !\n#VenirVite`, cultural:`🌍 ${site.name}\n\nUne page de l'histoire de l'Afrique de l'Ouest.\nZone ${site.zone}, à ${site.km}km de Dakar.\n\nNotre documentaire raconte ces histoires que le monde doit connaître.\n\n📖 Réservation ouverte — lien en bio`, promotional:`🎬 TOURNAGE EN COURS 📸\n\n${site.name} — Zone ${site.zone}\n\nDevenez les premiers à tenir entre vos mains le documentaire photographique le plus ambitieux jamais réalisé sur le Sénégal.\n\n👉 Lien de précommande en bio\n🔔 Activez les notifications !` };
+    const captions = { inspiring:`✨ ${site.name}\n\nCertains endroits ne se décrivent pas. Ils se ressentent.\n\nZone ${site.zone} · Site ${site.id} sur 38\n${site.coords[0].toFixed(4)}°N · ${site.days}j de tournage\n\nCe documentaire est pour vous 🎬\n\n📖 Lien en bio pour précommander`, informative:`📍 ${site.name}\n\n🗺 Zone ${site.zone} · Site ${site.id}/38\n📏 ${site.km}km de Dakar\n⏱ ${site.days} jour${site.days>1?'s':''} sur place\n\nNotre équipe capture l'essence de chaque lieu pour un livre documentaire exceptionnel sur le Sénégal.\n\n📖 38 sites · 100M FCFA · 2027`, exciting:`🔥🔥🔥 ${site.name.toUpperCase()}\n\nON EST LÀ ET C'EST INSANE 🎥\n\nZone ${site.zone} · ${site.km}km · ${site.days}j\n38 SITES. 11850KM. UN LIVRE. 💥\n\nSave this post si tu veux être notifié !\n#VenirVite`, cultural:`🌍 ${site.name}\n\nUne page de l'histoire de l'Afrique de l'Ouest.\nZone ${site.zone}, à ${site.km}km de Dakar.\n\nNotre documentaire raconte ces histoires que le monde doit connaître.\n\n📖 Réservation ouverte — lien en bio`, promotional:`🎬 TOURNAGE EN COURS 📸\n\n${site.name} — Zone ${site.zone}\n\nDevenez les premiers à tenir entre vos mains le documentaire photographique le plus ambitieux jamais réalisé sur le Sénégal.\n\n👉 Lien de précommande en bio\n🔔 Activez les notifications !` };
     return { text: captions[tone] || captions['informative'], hashtags: `#Sénégal #Dakar #Afrique #${site.zone==='A'?'Dakar':site.zone==='C'?'Casamance':site.zone==='D'?'Kédougou':'Sénégal'} #Documentary #Photography #AfriqueOuest #${site.name.replace(/[^\w]/g,'')} #WestAfrica #NatGeoAfrica #DiscoverAfrica`, meta: `Format : Carré 1080×1080 ou Portrait 4:5 · Premier commentaire : hashtags secondaires` };
   },
   twitter: (site, tone) => {
     const posts = {
       inspiring:`${site.name}. Zone ${site.zone}.\nCertains lieux ne se racontent pas — ils se vivent. On y était, caméra au poing. 🎬🇸🇳`,
-      informative:`📍 ${site.name} — Zone ${site.zone} · site ${site.id}/36\n${site.days}j de tournage · ~${site.km} km depuis Dakar.\nMission documentaire Sénégal.`,
+      informative:`📍 ${site.name} — Zone ${site.zone} · site ${site.id}/38\n${site.days}j de tournage · ~${site.km} km depuis Dakar.\nMission documentaire Sénégal.`,
       exciting:`ON EST À ${site.name.toUpperCase()} 🔥\n38 sites · 59j de terrain · un livre collector. On ne lâche rien. 🇸🇳🎥`,
       cultural:`${site.name}, Zone ${site.zone}.\nUn pan du patrimoine sénégalais qu'on documente pour qu'il reste. 🇸🇳`,
       promotional:`🎬 Tournage à ${site.name}.\nLivre documentaire Sénégal — 38 sites, édition collector. Précommandes ouvertes.`
@@ -8845,6 +8890,7 @@ async function init() {
   const setStatus = msg => { if (statusEl) statusEl.textContent = msg; };
 
   setStatus('Chargement IndexedDB…');
+  await requestPersistentStorage(); // évite que l'OS efface les données en mission
   await initDB();
   await loadStateFromDB();
   // Liens réseaux sociaux (publics) disponibles dès le départ, sans ouvrir le coffre
@@ -10135,7 +10181,7 @@ function a6BuildDefaultPages() {
   // coût d'impression malgré les 4 sites supplémentaires, cf. décision user)
   // Front matter  :  8 pages
   // Zones (6×2)   : 12 pages  (ouverture + description par zone)
-  // Sites (36×5)  :180 pages  (pleine page, double G, double D, portfolio, légende)
+  // Sites (38×~5) :~190 pages (pleine page, double G, double D, portfolio, légende)
   // Back matter   : 10 pages
   // TOTAL         :224 pages
   const pages = [];

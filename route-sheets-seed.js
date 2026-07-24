@@ -1,6 +1,6 @@
 /* ============================================================
    FEUILLES DE ROUTE — contenu rédigé (Phase 1), photographe et
-   vidéaste, pour les 36 sites de la mission. Clés = SITES[].id.
+   vidéaste, pour les 38 sites de la mission. Clés = SITES[].id.
    Même forme que la sortie de a5GenerateRouteSheet() dans
    index.html (shots, materiel, materielNote, logistiqueHoraire)
    afin de servir de contenu par défaut, régénérable ensuite par
